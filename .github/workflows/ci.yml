@@ -1,0 +1,168 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master, develop ]
+
+env:
+  GO_VERSION: '1.21'
+  SEND_AGENT_BINARY: send-agent
+  START_AGENTS_BINARY: claude-manager
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: [ '1.21', '1.22' ]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      # Send-agent tests
+      - name: Test send-agent
+        run: |
+          cd send-agent
+          go mod download
+          go mod verify
+          go test -v -race -coverprofile=coverage.out ./...
+          go tool cover -html=coverage.out -o coverage.html
+
+      # Start-agents tests
+      - name: Test start-agents
+        run: |
+          cd start-agents
+          go mod download
+          go mod verify
+          go test -v -race -coverprofile=coverage.out ./...
+          go tool cover -html=coverage.out -o coverage.html
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Run golangci-lint for send-agent
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: send-agent
+          args: --timeout=5m
+
+      - name: Run golangci-lint for start-agents
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: start-agents
+          args: --timeout=5m
+
+      - name: Run golangci-lint for claude-teams-go
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: start-agents/claude-teams-go
+          args: --timeout=5m
+
+      - name: Run go vet for all modules
+        run: |
+          cd send-agent && go vet ./...
+          cd ../start-agents && go vet ./...
+          cd claude-teams-go && go vet ./...
+
+      - name: Run go fmt check for all modules
+        run: |
+          cd send-agent
+          if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+            echo "❌ send-agent code is not formatted properly"
+            gofmt -s -l .
+            exit 1
+          fi
+          cd ../start-agents
+          if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+            echo "❌ start-agents code is not formatted properly"
+            gofmt -s -l .
+            exit 1
+          fi
+          cd claude-teams-go
+          if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+            echo "❌ claude-teams-go code is not formatted properly"
+            gofmt -s -l .
+            exit 1
+          fi
+          echo "✅ All code is properly formatted"
+
+  security:
+    name: Security
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Run Gosec Security Scanner for send-agent
+        uses: securecodewarrior/github-action-gosec@master
+        with:
+          args: '-no-fail -fmt sarif -out send-agent-results.sarif ./send-agent/...'
+
+      - name: Run Gosec Security Scanner for start-agents
+        uses: securecodewarrior/github-action-gosec@master
+        with:
+          args: '-no-fail -fmt sarif -out start-agents-results.sarif ./start-agents/...'
+
+      - name: Upload SARIF files
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: ./*-results.sarif
+
+      - name: Run Nancy vulnerability scanner
+        run: |
+          go install github.com/sonatypecommunity/nancy@latest
+          cd send-agent && go list -json -m all | nancy sleuth
+          cd ../start-agents && go list -json -m all | nancy sleuth
+          cd claude-teams-go && go list -json -m all | nancy sleuth
+
+  notify:
+    name: Notify
+    runs-on: ubuntu-latest
+    needs: [test, lint, build, security]
+    if: always()
+    steps:
+      - name: Notify success
+        if: ${{ needs.test.result == 'success' && needs.lint.result == 'success' && needs.build.result == 'success' && needs.security.result == 'success' }}
+        run: |
+          echo "✅ All CI/CD jobs completed successfully"
+
+      - name: Notify failure
+        if: ${{ needs.test.result == 'failure' || needs.lint.result == 'failure' || needs.build.result == 'failure' || needs.security.result == 'failure' }}
+        run: |
+          echo "❌ CI/CD pipeline failed"
