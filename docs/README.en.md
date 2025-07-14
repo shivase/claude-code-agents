@@ -29,6 +29,11 @@ Create the necessary environment information for startup using the `--init` comm
 Files are saved by default to `~/.claude/claude-code-agents/agents.json`.
 
 ```bash
+git clone https://github.com/shivase/claude-code-agents.git
+cd claude-code-agents
+# install start-agents and send-agent to /usr/local/bin
+make install
+
 # Initialize configuration
 start-agents --init
 
@@ -105,20 +110,6 @@ make ci-local
 
 # Release build
 make release
-```
-
-## 📊 Project Structure
-
-```
-cloud-code-agents/
-├── start-agents/         # Agent management system
-├── send-agent/           # Communication system
-├── hooks/               # Extension hooks
-│   └── reload-role/     # Role reload functionality
-├── instructions/        # Agent instruction files
-├── docs/               # Documentation
-├── scripts/            # Utility scripts
-└── Makefile           # Integrated build system
 ```
 
 ## 📄 License

@@ -24,6 +24,11 @@ Product Ownerに指示を与えることで、各種Dev Roleのエージェン�
 ファイルはデフォルトでは`~/.claude/claude-code-agents/agents.json`に保存されます。
 
 ```bash
+git clone https://github.com/shivase/claude-code-agents.git
+cd claude-code-agents
+# install start-agents and send-agent to /usr/local/bin
+make install
+
 # 設定初期化
 start-agents --init
 
