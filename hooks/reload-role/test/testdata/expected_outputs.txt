@@ -1,0 +1,110 @@
+# Expected Outputs for Testing
+
+## Valid Role Reload Output Template
+🔄 {role}の役割定義を再読み込み中...
+
+📋 ファイル: {home}/.claude/claude-code-agents/instructions/{role}.md
+
+🔄 前の役割定義をリセットしています...
+📖 新しい役割定義を適用します：
+----------------------------------------
+{file_content}
+----------------------------------------
+
+✅ {role}の役割定義を正常に再読み込みしました。
+💡 前の役割定義は完全にリセットされ、新しい役割定義のみが適用されます。
+
+## Invalid Role Error Output Template
+❌ エラー: 無効な役割です。
+📁 instructionsファイルが見つかりません: {home}/.claude/claude-code-agents/instructions/{role}.md
+📝 使用例: /reload-role [role名称]
+
+## File Not Found Error Output Template
+❌ エラー: {file_path} が見つかりません。
+
+## Home Directory Error Output Template
+❌ エラー: ホームディレクトリの取得に失敗しました: {error_message}
+
+## File Read Error Output Template
+❌ エラー: ファイルの読み込みに失敗しました: {error_message}
+
+## No Action Output
+(Empty output - no action taken for non-matching commands)
+
+## Test Data for Expected Outputs
+
+### Valid PO Role Output
+🔄 poの役割定義を再読み込み中...
+
+📋 ファイル: /tmp/test-home/.claude/claude-code-agents/instructions/po.md
+
+🔄 前の役割定義をリセットしています...
+📖 新しい役割定義を適用します：
+----------------------------------------
+# PO Role Definition
+
+## 🎯 PO の役割と責任
+
+**私は PO（Product Owner）です。**
+
+### 主要な責務
+- 戦略的意思決定の実行
+- 組織全体の方向性の決定
+- 重要な判断の最終承認
+- 成果の最終責任
+
+### 意思決定プロセス
+1. 状況分析
+2. 戦略的判断
+3. 実行指示
+4. 結果評価
+
+### チームとの連携
+- Manager に具体的な指示を提供
+- Developer チームの成果を評価
+- 全体の進捗を監視
+
+---
+**作成日**: 2025-07-11
+**バージョン**: 1.0
+**対象**: reload-role テストフィクスチャー
+----------------------------------------
+
+✅ poの役割定義を正常に再読み込みしました。
+💡 前の役割定義は完全にリセットされ、新しい役割定義のみが適用されます。
+
+### Invalid Role Error Output Example
+❌ エラー: 無効な役割です。
+📁 instructionsファイルが見つかりません: /tmp/test-home/.claude/claude-code-agents/instructions/nonexistent.md
+📝 使用例: /reload-role [role名称]
+
+### File Not Found Error Output Example
+❌ エラー: /tmp/test-home/.claude/claude-code-agents/instructions/missing.md が見つかりません。
+
+## Output Patterns for Testing
+
+### Success Pattern
+- Starts with "🔄 {role}の役割定義を再読み込み中..."
+- Contains "📋 ファイル: {file_path}"
+- Contains "🔄 前の役割定義をリセットしています..."
+- Contains "📖 新しい役割定義を適用します："
+- Contains "----------------------------------------"
+- Contains file content
+- Contains "----------------------------------------"
+- Ends with "✅ {role}の役割定義を正常に再読み込みしました。"
+- Ends with "💡 前の役割定義は完全にリセットされ、新しい役割定義のみが適用されます。"
+
+### Error Pattern
+- Starts with "❌ エラー:"
+- Contains specific error message
+- May contain usage instructions
+
+### No Action Pattern
+- Empty output (no output at all)
+- Application exits with code 0
+
+## Japanese Character Encoding
+- All Japanese text should be UTF-8 encoded
+- Emoji characters should be properly displayed
+- Error messages should be in Japanese
+- File paths should handle Japanese characters correctly

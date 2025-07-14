@@ -1,397 +1,134 @@
-# Claude Code Agents - Integrated Multi-Agent System
+# Cloud Code Agents - Integrated Multi-Agent System
 
 [![Go Version](https://img.shields.io/badge/go-1.21+-blue.svg)](https://golang.org/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](../LICENSE)
 [![Tests](https://img.shields.io/badge/tests-passing-green.svg)](https://github.com/shivase/cloud-code-agents/actions)
 [![Coverage](https://img.shields.io/badge/coverage-85%25-brightgreen.svg)](https://github.com/shivase/cloud-code-agents/actions)
 
-A comprehensive integrated multi-agent system specialized for Claude Code environments, implemented in Go for high performance.
+An integrated development environment system that runs multiple Claude Code AI agents in parallel on tmux.
+By providing instructions to the Product Owner, various Dev Role agents process tasks in parallel.
 
 📖 [日本語README](../README.md)
 
 ## Overview
 
-**Claude Code Agents** is an integrated multi-agent system designed to streamline AI development work in Claude Code environments. Multiple AI agents collaborate to accomplish tasks efficiently, providing an enterprise-grade solution.
+This project is a comprehensive toolkit for running multiple AI agents in parallel to streamline team development. It consists of two main components:
 
-## 🚀 Key Features
+![screen_shot](screen_shot.png)
 
-### Integrated Multi-Agent Management
-- **Manager-Agent** system (CEO, Manager, Developer)
-- **Real-time inter-agent communication** (send-agent functionality)
-- **Session management** for work continuity
-- **Automatic load balancing** for efficient task distribution
+- **start-agents**: Main system for launching and managing AI agent sessions
+- **send-agent**: Client tool for sending messages to running agents
 
-### Advanced Execution Control
-- **PTY control** for complete terminal emulation
-- **Graceful shutdown** mechanisms for safe termination
-- **Process monitoring** and automatic recovery
-- **Resource management** (memory/CPU usage control)
+## 🚀 Usage
 
-### Enterprise-Ready
-- **Secure authentication handling** (`~/.claude/settings.json`)
-- **Structured logging** for detailed operation tracking
-- **Configurable timeouts** and retry mechanisms
-- **Concurrent execution control** for high performance
+### start-agents - AI Agent Session Management System
 
-### Developer-Friendly
-- **Rich command-line options** for flexible usage
-- **JSON configuration files** for easy customization
-- **Detailed error messages** and debugging information
-- **Hot reload** for immediate configuration changes
+#### Preliminary Setup
 
-## 🏗️ System Architecture
+Create the necessary environment information for startup using the `--init` command.
+Files are saved by default to `~/.claude/claude-code-agents/agents.json`.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                Claude Code Agents                          │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
-│  │  Agent (CEO)    │  │ Agent (Manager) │  │Agent (Developer)│ │
-│  │     🎯          │  │      📋         │  │       💻        │ │
-│  │  ┌───────────┐  │  │  ┌───────────┐  │  │  ┌───────────┐  │ │
-│  │  │   PTY     │  │  │  │   PTY     │  │  │  │   PTY     │  │ │
-│  │  │ Terminal  │  │  │  │ Terminal  │  │  │  │ Terminal  │  │ │
-│  │  └───────────┘  │  │  └───────────┘  │  │  └───────────┘  │ │
-│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
-│  │ Message System  │  │ Resource Monitor│  │ Health Checker  │ │
-│  │  (send-agent)   │  │   (Memory/CPU)  │  │  (Auth/Claude)  │ │
-│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
-│  │Session Manager  │  │ Logger System   │  │ Signal Handler  │ │
-│  │  (tmux/config)  │  │   (zerolog)     │  │  (Graceful)     │ │
-│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-```
-
-## 📦 Installation
-
-### Prerequisites
-- Go 1.21 or later
-- Claude Code CLI (latest version)
-- tmux (for session management)
-
-### Quick Start
 ```bash
-# 1. Clone the repository
-git clone https://github.com/shivase/cloud-code-agents.git
-cd cloud-code-agents
+# Initialize configuration
+start-agents --init
 
-# 2. Install dependencies and build
-make setup
-
-# 3. Install binaries
-make install
-
-# 4. Initialize configuration
-make init-config
+# Run system diagnostics
+start-agents --doctor
 ```
 
-## 🎯 Usage
+#### Starting Agents
 
-### Basic Usage
-
-#### System Startup
 ```bash
-# Start agent system
-claude-code-agents start
-
-# Check system status
-claude-code-agents status
-
-# List agents
-claude-code-agents list
-
-# Stop system
-claude-code-agents stop
+# Please specify a session name for startup
+start-agents [session_name]
 ```
 
-#### Agent Communication
-```bash
-# Send tasks to agents
-send-agent ceo "Please start a new project"
-send-agent manager "Please divide tasks among the development team"
-send-agent dev1 "Please implement API endpoints"
+**Launched Agents:**
+- `po`: Product Owner (Overall coordination)
+- `manager`: Project Manager (Team management)
+- `dev1-dev4`: Execution agents (Flexible role assignment)
 
-# Specify a particular session
-send-agent --session myproject dev1 "【As Frontend Lead】Please implement UI design"
-```
+#### Agent Definition Files
 
-### Available Agents
+The operational definitions for various agents are stored in `~/.claude/claude-code-agents/instructions`.
+Please modify them according to your environment as needed.
 
-- **ceo** - Chief Executive Officer (Overall supervision)
-- **manager** - Project Manager (Flexible team management)
-- **dev1** - Execution Agent 1 (Flexible role assignment)
-- **dev2** - Execution Agent 2 (Flexible role assignment)
-- **dev3** - Execution Agent 3 (Flexible role assignment)
-- **dev4** - Execution Agent 4 (Flexible role assignment)
+## 📋 Preparation and Setup
 
-### Advanced Usage
-```bash
-# Start with specific layout
-claude-code-agents start --layout individual
+## Technical Specifications
 
-# Debug mode
-claude-code-agents --verbose start
+### System Requirements
 
-# Custom configuration directory
-claude-code-agents --config-dir /path/to/config start
-
-# Session management
-send-agent list-sessions
-send-agent list myproject
-```
-
-## ⚙️ Configuration
-
-### Configuration File: `~/.claude/agents-config.json`
-
-```json
-{
-  "system": {
-    "max_sessions": 10,
-    "session_timeout": "30m",
-    "health_check_interval": "30s",
-    "working_dir": "/tmp/claude-agents",
-    "auto_attach": true,
-    "default_layout": "integrated"
-  },
-  "claude": {
-    "cli_path": "/usr/local/bin/claude",
-    "instructions_dir": "./configs/instructions",
-    "auth_check_interval": "30m"
-  },
-  "logging": {
-    "level": "info",
-    "file": "./logs/agents.log",
-    "structured": true
-  },
-  "performance": {
-    "max_memory_mb": 1024,
-    "max_cpu_percent": 80.0,
-    "max_restart_attempts": 3
-  }
-}
-```
-
-### Environment Variables
-```bash
-export CLAUDE_AGENTS_LOG_LEVEL=debug
-export CLAUDE_AGENTS_CONFIG_DIR=/path/to/config
-export CLAUDE_AGENTS_VERBOSE=true
-```
-
-## 📁 Project Structure
-
-```
-cloud-code-agents/
-├── cmd/
-│   ├── manager/           # Agent management system
-│   ├── send-agent/        # Agent communication system
-│   └── claude-teams/      # Team management system
-├── internal/
-│   ├── auth/              # Authentication features
-│   ├── config/            # Configuration management
-│   ├── command/           # Command execution
-│   ├── session/           # Session management
-│   └── server/            # Server functionality
-├── pkg/
-│   ├── types/             # Common type definitions
-│   └── agent/             # Agent functionality
-├── configs/               # Configuration files
-├── docs/                  # Documentation
-├── logs/                  # Log files
-├── go.mod                 # Go module definition
-└── Makefile              # Build system
-```
-
-## 🔄 Comparison with Existing Solutions
-
-| Feature | Traditional Scripts | Claude Code Agents | Improvement |
-|---------|-------------------|------------------|-------------|
-| **Multi-Agent** | Single execution | Multiple concurrent | 10x efficiency |
-| **Process Management** | tmux+script | PTY+Go runtime | Stability & control |
-| **Authentication** | Manual management | Auto-protection & recovery | Enhanced security |
-| **Error Handling** | Simple logs | Structured logging+monitoring | Better operations |
-| **Resource Control** | No limits | Memory/CPU monitoring | System stability |
-| **Parallel Processing** | Sequential | Concurrent Goroutines | Performance boost |
-| **Configuration** | Hard-coded | JSON configuration | Flexibility & maintainability |
-| **Message Communication** | Manual input | Automated sending system | Efficiency improvement |
+- Go 2.0 or later
+- tmux
+- Claude Code CLI
 
 ## 🛠️ Development
 
-### Development Environment Setup
+### Build and Installation
+
 ```bash
-# Build development environment
-make setup
+# Full build (recommended)
+make build-all
 
-# Run tests
-make test          # Unit tests
-make test-race     # Race condition detection
-make test-coverage # Coverage measurement
+# Individual builds
+cd start-agents && make build
+cd send-agent && make build
 
-# Code quality
-make lint          # Static analysis
-make fmt           # Format code
-make vet           # Go vet
+# Multi-platform builds
+make build-all-platforms
+
+# Install
+make install
 ```
 
-### CI/CD
+### Testing and Code Quality
+
+```bash
+# Full test suite
+make test-all
+
+# Individual tests
+cd start-agents && make test
+cd send-agent && make test
+
+# Code quality checks
+make lint-all
+make fmt-all
+```
+
+### CI/CD Support
+
 ```bash
 # Local CI execution
 make ci-local
 
 # Release build
 make release
-
-# Package creation
-make package
 ```
 
-## 🔧 Troubleshooting
+## 📊 Project Structure
 
-### Common Issues
-
-#### Claude CLI Not Found
-```bash
-# Check path
-which claude
-
-# Specify path in configuration
-{
-  "claude": {
-    "cli_path": "/usr/local/bin/claude"
-  }
-}
 ```
-
-#### Authentication Errors
-```bash
-# Check authentication status
-claude auth status
-
-# Re-authenticate
-claude auth login
-
-# Verify settings file
-ls -la ~/.claude/settings.json
+cloud-code-agents/
+├── start-agents/         # Agent management system
+├── send-agent/           # Communication system
+├── hooks/               # Extension hooks
+│   └── reload-role/     # Role reload functionality
+├── instructions/        # Agent instruction files
+├── docs/               # Documentation
+├── scripts/            # Utility scripts
+└── Makefile           # Integrated build system
 ```
-
-#### Session Management Issues
-```bash
-# List sessions
-send-agent list-sessions
-
-# Stop problematic session
-claude-code-agents stop
-
-# Force reset
-claude-code-agents start --reset
-```
-
-## 📊 Feature List
-
-### System Management Features
-- Agent startup/shutdown/monitoring
-- Session management (integrated/individual)
-- Resource monitoring and control
-- Automatic recovery functionality
-
-### Message Communication Features
-- Inter-agent communication
-- Automated message sending
-- Message history logging
-- Automatic session detection
-
-### Configuration & Authentication Features
-- Configuration file management
-- Authentication status monitoring
-- Configuration hot reload
-- Environment variable support
-
-## 🏆 Key Implementation Highlights
-
-### 1. Thread-Safe Agent Management
-```go
-type Agent struct {
-    ID          string
-    Role        types.Role
-    Session     string
-    MessageChan chan types.Message
-    mu          sync.RWMutex
-    status      types.AgentStatus
-}
-```
-
-### 2. Concurrent-Safe Data Structures
-```go
-type SafeMap struct {
-    data map[string]interface{}
-    mu   sync.RWMutex
-}
-
-func (sm *SafeMap) Set(key string, value interface{}) {
-    sm.mu.Lock()
-    defer sm.mu.Unlock()
-    sm.data[key] = value
-}
-```
-
-### 3. Advanced PTY Control
-```go
-func startAgentWithPTY(agentID string) (*Agent, error) {
-    cmd := exec.Command("claude", "--dangerously-skip-permissions")
-    cmd.Env = append(os.Environ(), "TERM=xterm-256color")
-    
-    pty, err := pty.Start(cmd)
-    if err != nil {
-        return nil, fmt.Errorf("PTY start failed: %v", err)
-    }
-    
-    return &Agent{
-        ID:  agentID,
-        PTY: pty,
-        cmd: cmd,
-    }, nil
-}
-```
-
-### 4. Graceful Shutdown
-```go
-func (s *System) Shutdown() error {
-    s.cancel() // Cancel all contexts
-    
-    // Wait for all agents to terminate
-    for _, agent := range s.agents {
-        if err := agent.Stop(); err != nil {
-            s.logger.Error().Err(err).Msg("Agent stop failed")
-        }
-    }
-    
-    return nil
-}
-```
-
-## 🤝 Community
-
-- [GitHub Issues](https://github.com/shivase/cloud-code-agents/issues) - Bug reports & feature requests
-- [Discussions](https://github.com/shivase/cloud-code-agents/discussions) - Q&A & discussions
-- [Wiki](https://github.com/shivase/cloud-code-agents/wiki) - Detailed documentation
 
 ## 📄 License
 
 MIT License - See [LICENSE](../LICENSE) for details.
 
-## 🙏 Acknowledgments
+## 🤝 Contributing
 
-- [Claude Code](https://claude.ai/code) - Amazing AI development environment
-- [creack/pty](https://github.com/creack/pty) - PTY control library
-- [rs/zerolog](https://github.com/rs/zerolog) - High-performance logging library
-- [spf13/cobra](https://github.com/spf13/cobra) - CLI framework
-- Go community - Powerful development ecosystem
+We welcome contributions to the project.
 
----
-
-*Built with ❤️ for the Claude Code community*
+- [Issues](https://github.com/shivase/cloud-code-agents/issues) - Bug reports & feature requests
+- [Pull Requests](https://github.com/shivase/cloud-code-agents/pulls) - Code contributions
+- [Discussions](https://github.com/shivase/cloud-code-agents/discussions) - Q&A & discussions

@@ -37,6 +37,7 @@ build: deps
 install: build
 	@echo "📦 Installing binaries to $(INSTALL_DIR)..."
 	@mkdir -p $(INSTALL_DIR)
+	sudo rm $(INSTALL_DIR)/$(BINARY_NAME)
 	sudo cp $(BUILD_DIR)/$(BINARY_NAME) $(INSTALL_DIR)/
 	sudo chmod +x $(INSTALL_DIR)/$(BINARY_NAME)
 
@@ -51,15 +52,31 @@ uninstall:
 .PHONY: test
 test:
 	@echo "🧪 Running tests..."
-	go test -v ./...
+	go test -p 1 -v -timeout=10m -count=1 ./test/...
+
+# カバレッジ付きテスト実行
+.PHONY: test-coverage
+test-coverage:
+	@echo "📊 Running tests with coverage..."
+	go test -v -race -coverprofile=coverage.out -covermode=atomic ./test/...
+	go tool cover -html=coverage.out -o coverage.html
+	@echo "📄 Coverage report generated: coverage.html"
+
+# カバレッジ閾値チェック
+.PHONY: test-coverage-check
+test-coverage-check:
+	@echo "🎯 Checking coverage thresholds..."
+	go test -coverprofile=coverage.out ./test/...
+	@go tool cover -func=coverage.out | grep "total:" | awk '{if($$3+0 < 75.0) {print "❌ Coverage below 75%: " $$3; exit 1} else {print "✅ Coverage above 75%: " $$3}}'
 
 .PHONY: lint
 lint:
 	@echo "🔍 Running linters..."
 	@if command -v golangci-lint >/dev/null 2>&1; then \
-		golangci-lint run; \
+		golangci-lint run internal/... --config .golangci.yaml; \
+		golangci-lint run test/... --config .golangci.yaml; \
 	else \
-		@echo "⚠️  golangci-lint not found, running go vet instead"; \
+		echo "⚠️  golangci-lint not found, running go vet instead"; \
 		go vet ./...; \
 	fi
 
@@ -87,7 +104,10 @@ help:
 	@echo "  build              - Build the main binary for current platform"
 	@echo "  install            - Install binaries to $(INSTALL_DIR)"
 	@echo "  uninstall          - Remove installed binaries"
-	@echo "  test               - Run tests"
+	@echo "  test               - Run all tests"
+	@echo "  test-ci            - Run tests in CI environment with mocks"
+	@echo "  test-coverage      - Run tests with coverage and generate HTML report"
+	@echo "  test-coverage-check- Check coverage meets 75% threshold"
 	@echo "  lint               - Run static analysis"
 	@echo "  fmt                - Format code"
 	@echo "  clean              - Clean build artifacts and caches"

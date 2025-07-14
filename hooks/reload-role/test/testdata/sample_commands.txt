@@ -1,0 +1,93 @@
+# Sample Commands for Testing
+
+## Valid Commands
+/reload-role ceo
+/reload-role manager
+/reload-role developer
+/reload-role admin
+/reload-role tester
+/reload-role analyst
+/reload-role architect
+/reload-role designer
+/reload-role devops
+/reload-role support
+/reload-role   ceo
+/reload-role    manager
+/reload-role CEO
+/reload-role MANAGER
+/reload-role DevOps
+/reload-role a
+/reload-role abcdefghijklmnopqrstuvwxyz
+
+## Invalid Commands
+/reload-role
+/reload-role 
+/reload-role    
+reload-role ceo
+/restart-role ceo
+/reload-role dev123
+/reload-role dev-ops
+/reload-role dev_ops
+/reload-role dev@ops
+/reload-role dev.ops
+/reload-role dev/ops
+/reload-role dev ops
+/reload-role dev	ops
+/reload-role dev
+ops
+/reload-role "ceo"
+/reload-role 'manager'
+/reload-role (developer)
+/reload-role [admin]
+/reload-role {tester}
+/reload-role <analyst>
+/reload-role #architect
+/reload-role $designer
+/reload-role %devops
+/reload-role &support
+/reload-role *ceo
+/reload-role +manager
+/reload-role =developer
+/reload-role ?admin
+/reload-role |tester
+/reload-role \analyst
+/reload-role /architect
+/reload-role :designer
+/reload-role ;devops
+/reload-role ,support
+/reload-role .ceo
+/reload-role !manager
+/reload-role ~developer
+/reload-role `admin
+/reload-role ^tester
+/reload-role 管理者
+/reload-role マネージャー
+/reload-role 開発者
+/reload-role セオ
+/reload-role 123
+/reload-role 456789
+/reload-role 0
+/reload-role -1
+/reload-role 3.14
+/reload-role true
+/reload-role false
+/reload-role null
+/reload-role undefined
+/reload-role NaN
+/reload-role Infinity
+
+## Edge Cases
+/reload-role ceo extra text
+/reload-role ceo extra text with spaces
+/reload-role ceo	tab
+/reload-role ceo
+extra
+   /reload-role ceo
+/reload-role ceo   
+/reload-role abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+/reload-role A
+/reload-role Z
+/reload-role aA
+/reload-role Aa
+/reload-role aZ
+/reload-role Za

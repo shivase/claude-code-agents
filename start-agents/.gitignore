@@ -92,3 +92,4 @@ yarn-error.log*
 # Docker
 .dockerignore
 docker-compose.override.yml
+claude-code-agents
