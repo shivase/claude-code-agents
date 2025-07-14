@@ -1,7 +1,5 @@
 # Cloud Code Agents
 
-📖 [English README](docs/README.en.md)
-
 tmux上でClaude Code AIエージェントを並列実行する統合開発環境システムです。
 Product Ownerに指示を与えることで、各種Dev Roleのエージェントが並列で処理をおこなうようになります。
 
