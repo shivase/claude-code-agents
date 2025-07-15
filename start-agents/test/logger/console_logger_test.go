@@ -27,32 +27,32 @@ func TestInitConsoleLogger(t *testing.T) {
 		expectedLevel zerolog.Level
 	}{
 		{
-			name:          "デバッグレベル",
+			name:          "Debug level",
 			level:         "debug",
 			expectedLevel: zerolog.DebugLevel,
 		},
 		{
-			name:          "情報レベル",
+			name:          "Info level",
 			level:         "info",
 			expectedLevel: zerolog.InfoLevel,
 		},
 		{
-			name:          "警告レベル",
+			name:          "Warn level",
 			level:         "warn",
 			expectedLevel: zerolog.WarnLevel,
 		},
 		{
-			name:          "エラーレベル",
+			name:          "Error level",
 			level:         "error",
 			expectedLevel: zerolog.ErrorLevel,
 		},
 		{
-			name:          "致命的レベル",
+			name:          "Fatal level",
 			level:         "fatal",
 			expectedLevel: zerolog.FatalLevel,
 		},
 		{
-			name:          "無効なレベル",
+			name:          "Invalid level",
 			level:         "invalid",
 			expectedLevel: zerolog.InfoLevel, // デフォルト
 		},
@@ -78,17 +78,17 @@ func TestSetLogLevel(t *testing.T) {
 		expectedLevel zerolog.Level
 	}{
 		{
-			name:          "デバッグレベル設定",
+			name:          "Debug level setting",
 			level:         "debug",
 			expectedLevel: zerolog.DebugLevel,
 		},
 		{
-			name:          "情報レベル設定",
+			name:          "Info level setting",
 			level:         "info",
 			expectedLevel: zerolog.InfoLevel,
 		},
 		{
-			name:          "無効なレベル設定",
+			name:          "Invalid level setting",
 			level:         "invalid",
 			expectedLevel: zerolog.InfoLevel,
 		},
@@ -121,14 +121,14 @@ func TestInitWithDebugFlag(t *testing.T) {
 		expectDebugMsg bool
 	}{
 		{
-			name:           "デバッグフラグ有効",
+			name:           "Debug flag enabled",
 			debugEnabled:   true,
 			baseLogLevel:   "info",
 			expectedLevel:  zerolog.DebugLevel,
 			expectDebugMsg: true,
 		},
 		{
-			name:           "デバッグフラグ無効",
+			name:           "Debug flag disabled",
 			debugEnabled:   false,
 			baseLogLevel:   "warn",
 			expectedLevel:  zerolog.WarnLevel,

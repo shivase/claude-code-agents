@@ -13,7 +13,7 @@ import (
 	"github.com/shivase/claude-code-agents/internal/utils"
 )
 
-// TeamConfig AI Team設定構造体
+// TeamConfig represents AI Team configuration structure
 type TeamConfig struct {
 	// Path Configurations
 	ClaudeCLIPath   string
@@ -51,7 +51,7 @@ type TeamConfig struct {
 	SendCommand string
 	BinaryName  string
 
-	// 開発者設定
+	// Developer settings
 	DevCount int
 
 	// Role-based Instructions
@@ -59,40 +59,40 @@ type TeamConfig struct {
 	ManagerInstructionFile string
 	DevInstructionFile     string
 
-	// === 新規追加フィールド ===
-	// 拡張instruction設定
+	// === New fields ===
+	// Extended instruction configuration
 	InstructionConfig *InstructionConfig `json:"instruction_config,omitempty"`
 
-	// フォールバック設定
+	// Fallback settings
 	FallbackInstructionDir string `json:"fallback_instruction_dir,omitempty"`
 
-	// 環境設定
+	// Environment settings
 	Environment string `json:"environment,omitempty"` // development, production, etc.
 
-	// バリデーション設定
+	// Validation settings
 	StrictValidation bool `json:"strict_validation,omitempty"`
 }
 
-// InstructionConfig 拡張instruction設定
+// InstructionConfig represents extended instruction configuration
 type InstructionConfig struct {
-	// 基本設定
+	// Base configuration
 	Base InstructionRoleConfig `json:"base"`
 
-	// 環境別設定
+	// Environment-specific configuration
 	Environments map[string]InstructionRoleConfig `json:"environments,omitempty"`
 
-	// グローバル設定
+	// Global configuration
 	Global InstructionGlobalConfig `json:"global,omitempty"`
 }
 
-// InstructionRoleConfig ロール別instruction設定
+// InstructionRoleConfig represents role-specific instruction configuration
 type InstructionRoleConfig struct {
 	POInstructionPath      string `json:"po_instruction_path,omitempty"`
 	ManagerInstructionPath string `json:"manager_instruction_path,omitempty"`
 	DevInstructionPath     string `json:"dev_instruction_path,omitempty"`
 }
 
-// InstructionGlobalConfig グローバルinstruction設定
+// InstructionGlobalConfig represents global instruction configuration
 type InstructionGlobalConfig struct {
 	DefaultExtension string        `json:"default_extension,omitempty"` // .md, .txt
 	SearchPaths      []string      `json:"search_paths,omitempty"`
@@ -100,7 +100,7 @@ type InstructionGlobalConfig struct {
 	CacheTTL         time.Duration `json:"cache_ttl,omitempty"`
 }
 
-// GetWorkingDir ConfigInterface 実装メソッド
+// GetWorkingDir implements ConfigInterface method
 func (tc *TeamConfig) GetWorkingDir() string    { return tc.WorkingDir }
 func (tc *TeamConfig) SetWorkingDir(dir string) { tc.WorkingDir = dir }
 
@@ -129,19 +129,19 @@ func (tc *TeamConfig) GetPOInstructionFile() string      { return tc.POInstructi
 func (tc *TeamConfig) GetManagerInstructionFile() string { return tc.ManagerInstructionFile }
 func (tc *TeamConfig) GetDevInstructionFile() string     { return tc.DevInstructionFile }
 
-// LoadTeamConfigFromPath 設定ファイルの読み込み
+// LoadTeamConfigFromPath loads configuration from file path
 func LoadTeamConfigFromPath(configPath string) (*TeamConfig, error) {
 	homeDir, _ := os.UserHomeDir()
 
-	// ディレクトリ解決器を使用して最適な作業ディレクトリを取得
+	// Get optimal working directory using directory resolver
 	resolver := utils.GetGlobalDirectoryResolver()
 	optimalWorkingDir := resolver.GetOptimalWorkingDirectory()
 
-	// 統一された設定ディレクトリパス
+	// Unified configuration directory path
 	claudeDir := filepath.Join(homeDir, ".claude")
 	claudCodeAgentsDir := filepath.Join(claudeDir, "claude-code-agents")
 
-	// デフォルト設定
+	// Default configuration
 	config := &TeamConfig{
 		ClaudeCLIPath:          filepath.Join(claudeDir, "local", "claude"),
 		InstructionsDir:        filepath.Join(claudCodeAgentsDir, "instructions"),
@@ -173,12 +173,12 @@ func LoadTeamConfigFromPath(configPath string) (*TeamConfig, error) {
 		DevInstructionFile:     "developer.md",
 	}
 
-	// 設定ファイルが存在しない場合はデフォルト設定を返す
+	// Return default configuration if config file doesn't exist
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		return config, nil
 	}
 
-	// 設定ファイルの読み込み - パスの正規化とディレクトリトラバーサル防止
+	// Load config file - path normalization and directory traversal prevention
 	cleanPath := filepath.Clean(configPath)
 	if strings.Contains(cleanPath, "..") {
 		return nil, fmt.Errorf("config path contains directory traversal")
@@ -190,7 +190,7 @@ func LoadTeamConfigFromPath(configPath string) (*TeamConfig, error) {
 	}
 	defer func() {
 		if err := file.Close(); err != nil {
-			// ログに記録するか適切に処理
+			// Log or handle appropriately
 			_, err := fmt.Fprintf(os.Stderr, "Warning: failed to close config file: %v\n", err)
 			if err != nil {
 				return
@@ -202,12 +202,12 @@ func LoadTeamConfigFromPath(configPath string) (*TeamConfig, error) {
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 
-		// コメントや空行をスキップ
+		// Skip comments and empty lines
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
 
-		// KEY=VALUE形式の解析
+		// Parse KEY=VALUE format
 		parts := strings.SplitN(line, "=", 2)
 		if len(parts) != 2 {
 			continue
@@ -216,14 +216,14 @@ func LoadTeamConfigFromPath(configPath string) (*TeamConfig, error) {
 		key := strings.TrimSpace(parts[0])
 		value := strings.TrimSpace(parts[1])
 
-		// 設定値の適用
+		// Apply configuration values
 		switch key {
 		case "CLAUDE_CLI_PATH":
 			config.ClaudeCLIPath = value
 		case "INSTRUCTIONS_DIR":
 			config.InstructionsDir = value
 		case "WORKING_DIR":
-			// WorkingDirはディレクトリ解決器で最適化されるためスキップ
+			// Skip WorkingDir as it's optimized by directory resolver
 			log.Debug().Str("config_working_dir", value).Str("optimal_working_dir", optimalWorkingDir).Msg("WorkingDir override by directory resolver")
 		case "CONFIG_DIR":
 			config.ConfigDir = value
@@ -286,7 +286,7 @@ func LoadTeamConfigFromPath(configPath string) (*TeamConfig, error) {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
 
-	// 設定ファイル読み込み後もディレクトリ依存問題を修正
+	// Fix directory dependent paths after loading config file
 	if resolveErr := resolver.FixDirectoryDependentPaths(config); resolveErr != nil {
 		log.Warn().Err(resolveErr).Msg("Failed to fix directory dependent paths")
 	}
@@ -294,11 +294,11 @@ func LoadTeamConfigFromPath(configPath string) (*TeamConfig, error) {
 	return config, nil
 }
 
-// GetUnifiedConfigPaths 統一された設定パスを取得
+// GetUnifiedConfigPaths gets unified configuration paths
 func GetUnifiedConfigPaths() *ConfigPaths {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		// エラーの場合は相対パスを返す
+		// Return relative paths on error
 		return &ConfigPaths{
 			ClaudeDir:          ".claude",
 			CloudCodeAgentsDir: ".claude-code-agents",
@@ -325,7 +325,7 @@ func GetUnifiedConfigPaths() *ConfigPaths {
 	}
 }
 
-// ConfigPaths 設定パス構造体
+// ConfigPaths represents configuration path structure
 type ConfigPaths struct {
 	ClaudeDir          string
 	CloudCodeAgentsDir string
@@ -337,7 +337,7 @@ type ConfigPaths struct {
 	ClaudeCLIPath      string
 }
 
-// EnsureDirectories 必要なディレクトリを作成
+// EnsureDirectories creates necessary directories
 func (cp *ConfigPaths) EnsureDirectories() error {
 	directories := []string{
 		cp.CloudCodeAgentsDir,
@@ -355,22 +355,22 @@ func (cp *ConfigPaths) EnsureDirectories() error {
 	return nil
 }
 
-// LoadUnifiedConfig 統一された設定読み込み
+// LoadUnifiedConfig loads unified configuration
 func LoadUnifiedConfig() (*UnifiedConfig, error) {
 	paths := GetUnifiedConfigPaths()
 
-	// 必要なディレクトリを作成
+	// Create necessary directories
 	if err := paths.EnsureDirectories(); err != nil {
 		return nil, fmt.Errorf("failed to ensure directories: %w", err)
 	}
 
-	// TeamConfigの読み込み
+	// Load TeamConfig
 	teamConfig, err := LoadTeamConfigFromPath(paths.TeamConfigPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load team config: %w", err)
 	}
 
-	// MainConfigの読み込み
+	// Load MainConfig
 	mainConfig, err := LoadConfig(paths.MainConfigPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load main config: %w", err)
@@ -383,14 +383,14 @@ func LoadUnifiedConfig() (*UnifiedConfig, error) {
 	}, nil
 }
 
-// UnifiedConfig 統一された設定構造体
+// UnifiedConfig represents unified configuration structure
 type UnifiedConfig struct {
 	Paths *ConfigPaths
 	Team  *TeamConfig
 	Main  *Config
 }
 
-// GetEffectiveConfig 有効な設定値を取得（優先順位: Team > Main > Common）
+// GetEffectiveConfig gets effective configuration values (Priority: Team > Main > Common)
 func (uc *UnifiedConfig) GetEffectiveConfig() *EffectiveConfig {
 	return &EffectiveConfig{
 		MaxProcesses:           uc.Team.MaxProcesses,
@@ -424,7 +424,7 @@ func (uc *UnifiedConfig) GetEffectiveConfig() *EffectiveConfig {
 	}
 }
 
-// EffectiveConfig 有効な設定値
+// EffectiveConfig represents effective configuration values
 type EffectiveConfig struct {
 	MaxProcesses           int
 	MaxMemoryMB            int64
@@ -456,90 +456,90 @@ type EffectiveConfig struct {
 	DevInstructionFile     string
 }
 
-// GetTeamConfigPath 設定ファイルのパスを取得
+// GetTeamConfigPath gets configuration file path
 func GetTeamConfigPath() string {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		// エラーの場合はカレントディレクトリのデフォルトファイルを返す
+		// Return default file in current directory on error
 		return ".claude-code-agents.conf"
 	}
 
-	// 統一された設定ディレクトリパス
+	// Unified configuration directory path
 	configDir := filepath.Join(homeDir, ".claude", "claude-code-agents")
 
-	// 優先順位1: claude-code-agentsディレクトリ内の設定ファイル
+	// Priority 1: Configuration file in claude-code-agents directory
 	claudConfigPath := filepath.Join(configDir, "agents.conf")
 	if _, err := os.Stat(claudConfigPath); err == nil {
 		return claudConfigPath
 	}
 
-	// 優先順位2: ホームディレクトリの設定ファイル
+	// Priority 2: Configuration file in home directory
 	homeConfigPath := filepath.Join(homeDir, ".claude-code-agents.conf")
 	if _, err := os.Stat(homeConfigPath); err == nil {
 		return homeConfigPath
 	}
 
-	// 優先順位3: カレントディレクトリの設定ファイル
+	// Priority 3: Configuration file in current directory
 	currentConfigPath := ".claude-code-agents.conf"
 	if _, err := os.Stat(currentConfigPath); err == nil {
 		return currentConfigPath
 	}
 
-	// デフォルトパス（統一されたディレクトリ内）
+	// Default path (in unified directory)
 	return claudConfigPath
 }
 
-// LoadTeamConfig 設定ファイルの読み込み（パラメータなし版）
+// LoadTeamConfig loads configuration file (no parameter version)
 func LoadTeamConfig() (*TeamConfig, error) {
 	configPath := GetTeamConfigPath()
 	return LoadTeamConfigFromPath(configPath)
 }
 
-// GetDefaultTeamConfigPath デフォルトのチーム設定ファイルパスを取得
+// GetDefaultTeamConfigPath gets default team configuration file path
 func GetDefaultTeamConfigPath() string {
 	return GetTeamConfigPath()
 }
 
-// TeamConfigLoader チーム設定ローダー
+// TeamConfigLoader loads team configuration
 type TeamConfigLoader struct {
 	configPath          string
 	instructionResolver InstructionResolverInterface
 	validator           InstructionValidatorInterface
 }
 
-// NewTeamConfigLoader 新しいチーム設定ローダーを作成
+// NewTeamConfigLoader creates a new team configuration loader
 func NewTeamConfigLoader(configPath string) *TeamConfigLoader {
 	return &TeamConfigLoader{
 		configPath: configPath,
 	}
 }
 
-// LoadTeamConfig チーム設定を読み込み（拡張版）
+// LoadTeamConfig loads team configuration (extended version)
 func (tcl *TeamConfigLoader) LoadTeamConfig() (*TeamConfig, error) {
-	// 基本設定の読み込み
+	// Base configurationの読み込み
 	config, err := LoadTeamConfigFromPath(tcl.configPath)
 	if err != nil {
 		return nil, err
 	}
 
-	// instruction解決器とバリデーターを初期化
+	// Initialize instruction resolver and validator
 	tcl.instructionResolver = NewInstructionResolver(config)
 	tcl.validator = NewInstructionValidator(config.StrictValidation)
 
-	// 必要に応じて設定の正規化
+	// Normalize configuration if necessary
 	tcl.normalizeInstructionConfig(config)
 
 	return config, nil
 }
 
-// SaveTeamConfig チーム設定を保存
+// SaveTeamConfig saves team configuration
 func (tcl *TeamConfigLoader) SaveTeamConfig(config *TeamConfig) error {
-	// ディレクトリ作成
+	// Create directory
 	if err := os.MkdirAll(filepath.Dir(tcl.configPath), 0750); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
-	// 設定ファイルの内容を生成
+	// Generate configuration file content
 	content := fmt.Sprintf(`# AI Team Configuration File
 # Generated by Claude Code Agents
 
@@ -606,21 +606,21 @@ PROCESS_TIMEOUT=%s
 	return os.WriteFile(tcl.configPath, []byte(content), 0600)
 }
 
-// GetDevCount 開発者数を取得
+// GetDevCount gets developer count
 func (tc *TeamConfig) GetDevCount() int {
 	return tc.DevCount
 }
 
-// SetDevCount 開発者数を設定
+// SetDevCount sets developer count
 func (tc *TeamConfig) SetDevCount(count int) {
 	if count > 0 {
 		tc.DevCount = count
-		// PaneCountも更新（PO + Manager + Dev数）
+		// Update PaneCount (PO + Manager + Dev count)
 		tc.PaneCount = 2 + count
 	}
 }
 
-// GetAgentList 動的エージェントリストを取得
+// GetAgentList gets dynamic agent list
 func (tc *TeamConfig) GetAgentList() []string {
 	agents := []string{"po", "manager"}
 	for i := 1; i <= tc.DevCount; i++ {
@@ -629,7 +629,7 @@ func (tc *TeamConfig) GetAgentList() []string {
 	return agents
 }
 
-// GetPaneAgentMap 動的ペイン-エージェントマップを取得
+// GetPaneAgentMap gets dynamic pane-agent map
 func (tc *TeamConfig) GetPaneAgentMap() map[string]string {
 	paneMap := make(map[string]string)
 	paneMap["1"] = "po"
@@ -640,7 +640,7 @@ func (tc *TeamConfig) GetPaneAgentMap() map[string]string {
 	return paneMap
 }
 
-// GetPaneTitles 動的ペインタイトルマップを取得
+// GetPaneTitles gets dynamic pane title map
 func (tc *TeamConfig) GetPaneTitles() map[string]string {
 	titles := make(map[string]string)
 	titles["1"] = "PO"
@@ -651,14 +651,14 @@ func (tc *TeamConfig) GetPaneTitles() map[string]string {
 	return titles
 }
 
-// === 新規追加メソッド（dynamic instruction機能） ===
+// === New methods (dynamic instruction feature) ===
 
-// GetInstructionResolver instruction解決器を取得
+// GetInstructionResolver gets instruction resolver
 func (tcl *TeamConfigLoader) GetInstructionResolver() InstructionResolverInterface {
 	return tcl.instructionResolver
 }
 
-// ResolveInstructionPath instructionファイルパスを解決
+// ResolveInstructionPath resolves instruction file path
 func (tcl *TeamConfigLoader) ResolveInstructionPath(role string) (string, error) {
 	if tcl.instructionResolver == nil {
 		return "", fmt.Errorf("instruction resolver not initialized")
@@ -666,7 +666,7 @@ func (tcl *TeamConfigLoader) ResolveInstructionPath(role string) (string, error)
 	return tcl.instructionResolver.ResolveInstructionPath(role)
 }
 
-// ValidateInstructionConfig instruction設定を検証
+// ValidateInstructionConfig validates instruction configuration
 func (tcl *TeamConfigLoader) ValidateInstructionConfig() *ValidationResult {
 	if tcl.validator == nil {
 		return &ValidationResult{
@@ -692,15 +692,15 @@ func (tcl *TeamConfigLoader) ValidateInstructionConfig() *ValidationResult {
 	return tcl.validator.ValidateConfig(config)
 }
 
-// normalizeInstructionConfig 設定の正規化
+// normalizeInstructionConfig normalizes configuration
 func (tcl *TeamConfigLoader) normalizeInstructionConfig(config *TeamConfig) {
-	// 既存設定から拡張設定への移行
+	// Migrate from existing to extended configuration
 	if config.InstructionConfig == nil &&
 		(config.POInstructionFile != "" ||
 			config.ManagerInstructionFile != "" ||
 			config.DevInstructionFile != "") {
 
-		// 基本設定として既存値を設定
+		// Set existing values as base configuration
 		config.InstructionConfig = &InstructionConfig{
 			Base: InstructionRoleConfig{
 				POInstructionPath:      config.POInstructionFile,
@@ -715,7 +715,7 @@ func (tcl *TeamConfigLoader) normalizeInstructionConfig(config *TeamConfig) {
 		}
 	}
 
-	// フォールバックディレクトリの設定
+	// Set fallback directory
 	if config.FallbackInstructionDir == "" {
 		config.FallbackInstructionDir = config.InstructionsDir
 	}

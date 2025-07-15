@@ -11,7 +11,7 @@ import (
 	"github.com/shivase/cloud-code-agents/send-agent/internal"
 )
 
-// テスト用のヘルパー関数
+// Test helper functions
 func setupTempDir(t *testing.T) string {
 	tempDir := t.TempDir()
 	return tempDir
@@ -50,12 +50,12 @@ func TestFindAgentByName(t *testing.T) {
 		{
 			name:     "Valid PO",
 			agent:    "po",
-			expected: &internal.Agent{Name: "po", Description: "プロダクトオーナー（製品責任者）"},
+			expected: &internal.Agent{Name: "po", Description: "Product Owner (Product Manager)"},
 		},
 		{
 			name:     "Valid Manager",
 			agent:    "manager",
-			expected: &internal.Agent{Name: "manager", Description: "プロジェクトマネージャー（柔軟なチーム管理）"},
+			expected: &internal.Agent{Name: "manager", Description: "Project Manager (Flexible team management)"},
 		},
 		{
 			name:     "Invalid Agent",
@@ -105,25 +105,25 @@ func TestMessageSender_Send_WithMockSetup(t *testing.T) {
 		Message:     "Test message",
 	}
 
-	// このテストでは実際のファイルI/Oをテストします
-	// 実際のプロジェクトでは、より詳細なモック設定が必要になるでしょう
+	// This test actually tests file I/O
+	// In a real project, more detailed mock setup would be necessary
 
 	// Create test directory
 	testDir := filepath.Join(tempDir, "test")
 	err := os.MkdirAll(testDir, 0755)
 	assert.NoError(t, err)
 
-	// Note: このテストは実際のSendメソッドを呼び出すためには
-	// internal packageのコードを適切にモックする必要があります
-	// 現在のアーキテクチャでは、private methodsやglobal functionsのモックが困難です
+	// Note: This test requires proper mocking of the internal package code
+	// to actually call the Send method
+	// In the current architecture, mocking private methods and global functions is difficult
 
-	// テストが成功することを確認
+	// Verify that the test succeeds
 	assert.NotNil(t, ms)
 	assert.Equal(t, "test-session", ms.SessionName)
 	assert.Equal(t, "po", ms.Agent)
 	assert.Equal(t, "Test message", ms.Message)
 
-	// Mock functions が期待通りに動作することを確認
+	// Verify that mock functions work as expected
 	assert.True(t, mockHasSession("test-session"))
 	assert.False(t, mockHasSession("invalid-session"))
 
@@ -229,23 +229,23 @@ func TestSessionManager_Struct(t *testing.T) {
 	}
 
 	sm := &internal.SessionManager{}
-	// SessionManagerの実装によってテストを調整する必要があります
-	// 現在のコードでは、セッションを直接操作するメソッドは公開されていません
+	// Tests need to be adjusted based on SessionManager implementation
+	// In the current code, methods to directly manipulate sessions are not exposed
 
 	assert.NotNil(t, sm)
 
-	// 代わりに、SessionManagerが作成できることを確認
+	// Instead, verify that SessionManager can be created
 	assert.IsType(t, &internal.SessionManager{}, sm)
 
-	// テスト用のセッションデータが正しく作成されることを確認
+	// Verify that test session data is created correctly
 	assert.Equal(t, "session1", sessions[0].Name)
 	assert.Equal(t, "integrated", sessions[0].Type)
 	assert.Equal(t, 6, sessions[0].Panes)
 }
 
-// モックを使用した統合テスト
+// Integration test using mocks
 func TestMessageSender_Integration(t *testing.T) {
-	// このテストでは、実際のMessageSenderの動作をシミュレートします
+	// This test simulates the actual MessageSender behavior
 
 	ms := &internal.MessageSender{
 		SessionName:  "test-session",
@@ -254,26 +254,26 @@ func TestMessageSender_Integration(t *testing.T) {
 		ResetContext: false,
 	}
 
-	// MessageSenderが正しく作成されることを確認
+	// Verify that MessageSender is created correctly
 	assert.NotNil(t, ms)
 	assert.Equal(t, "test-session", ms.SessionName)
 	assert.Equal(t, "po", ms.Agent)
 	assert.Equal(t, "Integration test message", ms.Message)
 	assert.False(t, ms.ResetContext)
 
-	// エージェントが有効であることを確認
+	// Verify that the agent is valid
 	assert.True(t, internal.IsValidAgent(ms.Agent))
 
-	// エージェントが見つかることを確認
+	// Verify that the agent can be found
 	agent := internal.FindAgentByName(ms.Agent)
 	assert.NotNil(t, agent)
 	assert.Equal(t, "po", agent.Name)
-	assert.Equal(t, "プロダクトオーナー（製品責任者）", agent.Description)
+	assert.Equal(t, "Product Owner (Product Manager)", agent.Description)
 }
 
-// パフォーマンステスト
+// Performance test
 func TestMessageSender_Performance(t *testing.T) {
-	// 大量のMessageSenderを作成して、メモリ使用量とパフォーマンスをテスト
+	// Create many MessageSenders to test memory usage and performance
 
 	const numSenders = 1000
 	senders := make([]*internal.MessageSender, numSenders)
@@ -287,7 +287,7 @@ func TestMessageSender_Performance(t *testing.T) {
 		}
 	}
 
-	// すべてのsenderが正しく作成されることを確認
+	// Verify that all senders are created correctly
 	for i, sender := range senders {
 		assert.NotNil(t, sender)
 		assert.Equal(t, fmt.Sprintf("session-%d", i), sender.SessionName)
@@ -297,7 +297,7 @@ func TestMessageSender_Performance(t *testing.T) {
 	}
 }
 
-// エラーケースのテスト
+// Error case tests
 func TestMessageSender_ErrorCases(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -325,14 +325,14 @@ func TestMessageSender_ErrorCases(t *testing.T) {
 			sessionName: "",
 			agent:       "po",
 			message:     "Test message",
-			expectValid: false, // セッション名が空の場合の処理は実装依存
+			expectValid: false, // Handling of empty session name is implementation dependent
 		},
 		{
 			name:        "Empty message",
 			sessionName: "test-session",
 			agent:       "po",
 			message:     "",
-			expectValid: true, // 空のメッセージは技術的には有効
+			expectValid: true, // Empty message is technically valid
 		},
 	}
 
@@ -344,10 +344,10 @@ func TestMessageSender_ErrorCases(t *testing.T) {
 				Message:     tt.message,
 			}
 
-			// MessageSenderが作成できることを確認
+			// Verify that MessageSender can be created
 			assert.NotNil(t, ms)
 
-			// エージェントの有効性をチェック
+			// Check agent validity
 			isValidAgent := internal.IsValidAgent(ms.Agent)
 			if tt.expectValid {
 				assert.True(t, isValidAgent || ms.Agent == "po", "Agent should be valid")
@@ -360,7 +360,7 @@ func TestMessageSender_ErrorCases(t *testing.T) {
 	}
 }
 
-// ベンチマークテスト
+// Benchmark tests
 func BenchmarkIsValidAgent(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		internal.IsValidAgent("po")

@@ -14,14 +14,14 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// ProcessManagerImpl プロセス管理機能（containedctx修正版）
+// ProcessManagerImpl implements process management functionality (containedctx fixed version)
 type ProcessManagerImpl struct {
 	processes map[string]*ProcessInfo
 	cancel    context.CancelFunc
-	mu        sync.RWMutex // 並行処理安全性のためのMutex
+	mu        sync.RWMutex // Mutex for concurrency safety
 }
 
-// NewProcessManager プロセス管理機能を作成
+// NewProcessManager creates a new process manager
 func NewProcessManager() *ProcessManagerImpl {
 	_, cancel := context.WithCancel(context.Background())
 	return &ProcessManagerImpl{
@@ -30,17 +30,17 @@ func NewProcessManager() *ProcessManagerImpl {
 	}
 }
 
-// StartMonitoring プロセス監視を開始
+// StartMonitoring starts process monitoring
 func (pm *ProcessManagerImpl) StartMonitoring(ctx context.Context) {
 	go pm.monitorProcesses(ctx)
 }
 
-// StopMonitoring プロセス監視を停止
+// StopMonitoring stops process monitoring
 func (pm *ProcessManagerImpl) StopMonitoring() {
 	pm.cancel()
 }
 
-// RegisterProcess プロセスを登録
+// RegisterProcess registers a process
 func (pm *ProcessManagerImpl) RegisterProcess(sessionName, paneName, command string, pid int) {
 	key := fmt.Sprintf("%s:%s", sessionName, paneName)
 
@@ -59,7 +59,7 @@ func (pm *ProcessManagerImpl) RegisterProcess(sessionName, paneName, command str
 	log.Info().Str("session", sessionName).Str("pane", paneName).Int("pid", pid).Msg("Process registered")
 }
 
-// UnregisterProcess プロセスを登録解除
+// UnregisterProcess unregisters a process
 func (pm *ProcessManagerImpl) UnregisterProcess(sessionName, paneName string) {
 	key := fmt.Sprintf("%s:%s", sessionName, paneName)
 
@@ -72,7 +72,7 @@ func (pm *ProcessManagerImpl) UnregisterProcess(sessionName, paneName string) {
 	}
 }
 
-// IsProcessRunning プロセスが実行中かチェック
+// IsProcessRunning checks if a process is running
 func (pm *ProcessManagerImpl) IsProcessRunning(sessionName, paneName string) bool {
 	key := fmt.Sprintf("%s:%s", sessionName, paneName)
 
@@ -86,7 +86,7 @@ func (pm *ProcessManagerImpl) IsProcessRunning(sessionName, paneName string) boo
 	return false
 }
 
-// GetProcessInfo プロセス情報を取得
+// GetProcessInfo retrieves process information
 func (pm *ProcessManagerImpl) GetProcessInfo(sessionName, paneName string) (*ProcessInfo, bool) {
 	key := fmt.Sprintf("%s:%s", sessionName, paneName)
 
@@ -97,7 +97,7 @@ func (pm *ProcessManagerImpl) GetProcessInfo(sessionName, paneName string) (*Pro
 	return process, exists
 }
 
-// GetAllProcesses 全プロセス情報を取得
+// GetAllProcesses retrieves all process information
 func (pm *ProcessManagerImpl) GetAllProcesses() map[string]*ProcessInfo {
 	result := make(map[string]*ProcessInfo)
 
@@ -110,7 +110,7 @@ func (pm *ProcessManagerImpl) GetAllProcesses() map[string]*ProcessInfo {
 	return result
 }
 
-// TerminateProcess プロセスを強制終了
+// TerminateProcess forcefully terminates a process
 func (pm *ProcessManagerImpl) TerminateProcess(sessionName, paneName string) error {
 	key := fmt.Sprintf("%s:%s", sessionName, paneName)
 
@@ -131,16 +131,16 @@ func (pm *ProcessManagerImpl) TerminateProcess(sessionName, paneName string) err
 	return fmt.Errorf("process not found: %s:%s", sessionName, paneName)
 }
 
-// TerminateAllProcesses 全プロセスを強制終了
+// TerminateAllProcesses forcefully terminates all processes
 func (pm *ProcessManagerImpl) TerminateAllProcesses() error {
-	// 並列処理用のチャネルとWaitGroup
+	// Channel and WaitGroup for parallel processing
 	type killResult struct {
 		key string
 		pid int
 		err error
 	}
 
-	// 安全にプロセス情報をコピー
+	// Safely copy process information
 	pm.mu.RLock()
 	processes := make(map[string]*ProcessInfo)
 	for key, process := range pm.processes {
@@ -151,7 +151,7 @@ func (pm *ProcessManagerImpl) TerminateAllProcesses() error {
 	resultChan := make(chan killResult, len(processes))
 	var wg sync.WaitGroup
 
-	// 全プロセスに対して並列でSIGTERMを送信
+	// Send SIGTERM to all processes in parallel
 	for key, process := range processes {
 		wg.Add(1)
 		go func(k string, p *ProcessInfo) {
@@ -163,9 +163,9 @@ func (pm *ProcessManagerImpl) TerminateAllProcesses() error {
 				return
 			}
 
-			// SIGTERMを送信
+			// Send SIGTERM
 			if err := proc.Signal(os.Interrupt); err != nil {
-				// すでに終了している場合はエラーとしない
+				// Do not treat as error if already terminated
 				if !pm.isProcessAlive(p.PID) {
 					resultChan <- killResult{key: k, pid: p.PID, err: nil}
 					return
@@ -177,13 +177,13 @@ func (pm *ProcessManagerImpl) TerminateAllProcesses() error {
 		}(key, process)
 	}
 
-	// goroutineの完了を待つ
+	// Wait for goroutines to complete
 	go func() {
 		wg.Wait()
 		close(resultChan)
 	}()
 
-	// 結果を収集
+	// Collect results
 	var errors []error
 	sigTermResults := make(map[string]int)
 	for result := range resultChan {
@@ -194,17 +194,17 @@ func (pm *ProcessManagerImpl) TerminateAllProcesses() error {
 		}
 	}
 
-	// 段階的な待機時間（CI環境対応）
+	// Gradual wait time (CI environment support)
 	maxWaitTime := 3 * time.Second
 	checkInterval := 100 * time.Millisecond
 
-	// CI環境では待機時間を短縮
+	// Reduce wait time in CI environment
 	if os.Getenv("CI") == "true" || os.Getenv("CLAUDE_MOCK_ENV") == "true" {
 		maxWaitTime = 500 * time.Millisecond
 		checkInterval = 50 * time.Millisecond
 	}
 
-	// プロセスの終了を待機
+	// Wait for processes to terminate
 	deadline := time.Now().Add(maxWaitTime)
 	remainingPIDs := make(map[string]int)
 	for k, pid := range sigTermResults {
@@ -223,7 +223,7 @@ func (pm *ProcessManagerImpl) TerminateAllProcesses() error {
 		}
 	}
 
-	// まだ生きているプロセスにSIGKILLを送信
+	// Send SIGKILL to processes still alive
 	for k, pid := range remainingPIDs {
 		proc, err := os.FindProcess(pid)
 		if err != nil {
@@ -240,7 +240,7 @@ func (pm *ProcessManagerImpl) TerminateAllProcesses() error {
 		}
 	}
 
-	// 全プロセスをクリア
+	// Clear all processes
 	pm.mu.Lock()
 	pm.processes = make(map[string]*ProcessInfo)
 	pm.mu.Unlock()
@@ -251,12 +251,12 @@ func (pm *ProcessManagerImpl) TerminateAllProcesses() error {
 	return nil
 }
 
-// CheckClaudeProcesses Claude CLIプロセスをチェック
+// CheckClaudeProcesses checks for Claude CLI processes
 func (pm *ProcessManagerImpl) CheckClaudeProcesses() ([]ProcessInfo, error) {
 	cmd := exec.Command("pgrep", "-f", "claude.*--dangerously-skip-permissions")
 	output, err := cmd.Output()
 	if err != nil {
-		// プロセスが見つからない場合はエラーではない
+		// Not an error if no processes found
 		return []ProcessInfo{}, err
 	}
 
@@ -267,7 +267,7 @@ func (pm *ProcessManagerImpl) CheckClaudeProcesses() ([]ProcessInfo, error) {
 			continue
 		}
 
-		// プロセス情報を取得
+		// Retrieve process information
 		if processInfo, err := pm.getProcessInfoByPID(pidStr); err == nil {
 			processes = append(processes, *processInfo)
 		}
@@ -276,11 +276,11 @@ func (pm *ProcessManagerImpl) CheckClaudeProcesses() ([]ProcessInfo, error) {
 	return processes, nil
 }
 
-// TerminateClaudeProcesses Claude CLIプロセスを強制終了
+// TerminateClaudeProcesses forcefully terminates Claude CLI processes
 func (pm *ProcessManagerImpl) TerminateClaudeProcesses() error {
 	log.Info().Msg("Terminating Claude CLI processes")
 
-	// pgrep で Claude プロセスを検索
+	// Search for Claude processes using pgrep
 	processes, err := pm.CheckClaudeProcesses()
 	if err != nil {
 		return fmt.Errorf("failed to check Claude processes: %w", err)
@@ -291,7 +291,7 @@ func (pm *ProcessManagerImpl) TerminateClaudeProcesses() error {
 		return nil
 	}
 
-	// 各プロセスを終了
+	// Terminate each process
 	var errors []error
 	for _, process := range processes {
 		if err := pm.killProcess(process.PID); err != nil {
@@ -309,7 +309,7 @@ func (pm *ProcessManagerImpl) TerminateClaudeProcesses() error {
 	return nil
 }
 
-// monitorProcesses プロセス監視ループ（context引数で受け取り）
+// monitorProcesses process monitoring loop (receives context as argument)
 func (pm *ProcessManagerImpl) monitorProcesses(ctx context.Context) {
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
@@ -325,7 +325,7 @@ func (pm *ProcessManagerImpl) monitorProcesses(ctx context.Context) {
 	}
 }
 
-// checkProcessHealth プロセスの健全性チェック
+// checkProcessHealth checks process health
 func (pm *ProcessManagerImpl) checkProcessHealth() {
 	deadProcesses := 0
 
@@ -356,40 +356,40 @@ func (pm *ProcessManagerImpl) checkProcessHealth() {
 	}
 }
 
-// isProcessAlive プロセスが生きているかチェック
+// isProcessAlive checks if a process is alive
 func (pm *ProcessManagerImpl) isProcessAlive(pid int) bool {
 	process, err := os.FindProcess(pid)
 	if err != nil {
 		return false
 	}
 
-	// プロセスにシグナル0を送信して存在確認（syscall.Signal(0)を使用）
+	// Send signal 0 to process to check existence (using syscall.Signal(0))
 	if err := process.Signal(syscall.Signal(0)); err != nil {
 		return false
 	}
 	return true
 }
 
-// killProcess プロセスを強制終了
+// killProcess forcefully terminates a process
 func (pm *ProcessManagerImpl) killProcess(pid int) error {
 	process, err := os.FindProcess(pid)
 	if err != nil {
 		return fmt.Errorf("failed to find process: %w", err)
 	}
 
-	// まず SIGTERM で優雅に終了を試す
+	// First try graceful termination with SIGTERM
 	if err := process.Signal(os.Interrupt); err == nil {
-		// 段階的な待機時間（CI環境対応）
+		// Gradual wait time (CI environment support)
 		maxWaitTime := 3 * time.Second
 		checkInterval := 100 * time.Millisecond
 
-		// CI環境では待機時間を短縮
+		// Reduce wait time in CI environment
 		if os.Getenv("CI") == "true" || os.Getenv("CLAUDE_MOCK_ENV") == "true" {
 			maxWaitTime = 500 * time.Millisecond
 			checkInterval = 50 * time.Millisecond
 		}
 
-		// 段階的にプロセスの終了を確認
+		// Gradually check for process termination
 		deadline := time.Now().Add(maxWaitTime)
 		for time.Now().Before(deadline) {
 			if !pm.isProcessAlive(pid) {
@@ -399,11 +399,11 @@ func (pm *ProcessManagerImpl) killProcess(pid int) error {
 		}
 	}
 
-	// SIGKILL で強制終了
+	// Force termination with SIGKILL
 	return process.Kill()
 }
 
-// getProcessInfoByPID PIDからプロセス情報を取得
+// getProcessInfoByPID retrieves process information by PID
 func (pm *ProcessManagerImpl) getProcessInfoByPID(pidStr string) (*ProcessInfo, error) {
 	cmd := exec.Command("ps", "-p", pidStr, "-o", "pid,command")
 	output, err := cmd.Output()
@@ -416,7 +416,7 @@ func (pm *ProcessManagerImpl) getProcessInfoByPID(pidStr string) (*ProcessInfo, 
 		return nil, fmt.Errorf("invalid ps output")
 	}
 
-	// PID と コマンドを抽出
+	// Extract PID and command
 	re := regexp.MustCompile(`^\s*(\d+)\s+(.+)$`)
 	matches := re.FindStringSubmatch(lines[1])
 	if len(matches) < 3 {
@@ -431,13 +431,13 @@ func (pm *ProcessManagerImpl) getProcessInfoByPID(pidStr string) (*ProcessInfo, 
 	return &ProcessInfo{
 		PID:       pid,
 		Command:   matches[2],
-		StartTime: time.Now(), // 正確な開始時間は取得困難
+		StartTime: time.Now(), // Exact start time is difficult to obtain
 		Status:    "running",
 		LastCheck: time.Now(),
 	}, nil
 }
 
-// GetProcessStatus プロセス状態の取得
+// GetProcessStatus retrieves process status
 func (pm *ProcessManagerImpl) GetProcessStatus() map[string]interface{} {
 	pm.mu.RLock()
 	defer pm.mu.RUnlock()
@@ -473,7 +473,7 @@ func (pm *ProcessManagerImpl) GetProcessStatus() map[string]interface{} {
 	return result
 }
 
-// CleanupDeadProcesses 死んだプロセスを削除
+// CleanupDeadProcesses removes dead processes
 func (pm *ProcessManagerImpl) CleanupDeadProcesses() int {
 	cleanupCount := 0
 	keysToDelete := make([]string, 0)
@@ -500,11 +500,11 @@ func (pm *ProcessManagerImpl) CleanupDeadProcesses() int {
 // Global process manager instance
 var globalProcessManager *ProcessManagerImpl
 
-// GetGlobalProcessManager グローバルプロセスマネージャーを取得
+// GetGlobalProcessManager retrieves the global process manager
 func GetGlobalProcessManager() *ProcessManagerImpl {
 	if globalProcessManager == nil {
 		globalProcessManager = NewProcessManager()
-		// 呼び出し側でcontextを渡すように変更
+		// Changed to pass context from the caller
 	}
 	return globalProcessManager
 }

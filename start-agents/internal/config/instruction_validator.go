@@ -9,34 +9,34 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// InstructionValidatorInterface バリデーションインターフェース
+// InstructionValidatorInterface defines validation interface
 type InstructionValidatorInterface interface {
-	// ValidateConfig 設定全体のバリデーション
+	// ValidateConfig validates entire configuration
 	ValidateConfig(config *TeamConfig) *ValidationResult
 
-	// ValidateInstructionPath 個別パスのバリデーション
+	// ValidateInstructionPath validates individual path
 	ValidateInstructionPath(role, path string) *PathValidationResult
 
-	// ValidateFileExists ファイル存在確認
+	// ValidateFileExists checks file existence
 	ValidateFileExists(path string) bool
 
-	// ValidateFileReadable ファイル読み取り可能確認
+	// ValidateFileReadable checks file readability
 	ValidateFileReadable(path string) bool
 }
 
-// InstructionValidator instruction設定バリデーター
+// InstructionValidator validates instruction configuration
 type InstructionValidator struct {
 	strictMode bool
 }
 
-// NewInstructionValidator 新しいバリデーターを作成
+// NewInstructionValidator creates a new validator
 func NewInstructionValidator(strictMode bool) *InstructionValidator {
 	return &InstructionValidator{
 		strictMode: strictMode,
 	}
 }
 
-// ValidationResult バリデーション結果
+// ValidationResult represents validation result
 type ValidationResult struct {
 	IsValid  bool
 	Errors   []ValidationError
@@ -44,7 +44,7 @@ type ValidationResult struct {
 	Info     []ValidationInfo
 }
 
-// ValidationError バリデーションエラー
+// ValidationError represents validation error
 type ValidationError struct {
 	Field      string
 	Path       string
@@ -53,7 +53,7 @@ type ValidationError struct {
 	Suggestion string
 }
 
-// ValidationWarning バリデーション警告
+// ValidationWarning represents validation warning
 type ValidationWarning struct {
 	Field      string
 	Path       string
@@ -61,14 +61,14 @@ type ValidationWarning struct {
 	Suggestion string
 }
 
-// ValidationInfo バリデーション情報
+// ValidationInfo represents validation information
 type ValidationInfo struct {
 	Field   string
 	Path    string
 	Message string
 }
 
-// PathValidationResult パスバリデーション結果
+// PathValidationResult represents path validation result
 type PathValidationResult struct {
 	IsValid      bool
 	Exists       bool
@@ -77,7 +77,7 @@ type PathValidationResult struct {
 	ResolvedPath string
 }
 
-// InstructionError instruction関連エラー
+// InstructionError represents instruction-related error
 type InstructionError struct {
 	Type    InstructionErrorType
 	Role    string
@@ -86,7 +86,7 @@ type InstructionError struct {
 	Cause   error
 }
 
-// InstructionErrorType エラー種別
+// InstructionErrorType represents error type
 type InstructionErrorType int
 
 const (
@@ -116,11 +116,11 @@ func (iv *InstructionValidator) ValidateConfig(config *TeamConfig) *ValidationRe
 		Info:     []ValidationInfo{},
 	}
 
-	// ロール一覧を取得
+	// Get role list
 	roles := []string{"po", "manager", "dev"}
 
 	for _, role := range roles {
-		// 各ロールのパスを解決してバリデーション
+		// Resolve and validate path for each role
 		if err := iv.validateRoleInstructionPath(role, config, result); err != nil {
 			result.IsValid = false
 		}
@@ -129,12 +129,12 @@ func (iv *InstructionValidator) ValidateConfig(config *TeamConfig) *ValidationRe
 	return result
 }
 
-// validateRoleInstructionPath ロール別のinstructionパスバリデーション
+// validateRoleInstructionPath validates instruction path for role
 func (iv *InstructionValidator) validateRoleInstructionPath(role string, config *TeamConfig, result *ValidationResult) error {
-	// 設定からパスを取得
+	// Get path from configuration
 	path := iv.getPathForRole(role, config)
 	if path == "" {
-		// パスが設定されていない場合は警告
+		// Warn if path not configured
 		result.Warnings = append(result.Warnings, ValidationWarning{
 			Field:      role + "_instruction_path",
 			Message:    "instruction path not configured",
@@ -143,7 +143,7 @@ func (iv *InstructionValidator) validateRoleInstructionPath(role string, config 
 		return nil
 	}
 
-	// パスバリデーション実行
+	// Execute path validation
 	pathResult := iv.ValidateInstructionPath(role, path)
 
 	switch {
@@ -189,9 +189,9 @@ func (iv *InstructionValidator) validateRoleInstructionPath(role string, config 
 	return nil
 }
 
-// getPathForRole ロールに対応するパスを取得
+// getPathForRole gets path for role
 func (iv *InstructionValidator) getPathForRole(role string, config *TeamConfig) string {
-	// 拡張設定から取得を試行
+	// Try to get from extended configuration
 	if config.InstructionConfig != nil {
 		switch role {
 		case "po":
@@ -209,7 +209,7 @@ func (iv *InstructionValidator) getPathForRole(role string, config *TeamConfig) 
 		}
 	}
 
-	// 既存設定から取得（後方互換性）
+	// Get from legacy configuration (backward compatibility)
 	switch role {
 	case "po":
 		return config.POInstructionFile
@@ -228,9 +228,9 @@ func (iv *InstructionValidator) ValidateInstructionPath(role, path string) *Path
 		IsValid: true,
 	}
 
-	// パス解決テスト
+	// Test path resolution
 	if path == "" {
-		// パスが空の場合はスキップ
+		// Skip if path is empty
 		result.ResolvedPath = ""
 		return result
 	}
@@ -245,10 +245,10 @@ func (iv *InstructionValidator) ValidateInstructionPath(role, path string) *Path
 
 	result.ResolvedPath = resolvedPath
 
-	// ファイル存在確認
+	// Check file existence
 	result.Exists = iv.ValidateFileExists(resolvedPath)
 
-	// 読み取り権限確認
+	// Check read permission
 	if result.Exists {
 		result.Readable = iv.ValidateFileReadable(resolvedPath)
 	}
@@ -274,7 +274,7 @@ func (iv *InstructionValidator) ValidateFileReadable(path string) bool {
 		}
 	}()
 
-	// 簡単な読み取りテスト
+	// Simple read test
 	buf := make([]byte, 1)
 	_, err = file.Read(buf)
 	if err == nil {

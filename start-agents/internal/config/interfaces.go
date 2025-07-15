@@ -1,22 +1,22 @@
 package config
 
-// ConfigLoaderInterface 設定読み込みのインターフェース
+// ConfigLoaderInterface defines configuration loader interface
 type ConfigLoaderInterface interface {
-	// LoadTeamConfig チーム設定を読み込み
+	// LoadTeamConfig loads team configuration
 	LoadTeamConfig() (*TeamConfig, error)
-	// SaveTeamConfig チーム設定を保存
+	// SaveTeamConfig saves team configuration
 	SaveTeamConfig(*TeamConfig) error
-	// GetTeamConfigPath チーム設定ファイルパスを取得
+	// GetTeamConfigPath gets team configuration file path
 	GetTeamConfigPath() string
 }
 
-// === 動的instruction機能は既に実装済み ===
-// インターフェースと構造体はinstruction_resolver.goとinstruction_validator.goに定義されています
+// === Dynamic instruction feature already implemented ===
+// Interfaces and structures are defined in instruction_resolver.go and instruction_validator.go
 
-// ConfigGeneratorInterface 設定生成のインターフェース
+// ConfigGeneratorInterface defines configuration generator interface
 type ConfigGeneratorInterface interface {
-	// GenerateConfig 設定ファイルを生成
+	// GenerateConfig generates configuration file
 	GenerateConfig(forceOverwrite bool) error
-	// ValidateConfig 設定ファイルを検証
+	// ValidateConfig validates configuration file
 	ValidateConfig() error
 }

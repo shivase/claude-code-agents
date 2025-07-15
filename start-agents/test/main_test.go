@@ -9,34 +9,34 @@ import (
 
 // TestMain_ArgumentParsing mainパッケージの基本的な引数処理をテスト
 func TestMain_ArgumentParsing(t *testing.T) {
-	t.Run("デバッグフラグ検出", func(t *testing.T) {
+	t.Run("Debug flag detection", func(t *testing.T) {
 		tests := []struct {
 			name     string
 			args     []string
 			expected bool
 		}{
 			{
-				name:     "デバッグフラグ --debug",
+				name:     "Debug flag --debug",
 				args:     []string{"--debug"},
 				expected: true,
 			},
 			{
-				name:     "デバッグフラグ -d",
+				name:     "Debug flag -d",
 				args:     []string{"-d"},
 				expected: true,
 			},
 			{
-				name:     "デバッグフラグなし",
+				name:     "No debug flag",
 				args:     []string{"--verbose"},
 				expected: false,
 			},
 			{
-				name:     "引数なし",
+				name:     "No arguments",
 				args:     []string{},
 				expected: false,
 			},
 			{
-				name:     "複数引数でデバッグ含む",
+				name:     "Multiple arguments with debug",
 				args:     []string{"--verbose", "--debug", "session"},
 				expected: true,
 			},
@@ -56,29 +56,29 @@ func TestMain_ArgumentParsing(t *testing.T) {
 		}
 	})
 
-	t.Run("引数フィルタリング", func(t *testing.T) {
+	t.Run("Argument filtering", func(t *testing.T) {
 		tests := []struct {
 			name     string
 			args     []string
 			expected []string
 		}{
 			{
-				name:     "デバッグフラグ除去",
+				name:     "Remove debug flag",
 				args:     []string{"--debug", "session"},
 				expected: []string{"session"},
 			},
 			{
-				name:     "ショートデバッグフラグ除去",
+				name:     "Remove short debug flag",
 				args:     []string{"-d", "session"},
 				expected: []string{"session"},
 			},
 			{
-				name:     "複数デバッグフラグ除去",
+				name:     "Remove multiple debug flags",
 				args:     []string{"--debug", "--verbose", "-d", "session"},
 				expected: []string{"--verbose", "session"},
 			},
 			{
-				name:     "デバッグフラグなし",
+				name:     "No debug flag",
 				args:     []string{"--verbose", "session"},
 				expected: []string{"--verbose", "session"},
 			},
@@ -105,12 +105,12 @@ func TestMain_LogLevelDetermination(t *testing.T) {
 		expectedLevel string
 	}{
 		{
-			name:          "デバッグモード有効",
+			name:          "Debug mode enabled",
 			debugMode:     true,
 			expectedLevel: "debug",
 		},
 		{
-			name:          "デバッグモード無効",
+			name:          "Debug mode disabled",
 			debugMode:     false,
 			expectedLevel: "info",
 		},
@@ -128,7 +128,7 @@ func TestMain_LogLevelDetermination(t *testing.T) {
 }
 
 func TestMain_EnvironmentVariables(t *testing.T) {
-	t.Run("環境変数設定", func(t *testing.T) {
+	t.Run("Environment variable setup", func(t *testing.T) {
 		// テスト用環境変数設定
 		originalTmux := os.Getenv("TMUX")
 		originalTmuxPane := os.Getenv("TMUX_PANE")
@@ -152,7 +152,7 @@ func TestMain_EnvironmentVariables(t *testing.T) {
 }
 
 func TestMain_ArgumentValidation(t *testing.T) {
-	t.Run("os.Args構造テスト", func(t *testing.T) {
+	t.Run("os.Args structure test", func(t *testing.T) {
 		// os.Args[1:]の動作をテスト
 		testArgs := []string{"program", "--debug", "session"}
 		args := testArgs[1:] // os.Args[1:]をシミュレート
@@ -161,7 +161,7 @@ func TestMain_ArgumentValidation(t *testing.T) {
 		assert.Equal(t, expected, args)
 	})
 
-	t.Run("空の引数リスト", func(t *testing.T) {
+	t.Run("Empty argument list", func(t *testing.T) {
 		testArgs := []string{"program"}
 		args := testArgs[1:]
 
@@ -171,7 +171,7 @@ func TestMain_ArgumentValidation(t *testing.T) {
 }
 
 func TestMain_ErrorHandling(t *testing.T) {
-	t.Run("デバッグフラグエラー処理", func(t *testing.T) {
+	t.Run("Debug flag error handling", func(t *testing.T) {
 		// "debug flag processed by main" エラーの処理パターンをテスト
 		testError := "debug flag processed by main"
 
@@ -185,7 +185,7 @@ func TestMain_ErrorHandling(t *testing.T) {
 }
 
 func TestMain_StartupPhaseData(t *testing.T) {
-	t.Run("起動フェーズデータ構造", func(t *testing.T) {
+	t.Run("Startup phase data structure", func(t *testing.T) {
 		debugMode := true
 		logLevel := "debug"
 		args := []string{"--debug", "test-session"}
@@ -205,11 +205,11 @@ func TestMain_StartupPhaseData(t *testing.T) {
 
 // 統合テスト：main関数の主要フローをシミュレート
 func TestMain_Integration(t *testing.T) {
-	t.Run("引数処理フローのシミュレーション", func(t *testing.T) {
+	t.Run("Argument processing flow simulation", func(t *testing.T) {
 		// テストケース：デバッグフラグありのセッション起動
 		testArgs := []string{"--debug", "test-session"}
 
-		// 1. デバッグモード判定
+		// 1. Debug mode determination
 		debugMode := false
 		for _, arg := range testArgs {
 			if arg == "--debug" || arg == "-d" {
@@ -219,7 +219,7 @@ func TestMain_Integration(t *testing.T) {
 		}
 		assert.True(t, debugMode)
 
-		// 2. ログレベル決定
+		// 2. Log level determination
 		logLevel := "info"
 		if debugMode {
 			logLevel = "debug"
@@ -244,11 +244,11 @@ func TestMain_Integration(t *testing.T) {
 		assert.Equal(t, []string{"test-session"}, filteredArgs)
 	})
 
-	t.Run("通常起動フローのシミュレーション", func(t *testing.T) {
+	t.Run("Normal startup flow simulation", func(t *testing.T) {
 		// テストケース：通常のセッション起動
 		testArgs := []string{"production-session"}
 
-		// 1. デバッグモード判定
+		// 1. Debug mode determination
 		debugMode := false
 		for _, arg := range testArgs {
 			if arg == "--debug" || arg == "-d" {
@@ -258,7 +258,7 @@ func TestMain_Integration(t *testing.T) {
 		}
 		assert.False(t, debugMode)
 
-		// 2. ログレベル決定
+		// 2. Log level determination
 		logLevel := "info"
 		if debugMode {
 			logLevel = "debug"

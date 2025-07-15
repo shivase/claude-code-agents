@@ -1,7 +1,9 @@
 # Cloud Code Agents
 
+[README in English is here](./docs/README.en.md) 
+
 tmux上でClaude Code AIエージェントを並列実行する統合開発環境システムです。
-Product Ownerに指示を与えることで、各種Dev Roleのエージェントが並列で処理をおこなうようになります。
+Product Ownerに指示を与えることで、Managerが適切に作業を解析し、各種Dev Roleのエージェントが並列で処理をおこなうようになります。
 
 ## 概要
 
@@ -14,9 +16,7 @@ Product Ownerに指示を与えることで、各種Dev Roleのエージェン�
 
 ## 🚀 使用方法
 
-### start-agents - AIエージェントセッション起動システム
-
-#### 事前作業
+### 事前作業
 
 起動に必要な各種環境情報を`--init`コマンドで作成します。
 ファイルはデフォルトでは`~/.claude/claude-code-agents/agents.json`に保存されます。
@@ -28,74 +28,73 @@ cd claude-code-agents
 make install
 
 # 設定初期化
-start-agents --init
+claude-code-agents --init
 
 # システム診断実行
-start-agents --doctor
+claude-code-agents --doctor
 
+# 設定ファイルの情報を見たい場合
+claude-code-agents --show-config
 ```
+
+### エージェントの制約を設定する。
+
+このプログラムで起動するclaude codeは`dangerously-skip-permissions`をONにして起動しています。
+そのため、エージェントに制約を与えておかなければ、かなり勝手に動いてしまい不都合があります。
+
+[settings.json](./docs/settings.json)を参考に、`~/.claude/claude-code-agents/settings.json`の、`allow`と`deny`の設定をおこなってください。
 
 #### エージェントの起動
 
+claude codeは起動ディレクトリに依存して動作します。
+
 ```bash
+# 対象のプロジェクトフォルダに移動
+cd [プロジェクトフォルダ]
 # セッション名を指定して起動してください
-start-agents [session_name]
+claude-code-agents [session_name]
 ```
 
 **起動されるエージェント：**
-- `po`: プロダクトオーナー（全体統括）
-- `manager`: プロジェクトマネージャー（チーム管理）
-- `dev1-dev4`: 実行エージェント（柔軟な役割対応）
+- `po`: プロダクトオーナー（全体統括）, 左上pane
+- `manager`: プロジェクトマネージャー（チーム管理）, 左下pane
+- `dev1-dev4`: 実行エージェント（柔軟な役割対応） , 右側pane
 
-#### エージェントの定義ファイル
+#### 各エージェントの定義ファイル
 
-各種エージェントの動作定義は~`~/.claude/claude-code-agents/instructions`に保存されています。
-自身の環境に合わせて任意に変更して下さい。
+各種エージェントの動作定義は`~/.claude/claude-code-agents/instructions`に保存されています。
+名前は `<role>.md`の形式で保存されますので、 自身の環境に合わせて任意に変更した上で、再度アプリを立ち上げなおして下さい。
 
+## FAQ
 
-## 📋 準備とセットアップ
+### Q: 起動をもっと早くできないか？
 
-## 技術仕様
+元々このプログラムはbashで作成していました。
+その時の起動時間を短縮するために、各エージェントの起動を並列化する目的でGoで作り直した背景があります。
+しかし、claude codeの認証情報は一つのファイルで管理しており、同時起動するとこのファイルが壊れることが多々あり、各起動したpaneで認証入力が必要になりました。
 
-### システム要件
+そのため、現状は一つずつタイマーでずらしながら起動しており遅い状態です。（高速化したい･･･
 
-- Go 2.0以上
-- tmux
-- Claude Code CLI
+### Q: PO/Manager/Devが適切に別のRoleにデータを投げなくなった。
 
-## 開発
-
-### ビルドとインストール
-
-```bash
-# 全体ビルド（推奨）
-make build-all
-
-# 個別ビルド
-cd start-agents && make build
-cd send-agent && make build
-
-# マルチプラットフォームビルド
-make build-all-platforms
-
-# インストール
-make install
-```
-
-### テストとコード品質
+これは、会話が多量になった場合や、たまに対処に起きる場合があります。
+以下のように、Roleファイルを再読み込みさせると治ることがあります。
 
 ```bash
-# 全体テスト
-make test-all
-
-# 個別テスト
-cd start-agents && make test
-cd send-agent && make test
-
-# コード品質チェック
-make lint-all
-make fmt-all
+cat "~/.claude/claude-code-agents/instructions/developer.md"
 ```
+
+### Q: PO/Managerが自身でコード生成するようになった
+
+「あなたはPOです。自身で作業するのではなく指示をしてください」などといった指示を与えると治ります。
+
+### Q: DeveloperがManagerに作業報告していない
+
+これも会話量が増えてくると起きる時があります。
+
+「作業が完了していれば、send-agentでmanagerに適切に報告して下さい」
+
+という文言を入れてあげると治ります。もしくは Roleファイルを再読み込みさせると良いでしょう。
 
 ## 📄 ライセンス
 

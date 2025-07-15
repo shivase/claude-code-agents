@@ -1,0 +1,31 @@
+{
+  "model": "sonnet",
+  "theme": "dark",
+  "hasCompletedOnboarding": true,
+  "hasSetTheme": true,
+  "skipInitialSetup": true,
+  "permissions": {
+    "allow": [
+      "Bash(rg:*)",
+      "Bash(tmux list-sessions:*)",
+      "Bash(tmux show-options:*)",
+      "Bash(tmux set-window-option:*)",
+      "Bash(tmux list-panes:*)",
+      "Bash(tmux show-window-options:*)",
+      "Bash(tmux bind-key:*)",
+      "Bash(tmux list-windows:*)",
+      "Bash(tmux rename-window:*)"
+    ],
+    "deny": [
+      "Bash(sudo:*)",
+      "Bash(rm -rf:*)",
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
+      "Bash(git reset:*)",
+      "Bash(git rebase:*)",
+      "Bash(kill:*)",
+      "Read(.env*)",
+      "Write(.env*)"
+    ]
+  }
+}

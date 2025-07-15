@@ -14,30 +14,30 @@ import (
 )
 
 var (
-	// GlobalLogLevel グローバル設定フラグ
+	// GlobalLogLevel global configuration flag
 	GlobalLogLevel string
 
-	// MainInitialized 初期化管理
+	// MainInitialized initialization management
 	MainInitialized   bool
 	LoggerInitialized bool
 )
 
-// InitializeMainSystem メインシステムの初期化処理統合化
+// InitializeMainSystem main system initialization process integration
 func InitializeMainSystem(logLevel string) {
-	// 既に初期化されている場合はスキップ
+	// Skip if already initialized
 	if MainInitialized {
 		return
 	}
 
-	// ログシステムの初期化
+	// Initialize log system
 	GlobalLogLevel = logLevel
 	InitLogger()
 
-	// 初期化フラグを設定
+	// Set initialization flag
 	MainInitialized = true
 }
 
-// InitLogger ログシステムの初期化
+// InitLogger log system initialization
 func InitLogger() {
 	if LoggerInitialized {
 		return
@@ -45,18 +45,18 @@ func InitLogger() {
 
 	_, err := zerolog.ParseLevel(GlobalLogLevel)
 	if err != nil {
-		// fallback to info level if parsing fails
-		GlobalLogLevel = "info"
+		// fallback to error level if parsing fails
+		GlobalLogLevel = "error"
 	}
 
 	logger.InitConsoleLogger(GlobalLogLevel)
 
-	log.Info().Msg("Commands package initialized: Command functions are available")
+	log.Debug().Msg("Commands package initialized: Command functions are available")
 
 	LoggerInitialized = true
 }
 
-// IsValidSessionName セッション名のバリデーション
+// IsValidSessionName session name validation
 func IsValidSessionName(name string) bool {
 	if name == "" {
 		return false
@@ -73,25 +73,25 @@ func IsValidSessionName(name string) bool {
 	return true
 }
 
-// ListAISessions セッション一覧表示機能
+// ListAISessions session list display function
 func ListAISessions() error {
-	fmt.Println("🤖 セッション一覧")
+	fmt.Println("🤖 Session List")
 	fmt.Println("==================================")
 
 	tmuxManager := tmux.NewTmuxManager("ai-teams")
 	sessions, err := tmuxManager.ListSessions()
 	if err != nil {
 		if strings.Contains(err.Error(), "no server running") {
-			fmt.Println("📭 現在起動中のAIチームセッションはありません")
+			fmt.Println("📭 No AI team sessions currently running")
 			return nil
 		}
-		return fmt.Errorf("tmuxセッション取得エラー: %w", err)
+		return fmt.Errorf("tmux session retrieval error: %w", err)
 	}
 
 	if len(sessions) == 0 {
-		fmt.Println("📭 現在起動中のセッションはありません")
+		fmt.Println("📭 No sessions currently running")
 	} else {
-		fmt.Printf("🚀 起動中のセッション: %d個\n", len(sessions))
+		fmt.Printf("🚀 Running sessions: %d\n", len(sessions))
 		for i, session := range sessions {
 			fmt.Printf("  %d. %s\n", i+1, session)
 		}
@@ -100,49 +100,49 @@ func ListAISessions() error {
 	return nil
 }
 
-// DeleteAISession 指定したセッションを削除
+// DeleteAISession delete specified session
 func DeleteAISession(sessionName string) error {
 	if sessionName == "" {
-		fmt.Println("❌ エラー: 削除するセッション名を指定してください")
-		fmt.Println("使用方法: ./claude-code-agents --delete [セッション名]")
-		fmt.Println("セッション一覧: ./claude-code-agents --list")
-		return fmt.Errorf("セッション名が指定されていません")
+		fmt.Println("❌ Error: Please specify the session name to delete")
+		fmt.Println("Usage: ./claude-code-agents --delete [session-name]")
+		fmt.Println("Session list: ./claude-code-agents --list")
+		return fmt.Errorf("session name not specified")
 	}
 
-	fmt.Printf("🗑️ セッション削除: %s\n", sessionName)
+	fmt.Printf("🗑️ Deleting session: %s\n", sessionName)
 
 	tmuxManager := tmux.NewTmuxManager(sessionName)
 	if !tmuxManager.SessionExists(sessionName) {
-		fmt.Printf("⚠️ セッション '%s' は存在しません\n", sessionName)
+		fmt.Printf("⚠️ Session '%s' does not exist\n", sessionName)
 		return nil
 	}
 
 	if err := tmuxManager.KillSession(sessionName); err != nil {
-		return fmt.Errorf("セッション削除エラー: %w", err)
+		return fmt.Errorf("session deletion error: %w", err)
 	}
 
-	fmt.Printf("✅ セッション '%s' を削除しました\n", sessionName)
+	fmt.Printf("✅ Session '%s' deleted\n", sessionName)
 	return nil
 }
 
-// DeleteAllAISessions 全セッションを削除
+// DeleteAllAISessions delete all sessions
 func DeleteAllAISessions() error {
-	fmt.Println("🗑️ 全AIチームセッション削除")
+	fmt.Println("🗑️ Deleting All AI Team Sessions")
 	fmt.Println("==============================")
 
 	tmuxManager := tmux.NewTmuxManager("ai-teams")
 	sessions, err := tmuxManager.ListSessions()
 	if err != nil {
 		if strings.Contains(err.Error(), "no server running") {
-			fmt.Println("📭 現在起動中のAIチームセッションはありません")
+			fmt.Println("📭 No AI team sessions currently running")
 			return nil
 		}
-		return fmt.Errorf("tmuxセッション取得エラー: %w", err)
+		return fmt.Errorf("tmux session retrieval error: %w", err)
 	}
 
 	var aiSessions []string
 
-	// AIチーム関連のセッションを抽出
+	// Extract AI team related sessions
 	for _, session := range sessions {
 		if strings.Contains(session, "ai-") || strings.Contains(session, "claude-") ||
 			strings.Contains(session, "dev-") || strings.Contains(session, "agent-") {
@@ -151,182 +151,188 @@ func DeleteAllAISessions() error {
 	}
 
 	if len(aiSessions) == 0 {
-		fmt.Println("📭 削除対象のAIチームセッションはありません")
+		fmt.Println("📭 No AI team sessions to delete")
 		return nil
 	}
 
-	fmt.Printf("🎯 削除対象セッション: %d個\n", len(aiSessions))
+	fmt.Printf("🎯 Sessions to delete: %d\n", len(aiSessions))
 	for i, session := range aiSessions {
 		fmt.Printf("  %d. %s\n", i+1, session)
 	}
 
-	// 各セッションを削除
+	// Delete each session
 	deletedCount := 0
 	for _, session := range aiSessions {
 		sessionManager := tmux.NewTmuxManager(session)
 		if err := sessionManager.KillSession(session); err != nil {
-			fmt.Printf("⚠️ セッション '%s' の削除に失敗: %v\n", session, err)
+			fmt.Printf("⚠️ Failed to delete session '%s': %v\n", session, err)
 		} else {
 			deletedCount++
-			fmt.Printf("✅ セッション '%s' を削除しました\n", session)
+			fmt.Printf("✅ Session '%s' deleted\n", session)
 		}
 	}
 
-	fmt.Printf("\n🎉 %d個のAIチームセッションを削除しました\n", deletedCount)
+	fmt.Printf("\n🎉 Deleted %d AI team sessions\n", deletedCount)
 	return nil
 }
 
-// LaunchSystem システム起動機能
+// LaunchSystem system launch function
 func LaunchSystem(sessionName string) error {
-	fmt.Printf("🚀 システム起動: %s\n", sessionName)
+	fmt.Printf("🚀 System startup: %s\n", sessionName)
 
-	// 設定ファイルの読み込み
+	// Load configuration file
 	configPath := config.GetDefaultTeamConfigPath()
 	configLoader := config.NewTeamConfigLoader(configPath)
 	teamConfig, err := configLoader.LoadTeamConfig()
 	if err != nil {
-		return fmt.Errorf("設定ファイルの読み込みに失敗: %w", err)
+		return fmt.Errorf("failed to load configuration file: %w", err)
 	}
 
-	// 設定読み込み完了ログ
-	logger.LogConfigLoad(configPath, map[string]interface{}{
-		"config_path":      configPath,
-		"dev_count":        teamConfig.DevCount,
-		"session_name":     teamConfig.SessionName,
-		"instructions_dir": teamConfig.InstructionsDir,
-	})
+	// Configuration load completion log
+	if GlobalLogLevel == "debug" || GlobalLogLevel == "info" {
+		logger.LogConfigLoad(configPath, map[string]interface{}{
+			"config_path":      configPath,
+			"dev_count":        teamConfig.DevCount,
+			"session_name":     teamConfig.SessionName,
+			"instructions_dir": teamConfig.InstructionsDir,
+		})
+	}
 
-	// instructionファイル情報を収集・表示
+	// Collect and display instruction file information
 	instructionInfo := gatherInstructionInfo(teamConfig)
 	envInfo := gatherEnvironmentInfo(teamConfig)
 
-	// instruction設定情報ログ
-	logger.LogInstructionConfig(instructionInfo, map[string]interface{}{
-		"config_loaded": true,
-		"role_count":    len(instructionInfo),
-	})
+	// Instruction configuration information log
+	if GlobalLogLevel == "debug" || GlobalLogLevel == "info" {
+		logger.LogInstructionConfig(instructionInfo, map[string]interface{}{
+			"config_loaded": true,
+			"role_count":    len(instructionInfo),
+		})
+	}
 
-	// 環境情報ログ（デバッグモードをグローバルから取得）
+	// Environment information log (get debug mode from global)
 	debugMode := GlobalLogLevel == "debug"
-	logger.LogEnvironmentInfo(envInfo, debugMode)
+	if debugMode || GlobalLogLevel == "info" {
+		logger.LogEnvironmentInfo(envInfo, debugMode)
+	}
 
-	// tmux管理の基本動作
+	// Basic tmux management operations
 	tmuxManager := tmux.NewTmuxManager(sessionName)
 
-	// 既存セッションの確認
+	// Check existing session
 	if tmuxManager.SessionExists(sessionName) {
-		fmt.Printf("🔄 既存セッション '%s' に接続します\n", sessionName)
+		fmt.Printf("🔄 Connecting to existing session '%s'\n", sessionName)
 		return tmuxManager.AttachSession(sessionName)
 	}
 
-	// 新しいセッションを作成
-	fmt.Printf("📝 新しいセッション '%s' を作成します\n", sessionName)
+	// Create new session
+	fmt.Printf("📝 Creating new session '%s'\n", sessionName)
 	if err := tmuxManager.CreateSession(sessionName); err != nil {
-		return fmt.Errorf("セッション作成失敗: %w", err)
+		return fmt.Errorf("session creation failed: %w", err)
 	}
 
-	// 統合レイアウトの作成（動的dev数対応）
-	fmt.Println("🎛️ 統合レイアウトを作成中...")
+	// Create integrated layout (dynamic dev count support)
+	fmt.Println("🎛️ Creating integrated layout...")
 	if err := tmuxManager.CreateIntegratedLayout(sessionName, teamConfig.DevCount); err != nil {
-		return fmt.Errorf("統合レイアウト作成失敗: %w", err)
+		return fmt.Errorf("integrated layout creation failed: %w", err)
 	}
 
-	// Claude CLI自動起動処理（設定ファイル対応）
-	fmt.Println("🤖 各ペインでClaude CLIを起動中...")
+	// Claude CLI automatic startup process (configuration file support)
+	fmt.Println("🤖 Starting Claude CLI in each pane...")
 	if err := tmuxManager.SetupClaudeInPanesWithConfig(sessionName, teamConfig.ClaudeCLIPath, teamConfig.InstructionsDir, teamConfig, teamConfig.DevCount); err != nil {
-		fmt.Printf("⚠️ Claude CLI自動起動失敗: %v\n", err)
-		fmt.Printf("手動でClaude CLIを起動してください: %s --dangerously-skip-permissions\n", teamConfig.ClaudeCLIPath)
-		// フォールバック: 従来の方法を試行
-		fmt.Println("🔄 フォールバック: 従来の方法で再試行中...")
+		fmt.Printf("⚠️ Claude CLI automatic startup failed: %v\n", err)
+		fmt.Printf("Please start Claude CLI manually: %s --dangerously-skip-permissions\n", teamConfig.ClaudeCLIPath)
+		// Fallback: try conventional method
+		fmt.Println("🔄 Fallback: retrying with conventional method...")
 		if err := tmuxManager.SetupClaudeInPanes(sessionName, teamConfig.ClaudeCLIPath, teamConfig.InstructionsDir, teamConfig.DevCount); err != nil {
-			fmt.Printf("⚠️ フォールバック起動も失敗: %v\n", err)
+			fmt.Printf("⚠️ Fallback startup also failed: %v\n", err)
 		} else {
-			fmt.Println("✅ フォールバック起動成功")
+			fmt.Println("✅ Fallback startup successful")
 		}
 	} else {
-		fmt.Println("✅ Claude CLI自動起動完了（設定ファイル対応）")
+		fmt.Println("✅ Claude CLI automatic startup completed (configuration file support)")
 	}
 
-	fmt.Printf("✅ セッション '%s' の準備が完了しました\n", sessionName)
+	fmt.Printf("✅ Session '%s' preparation completed\n", sessionName)
 	return tmuxManager.AttachSession(sessionName)
 }
 
-// InitializeSystemCommand システム初期化コマンド
+// InitializeSystemCommand system initialization command
 func InitializeSystemCommand(forceOverwrite bool) error {
-	fmt.Println("🚀 Claude Code Agentsシステム初期化")
+	fmt.Println("🚀 Claude Code Agents System Initialization")
 	fmt.Println("=====================================")
 
 	if forceOverwrite {
-		fmt.Println("⚠️ 強制上書きモードが有効です")
+		fmt.Println("⚠️ Force overwrite mode is enabled")
 	}
 
-	// ディレクトリ作成処理
+	// Directory creation process
 	if err := createSystemDirectories(forceOverwrite); err != nil {
-		return fmt.Errorf("ディレクトリ作成に失敗: %w", err)
+		return fmt.Errorf("directory creation failed: %w", err)
 	}
 
-	// 設定ファイル生成処理
+	// Configuration file generation process
 	if err := generateInitialConfig(forceOverwrite); err != nil {
-		return fmt.Errorf("設定ファイル生成に失敗: %w", err)
+		return fmt.Errorf("configuration file generation failed: %w", err)
 	}
 
-	// 成功メッセージ表示
+	// Display success message
 	displayInitializationSuccess()
 
 	return nil
 }
 
-// createSystemDirectories システムディレクトリの作成
+// createSystemDirectories system directory creation
 func createSystemDirectories(forceOverwrite bool) error {
-	fmt.Println("📁 ディレクトリ構造を作成中...")
+	fmt.Println("📁 Creating directory structure...")
 
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return fmt.Errorf("ホームディレクトリの取得に失敗: %w", err)
+		return fmt.Errorf("failed to get home directory: %w", err)
 	}
 
-	// 作成対象ディレクトリ一覧
+	// List of directories to create
 	directories := []struct {
 		path        string
 		description string
 	}{
-		{filepath.Join(homeDir, ".claude"), "Claude基本ディレクトリ"},
-		{filepath.Join(homeDir, ".claude", "claude-code-agents"), "Claude Code Agentsディレクトリ"},
-		{filepath.Join(homeDir, ".claude", "claude-code-agents", "instructions"), "インストラクションディレクトリ"},
-		{filepath.Join(homeDir, ".claude", "claude-code-agents", "auth_backup"), "認証バックアップディレクトリ"},
-		{filepath.Join(homeDir, ".claude", "claude-code-agents", "logs"), "ログディレクトリ"},
+		{filepath.Join(homeDir, ".claude"), "Claude base directory"},
+		{filepath.Join(homeDir, ".claude", "claude-code-agents"), "Claude Code Agents directory"},
+		{filepath.Join(homeDir, ".claude", "claude-code-agents", "instructions"), "Instructions directory"},
+		{filepath.Join(homeDir, ".claude", "claude-code-agents", "auth_backup"), "Authentication backup directory"},
+		{filepath.Join(homeDir, ".claude", "claude-code-agents", "logs"), "Log directory"},
 	}
 
 	for _, dir := range directories {
 		fmt.Printf("  📂 %s: %s\n", dir.description, dir.path)
 
-		// ディレクトリが既に存在する場合のチェック
+		// Check if directory already exists
 		if _, err := os.Stat(dir.path); err == nil {
 			if !forceOverwrite {
-				fmt.Printf("     ✅ 既に存在します（スキップ）\n")
+				fmt.Printf("     ✅ Already exists (skipped)\n")
 				continue
 			}
-			fmt.Printf("     ⚠️ 既に存在しますが続行します（強制モード）\n")
+			fmt.Printf("     ⚠️ Already exists but continuing (force mode)\n")
 		}
 
-		// ディレクトリを作成
+		// Create directory
 		if err := os.MkdirAll(dir.path, 0750); err != nil {
-			return fmt.Errorf("ディレクトリ作成失敗 %s: %w", dir.path, err)
+			return fmt.Errorf("directory creation failed %s: %w", dir.path, err)
 		}
-		fmt.Printf("     ✅ 作成完了\n")
+		fmt.Printf("     ✅ Creation completed\n")
 	}
 
 	return nil
 }
 
-// generateInitialConfig 初期設定ファイルの生成
+// generateInitialConfig initial configuration file generation
 func generateInitialConfig(forceOverwrite bool) error {
-	fmt.Println("⚙️ 設定ファイルを生成中...")
+	fmt.Println("⚙️ Generating configuration file...")
 
-	// ConfigGeneratorを使用して設定ファイルを生成
+	// Generate configuration file using ConfigGenerator
 	configGenerator := config.NewConfigGenerator()
 
-	// 設定ファイル生成用のテンプレート作成
+	// Create template for configuration file generation
 	templateContent := generateConfigTemplate()
 
 	var err error
@@ -337,17 +343,17 @@ func generateInitialConfig(forceOverwrite bool) error {
 	}
 
 	if err != nil {
-		return fmt.Errorf("設定ファイル生成失敗: %w", err)
+		return fmt.Errorf("configuration file generation failed: %w", err)
 	}
 
-	fmt.Println("  ✅ agents.conf設定ファイルが作成されました")
+	fmt.Println("  ✅ agents.conf configuration file created")
 	return nil
 }
 
-// generateConfigTemplate 設定ファイルテンプレートの生成
+// generateConfigTemplate configuration file template generation
 func generateConfigTemplate() string {
-	return `# Claude Code Agents 設定ファイル
-# このファイルはシステム初期化時に自動生成されました
+	return `# Claude Code Agents Configuration File
+# This file was automatically generated during system initialization
 
 # Path Configurations
 CLAUDE_CLI_PATH=~/.claude/local/claude
@@ -386,86 +392,86 @@ RESTART_DELAY=5s
 PROCESS_TIMEOUT=30s
 
 # === Extended Instruction Configuration ===
-# 動的instruction設定を有効にするには、以下の設定を編集してください
+# To enable dynamic instruction settings, edit the following configuration
 
-# 環境設定
+# Environment Settings
 # ENVIRONMENT=development
 # STRICT_VALIDATION=false
 # FALLBACK_INSTRUCTION_DIR=~/.claude/claude-code-agents/fallback
 
-# 拡張instruction設定（JSON形式で設定可能）
-# 詳細な設定については、documentation/instruction-config.mdを参照してください
+# Extended instruction settings (configurable in JSON format)
+# For detailed configuration, refer to documentation/instruction-config.md
 `
 }
 
-// displayInitializationSuccess 初期化成功メッセージの表示
+// displayInitializationSuccess display initialization success message
 func displayInitializationSuccess() {
 	homeDir, _ := os.UserHomeDir()
 
 	fmt.Println()
-	fmt.Println("🎉 システム初期化が完了しました！")
+	fmt.Println("🎉 System initialization completed!")
 	fmt.Println("=" + strings.Repeat("=", 38))
 	fmt.Println()
-	fmt.Println("📂 作成されたディレクトリ:")
+	fmt.Println("📂 Created directories:")
 	fmt.Printf("  • %s\n", filepath.Join(homeDir, ".claude", "claude-code-agents"))
 	fmt.Printf("  • %s\n", filepath.Join(homeDir, ".claude", "claude-code-agents", "instructions"))
 	fmt.Printf("  • %s\n", filepath.Join(homeDir, ".claude", "claude-code-agents", "auth_backup"))
 	fmt.Printf("  • %s\n", filepath.Join(homeDir, ".claude", "claude-code-agents", "logs"))
 	fmt.Println()
-	fmt.Println("📝 作成されたファイル:")
+	fmt.Println("📝 Created files:")
 	fmt.Printf("  • %s/agents.conf\n", filepath.Join(homeDir, ".claude", "claude-code-agents"))
 	fmt.Println()
-	fmt.Println("💡 次のステップ:")
-	fmt.Println("  1. インストラクションファイルを配置してください:")
+	fmt.Println("💡 Next steps:")
+	fmt.Println("  1. Place instruction files:")
 	fmt.Printf("     • %s/po.md\n", filepath.Join(homeDir, ".claude", "claude-code-agents", "instructions"))
 	fmt.Printf("     • %s/manager.md\n", filepath.Join(homeDir, ".claude", "claude-code-agents", "instructions"))
 	fmt.Printf("     • %s/developer.md\n", filepath.Join(homeDir, ".claude", "claude-code-agents", "instructions"))
-	fmt.Println("  2. システムの健全性を確認してください:")
+	fmt.Println("  2. Check system health:")
 	fmt.Println("     ./claude-code-agents --doctor")
-	fmt.Println("  3. Claude CLIで認証を行ってください:")
+	fmt.Println("  3. Authenticate with Claude CLI:")
 	fmt.Println("     claude auth")
-	fmt.Println("  4. システムを起動してください:")
+	fmt.Println("  4. Start the system:")
 	fmt.Println("     ./claude-code-agents ai-teams")
 	fmt.Println()
 }
 
-// GenerateConfigCommand 設定ファイル生成コマンド
+// GenerateConfigCommand configuration file generation command
 func GenerateConfigCommand(forceOverwrite bool) error {
-	fmt.Println("⚙️ 設定ファイル生成")
+	fmt.Println("⚙️ Configuration File Generation")
 	fmt.Println("====================")
 
 	if forceOverwrite {
-		fmt.Println("⚠️ 強制上書きモードが有効です")
+		fmt.Println("⚠️ Force overwrite mode is enabled")
 	}
 
-	// 設定ファイル生成処理
+	// Configuration file generation process
 	if err := generateInitialConfig(forceOverwrite); err != nil {
-		return fmt.Errorf("設定ファイル生成に失敗: %w", err)
+		return fmt.Errorf("configuration file generation failed: %w", err)
 	}
 
-	fmt.Println("✅ 設定ファイル生成が完了しました")
+	fmt.Println("✅ Configuration file generation completed")
 
 	homeDir, _ := os.UserHomeDir()
-	fmt.Printf("📝 生成されたファイル: %s/agents.conf\n", filepath.Join(homeDir, ".claude", "claude-code-agents"))
+	fmt.Printf("📝 Generated file: %s/agents.conf\n", filepath.Join(homeDir, ".claude", "claude-code-agents"))
 	fmt.Println()
-	fmt.Println("💡 次のステップ:")
-	fmt.Println("  1. 設定ファイルを確認・編集してください")
-	fmt.Println("  2. システムの健全性を確認してください: ./claude-code-agents --doctor")
+	fmt.Println("💡 Next steps:")
+	fmt.Println("  1. Review and edit the configuration file")
+	fmt.Println("  2. Check system health: ./claude-code-agents --doctor")
 
 	return nil
 }
 
-// gatherInstructionInfo instructionファイル情報を収集
+// gatherInstructionInfo collect instruction file information
 func gatherInstructionInfo(config *config.TeamConfig) map[string]interface{} {
 	info := make(map[string]interface{})
 
-	// 基本instructionファイル情報
+	// Basic instruction file information
 	info["po_instruction_file"] = config.POInstructionFile
 	info["manager_instruction_file"] = config.ManagerInstructionFile
 	info["dev_instruction_file"] = config.DevInstructionFile
 	info["instructions_directory"] = config.InstructionsDir
 
-	// 拡張instruction設定があるかチェック
+	// Check if extended instruction settings exist
 	if config.InstructionConfig != nil {
 		info["enhanced_config_enabled"] = true
 		info["base_config"] = map[string]interface{}{
@@ -474,7 +480,7 @@ func gatherInstructionInfo(config *config.TeamConfig) map[string]interface{} {
 			"dev_path":     config.InstructionConfig.Base.DevInstructionPath,
 		}
 
-		// 環境別設定
+		// Environment-specific settings
 		if len(config.InstructionConfig.Environments) > 0 {
 			info["environment_configs"] = len(config.InstructionConfig.Environments)
 			envNames := make([]string, 0, len(config.InstructionConfig.Environments))
@@ -484,7 +490,7 @@ func gatherInstructionInfo(config *config.TeamConfig) map[string]interface{} {
 			info["available_environments"] = envNames
 		}
 
-		// グローバル設定
+		// Global settings
 		if config.InstructionConfig.Global.DefaultExtension != "" {
 			info["default_extension"] = config.InstructionConfig.Global.DefaultExtension
 		}
@@ -496,27 +502,27 @@ func gatherInstructionInfo(config *config.TeamConfig) map[string]interface{} {
 		info["enhanced_config_enabled"] = false
 	}
 
-	// フォールバック設定
+	// Fallback settings
 	if config.FallbackInstructionDir != "" {
 		info["fallback_directory"] = config.FallbackInstructionDir
 	}
 
-	// 環境設定
+	// Environment settings
 	if config.Environment != "" {
 		info["current_environment"] = config.Environment
 	}
 
-	// バリデーション設定
+	// Validation settings
 	info["strict_validation"] = config.StrictValidation
 
 	return info
 }
 
-// gatherEnvironmentInfo 環境情報を収集
+// gatherEnvironmentInfo collect environment information
 func gatherEnvironmentInfo(config *config.TeamConfig) map[string]interface{} {
 	info := make(map[string]interface{})
 
-	// システム情報
+	// System information
 	info["claude_cli_path"] = config.ClaudeCLIPath
 	info["working_directory"] = config.WorkingDir
 	info["config_directory"] = config.ConfigDir
@@ -524,22 +530,22 @@ func gatherEnvironmentInfo(config *config.TeamConfig) map[string]interface{} {
 	info["session_name"] = config.SessionName
 	info["dev_count"] = config.DevCount
 
-	// tmux設定
+	// tmux settings
 	info["tmux_layout"] = config.DefaultLayout
 	info["auto_attach"] = config.AutoAttach
 	info["pane_count"] = config.PaneCount
 
-	// タイムアウト設定
+	// Timeout settings
 	info["startup_timeout"] = config.StartupTimeout.String()
 	info["shutdown_timeout"] = config.ShutdownTimeout.String()
 	info["process_timeout"] = config.ProcessTimeout.String()
 
-	// リソース設定
+	// Resource settings
 	info["max_processes"] = config.MaxProcesses
 	info["max_memory_mb"] = config.MaxMemoryMB
 	info["max_cpu_percent"] = config.MaxCPUPercent
 
-	// 監視設定
+	// Monitoring settings
 	info["health_check_interval"] = config.HealthCheckInterval.String()
 	info["auth_check_interval"] = config.AuthCheckInterval.String()
 

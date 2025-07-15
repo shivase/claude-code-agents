@@ -1,6 +1,6 @@
 package cmd
 
-// 共通機能とデータ構造の定義
+// Common functions and data structure definitions
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 	"github.com/shivase/claude-code-agents/internal/tmux"
 )
 
-// 共通設定構造体
+// Common configuration structure
 type CommonConfig struct {
 	HomeDir         string
 	ConfigDir       string
@@ -24,24 +24,24 @@ type CommonConfig struct {
 	Verbose         bool
 }
 
-// グローバル設定インスタンス
+// Global configuration instance
 var globalConfig *CommonConfig
 
-// グローバル設定変数
+// Global configuration variables
 var (
 	globalConfigDir string
-	globalLogLevel  = "info"
+	globalLogLevel  = "error"
 	globalVerbose   = false
 )
 
-// AgentConfig エージェント設定
+// AgentConfig agent configuration
 type AgentConfig struct {
 	Name            string
 	InstructionFile string
 	WorkingDir      string
 }
 
-// GetCommonConfig 共通設定の取得
+// GetCommonConfig get common configuration
 func GetCommonConfig() *CommonConfig {
 	if globalConfig == nil {
 		globalConfig = &CommonConfig{}
@@ -52,76 +52,76 @@ func GetCommonConfig() *CommonConfig {
 	return globalConfig
 }
 
-// Initialize 設定の初期化
+// Initialize configuration initialization
 func (c *CommonConfig) Initialize() error {
-	// ホームディレクトリの設定
+	// Set home directory
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return fmt.Errorf("failed to get home directory: %w", err)
 	}
 	c.HomeDir = homeDir
 
-	// 統一された設定ディレクトリパス
+	// Unified configuration directory path
 	claudeDir := filepath.Join(homeDir, ".claude")
 	claudCodeAgentsDir := filepath.Join(claudeDir, "claude-code-agents")
 
-	// 設定ディレクトリの設定
+	// Set configuration directory
 	if globalConfigDir != "" {
 		c.ConfigDir = globalConfigDir
 	} else {
 		c.ConfigDir = claudCodeAgentsDir
 	}
 
-	// 作業ディレクトリの設定
+	// Set working directory
 	workingDir, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("failed to get working directory: %w", err)
 	}
 	c.WorkingDir = workingDir
 
-	// Claude CLIパスの設定
+	// Set Claude CLI path
 	c.ClaudeCLIPath = filepath.Join(claudeDir, "local", "claude")
 
-	// インストラクションディレクトリの設定
+	// Set instructions directory
 	c.InstructionsDir = filepath.Join(claudCodeAgentsDir, "instructions")
 
-	// ログレベルの設定
+	// Set log level
 	c.LogLevel = globalLogLevel
 	c.Verbose = globalVerbose
 
 	return nil
 }
 
-// GetConfigPath 設定ファイルパスの取得
+// GetConfigPath get configuration file path
 func (c *CommonConfig) GetConfigPath() string {
 	return filepath.Join(c.ConfigDir, "manager.json")
 }
 
-// GetTeamConfigPath チーム設定ファイルパスの取得
+// GetTeamConfigPath get team configuration file path
 func (c *CommonConfig) GetTeamConfigPath() string {
 	return filepath.Join(c.ConfigDir, "agents.conf")
 }
 
-// GetSessionName tmuxセッション名の取得（動的検出）
+// GetSessionName get tmux session name (dynamic detection)
 func (c *CommonConfig) GetSessionName() string {
-	// tmuxManagerを使用してアクティブなAIセッションを検出
+	// Detect active AI session using tmuxManager
 	tmuxManager := tmux.NewTmuxManager("")
 	if sessionName, err := tmuxManager.FindDefaultAISession(6); err == nil {
 		return sessionName
 	}
 
-	// 検出できない場合はデフォルト値を返す
+	// Return default value if detection fails
 	return "ai-teams"
 }
 
-// GetLogPath ログファイルパスの取得
+// GetLogPath get log file path
 func (c *CommonConfig) GetLogPath() string {
 	return filepath.Join(c.ConfigDir, "logs", "manager.log")
 }
 
-// 共通のエラーハンドリング
+// Common error handling
 
-// CommandError コマンドエラー構造体
+// CommandError command error structure
 type CommandError struct {
 	Command string
 	Err     error
@@ -132,7 +132,7 @@ func (e *CommandError) Error() string {
 	return fmt.Sprintf("command '%s' failed: %v (exit code: %d)", e.Command, e.Err, e.Code)
 }
 
-// WrapError エラーのラップ
+// WrapError wrap error
 func WrapError(command string, err error, code int) *CommandError {
 	return &CommandError{
 		Command: command,
@@ -141,9 +141,9 @@ func WrapError(command string, err error, code int) *CommandError {
 	}
 }
 
-// 共通のバリデーション関数
+// Common validation functions
 
-// ValidateAgentName エージェント名の検証
+// ValidateAgentName validate agent name
 func ValidateAgentName(agentName string) error {
 	validAgents := map[string]bool{
 		"po":      true,
@@ -161,7 +161,7 @@ func ValidateAgentName(agentName string) error {
 	return nil
 }
 
-// ValidateMessage メッセージの検証
+// ValidateMessage validate message
 func ValidateMessage(message string) error {
 	if len(message) == 0 {
 		return fmt.Errorf("message cannot be empty")
@@ -174,16 +174,16 @@ func ValidateMessage(message string) error {
 	return nil
 }
 
-// ValidateConfig 設定の検証
+// ValidateConfig validate configuration
 func ValidateConfig() error {
 	config := GetCommonConfig()
 
-	// Claude CLIの存在確認
+	// Check Claude CLI existence
 	if _, err := os.Stat(config.ClaudeCLIPath); os.IsNotExist(err) {
 		return fmt.Errorf("claude CLI not found at %s", config.ClaudeCLIPath)
 	}
 
-	// インストラクションディレクトリの存在確認
+	// Check instructions directory existence
 	if _, err := os.Stat(config.InstructionsDir); os.IsNotExist(err) {
 		return fmt.Errorf("instructions directory not found at %s", config.InstructionsDir)
 	}
@@ -191,9 +191,9 @@ func ValidateConfig() error {
 	return nil
 }
 
-// 共通のヘルパー関数
+// Common helper functions
 
-// EnsureDir ディレクトリの存在確認と作成
+// EnsureDir ensure directory exists and create if necessary
 func EnsureDir(path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return os.MkdirAll(path, 0750)
@@ -201,7 +201,7 @@ func EnsureDir(path string) error {
 	return nil
 }
 
-// IsProcessRunning プロセスの実行状態確認
+// IsProcessRunning check if process is running
 func IsProcessRunning(pid int) bool {
 	if pid <= 0 {
 		return false
@@ -212,12 +212,12 @@ func IsProcessRunning(pid int) bool {
 		return false
 	}
 
-	// プロセスにシグナル0を送信して存在確認（Unix系のみ）
+	// Send signal 0 to process to check existence (Unix only)
 	err = process.Signal(syscall.Signal(0))
 	return err == nil
 }
 
-// FormatDuration 期間のフォーマット
+// FormatDuration format duration
 func FormatDuration(duration time.Duration) string {
 	switch {
 	case duration < time.Millisecond:
@@ -229,7 +229,7 @@ func FormatDuration(duration time.Duration) string {
 	}
 }
 
-// TruncateString 文字列の切り詰め
+// TruncateString truncate string
 func TruncateString(str string, maxLen int) string {
 	if len(str) <= maxLen {
 		return str
@@ -242,9 +242,9 @@ func TruncateString(str string, maxLen int) string {
 	return str[:maxLen-3] + "..."
 }
 
-// 共通のステータス管理
+// Common status management
 
-// SystemStatus システムステータス
+// SystemStatus system status
 type SystemStatus struct {
 	IsRunning     bool            `json:"is_running"`
 	StartTime     time.Time       `json:"start_time"`
@@ -255,7 +255,7 @@ type SystemStatus struct {
 	PID           int             `json:"pid"`
 }
 
-// NewSystemStatus 新しいシステムステータスの作成
+// NewSystemStatus create new system status
 func NewSystemStatus() *SystemStatus {
 	return &SystemStatus{
 		IsRunning:     false,
@@ -266,18 +266,18 @@ func NewSystemStatus() *SystemStatus {
 	}
 }
 
-// UpdateAgentStatus エージェントステータスの更新
+// UpdateAgentStatus update agent status
 func (s *SystemStatus) UpdateAgentStatus(agentName string, isRunning bool) {
 	s.AgentStatuses[agentName] = isRunning
 	s.LastUpdate = time.Now()
 }
 
-// GetAgentStatus エージェントステータスの取得
+// GetAgentStatus get agent status
 func (s *SystemStatus) GetAgentStatus(agentName string) bool {
 	return s.AgentStatuses[agentName]
 }
 
-// GetAllAgentStatuses 全エージェントステータスの取得
+// GetAllAgentStatuses get all agent statuses
 func (s *SystemStatus) GetAllAgentStatuses() map[string]bool {
 	statuses := make(map[string]bool)
 	for agent, status := range s.AgentStatuses {
@@ -287,20 +287,20 @@ func (s *SystemStatus) GetAllAgentStatuses() map[string]bool {
 	return statuses
 }
 
-// Start システム開始
+// Start system start
 func (s *SystemStatus) Start() {
 	s.IsRunning = true
 	s.StartTime = time.Now()
 	s.LastUpdate = time.Now()
 }
 
-// Stop システム停止
+// Stop system stop
 func (s *SystemStatus) Stop() {
 	s.IsRunning = false
 	s.LastUpdate = time.Now()
 }
 
-// GetUptime 稼働時間の取得
+// GetUptime get uptime
 func (s *SystemStatus) GetUptime() time.Duration {
 	if !s.IsRunning {
 		return 0
@@ -309,75 +309,75 @@ func (s *SystemStatus) GetUptime() time.Duration {
 	return time.Since(s.StartTime)
 }
 
-// 共通のメッセージフォーマット
+// Common message format
 
-// FormatAgentStatus エージェントステータスのフォーマット
+// FormatAgentStatus format agent status
 func FormatAgentStatus(agentName string, isRunning bool) string {
 	statusIcon := "❌"
-	statusText := "停止中"
+	statusText := "Stopped"
 
 	if isRunning {
 		statusIcon = "✅"
-		statusText = "実行中"
+		statusText = "Running"
 	}
 
 	return fmt.Sprintf("%s %s: %s", statusIcon, agentName, statusText)
 }
 
-// FormatMessage メッセージのフォーマット
+// FormatMessage format message
 func FormatMessage(sender, recipient, message string) string {
 	timestamp := time.Now().Format("15:04:05")
 	return fmt.Sprintf("[%s] %s -> %s: %s", timestamp, sender, recipient, message)
 }
 
-// FormatError エラーのフォーマット
+// FormatError format error
 func FormatError(err error) string {
 	if err == nil {
 		return ""
 	}
 
-	return fmt.Sprintf("❌ エラー: %v", err)
+	return fmt.Sprintf("❌ Error: %v", err)
 }
 
-// FormatSuccess 成功メッセージのフォーマット
+// FormatSuccess format success message
 func FormatSuccess(message string) string {
 	return fmt.Sprintf("✅ %s", message)
 }
 
-// FormatWarning 警告メッセージのフォーマット
+// FormatWarning format warning message
 func FormatWarning(message string) string {
 	return fmt.Sprintf("⚠️ %s", message)
 }
 
-// FormatInfo 情報メッセージのフォーマット
+// FormatInfo format information message
 func FormatInfo(message string) string {
 	return fmt.Sprintf("ℹ️ %s", message)
 }
 
-// 共通のリソース管理
+// Common resource management
 
-// ResourceManager リソース管理
+// ResourceManager resource manager
 type ResourceManager struct {
 	cleanupFuncs []func() error
 }
 
-// NewResourceManager 新しいリソース管理の作成
+// NewResourceManager create new resource manager
 func NewResourceManager() *ResourceManager {
 	return &ResourceManager{
 		cleanupFuncs: make([]func() error, 0),
 	}
 }
 
-// AddCleanup クリーンアップ関数の追加
+// AddCleanup add cleanup function
 func (rm *ResourceManager) AddCleanup(cleanup func() error) {
 	rm.cleanupFuncs = append(rm.cleanupFuncs, cleanup)
 }
 
-// Cleanup 全リソースのクリーンアップ
+// Cleanup cleanup all resources
 func (rm *ResourceManager) Cleanup() error {
 	var errors []error
 
-	// 逆順でクリーンアップ実行
+	// Execute cleanup in reverse order
 	for i := len(rm.cleanupFuncs) - 1; i >= 0; i-- {
 		if err := rm.cleanupFuncs[i](); err != nil {
 			errors = append(errors, err)
@@ -391,10 +391,10 @@ func (rm *ResourceManager) Cleanup() error {
 	return nil
 }
 
-// グローバルリソース管理インスタンス
+// Global resource manager instance
 var globalResourceManager *ResourceManager
 
-// GetResourceManager グローバルリソース管理の取得
+// GetResourceManager get global resource manager
 func GetResourceManager() *ResourceManager {
 	if globalResourceManager == nil {
 		globalResourceManager = NewResourceManager()

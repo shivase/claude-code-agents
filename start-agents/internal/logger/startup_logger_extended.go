@@ -6,7 +6,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// InstructionLogger InstructionSender インストラクション送信ログのインターフェース
+// InstructionLogger interface for instruction sending logs
 type InstructionLogger interface {
 	LogInstructionLoad(instructionsDir string, details map[string]interface{})
 	LogInstructionSend(agent string, instructionFile string, details map[string]interface{})
@@ -16,7 +16,7 @@ type InstructionLogger interface {
 	BeginInstructionPhase(batchName string, agentCount int) *InstructionPhase
 }
 
-// InstructionPhase インストラクション送信フェーズの管理構造体
+// InstructionPhase manages instruction sending phases
 type InstructionPhase struct {
 	BatchName  string
 	StartTime  time.Time
@@ -26,19 +26,19 @@ type InstructionPhase struct {
 	Details    map[string]interface{}
 }
 
-// ExtendedStartupLogger 拡張された起動ログ実装
+// ExtendedStartupLogger extended startup log implementation
 type ExtendedStartupLogger struct {
 	*DefaultStartupLogger
 }
 
-// NewExtendedStartupLogger 拡張起動ログインスタンスを作成
+// NewExtendedStartupLogger creates extended startup logger instance
 func NewExtendedStartupLogger() *ExtendedStartupLogger {
 	return &ExtendedStartupLogger{
 		DefaultStartupLogger: &DefaultStartupLogger{},
 	}
 }
 
-// LogInstructionLoad インストラクションディレクトリ読み込みログ
+// LogInstructionLoad logs instruction directory loading
 func (esl *ExtendedStartupLogger) LogInstructionLoad(instructionsDir string, details map[string]interface{}) {
 	if details == nil {
 		details = make(map[string]interface{})
@@ -49,10 +49,10 @@ func (esl *ExtendedStartupLogger) LogInstructionLoad(instructionsDir string, det
 		Str("category", "startup").
 		Str("phase", "instruction_load").
 		Interface("details", details).
-		Msg("📋 インストラクションディレクトリ読み込み")
+		Msg("📋 Instruction directory loading")
 }
 
-// LogInstructionSend 個別インストラクション送信ログ
+// LogInstructionSend logs individual instruction sending
 func (esl *ExtendedStartupLogger) LogInstructionSend(agent string, instructionFile string, details map[string]interface{}) {
 	if details == nil {
 		details = make(map[string]interface{})
@@ -64,10 +64,10 @@ func (esl *ExtendedStartupLogger) LogInstructionSend(agent string, instructionFi
 		Str("category", "startup").
 		Str("phase", "instruction_send").
 		Interface("details", details).
-		Msg("📤 インストラクション送信")
+		Msg("📤 Instruction sending")
 }
 
-// LogInstructionProgress インストラクション送信進捗ログ
+// LogInstructionProgress logs instruction sending progress
 func (esl *ExtendedStartupLogger) LogInstructionProgress(agent string, status string, progress map[string]interface{}) {
 	if progress == nil {
 		progress = make(map[string]interface{})
@@ -79,10 +79,10 @@ func (esl *ExtendedStartupLogger) LogInstructionProgress(agent string, status st
 		Str("category", "startup").
 		Str("phase", "instruction_progress").
 		Interface("details", progress).
-		Msg("📊 インストラクション送信進捗")
+		Msg("📊 Instruction sending progress")
 }
 
-// LogInstructionError インストラクション送信エラーログ
+// LogInstructionError logs instruction sending error
 func (esl *ExtendedStartupLogger) LogInstructionError(agent string, instructionFile string, err error, recovery map[string]interface{}) {
 	fields := map[string]interface{}{
 		"category":         "startup",
@@ -99,10 +99,10 @@ func (esl *ExtendedStartupLogger) LogInstructionError(agent string, instructionF
 	log.Error().
 		Interface("details", fields).
 		Err(err).
-		Msg("❌ インストラクション送信エラー")
+		Msg("❌ Instruction sending error")
 }
 
-// LogInstructionBatch バッチインストラクション送信ログ
+// LogInstructionBatch logs batch instruction sending
 func (esl *ExtendedStartupLogger) LogInstructionBatch(agents []string, details map[string]interface{}) {
 	if details == nil {
 		details = make(map[string]interface{})
@@ -114,10 +114,10 @@ func (esl *ExtendedStartupLogger) LogInstructionBatch(agents []string, details m
 		Str("category", "startup").
 		Str("phase", "instruction_batch").
 		Interface("details", details).
-		Msg("📦 バッチインストラクション送信開始")
+		Msg("📦 Batch instruction sending started")
 }
 
-// BeginInstructionPhase インストラクション送信フェーズ開始
+// BeginInstructionPhase begins instruction sending phase
 func (esl *ExtendedStartupLogger) BeginInstructionPhase(batchName string, agentCount int) *InstructionPhase {
 	ip := &InstructionPhase{
 		BatchName:  batchName,
@@ -136,12 +136,12 @@ func (esl *ExtendedStartupLogger) BeginInstructionPhase(batchName string, agentC
 		Str("phase", "instruction_batch").
 		Str("status", "started").
 		Interface("details", ip.Details).
-		Msg("🔄 インストラクション送信バッチ開始")
+		Msg("🔄 Instruction sending batch started")
 
 	return ip
 }
 
-// RecordSuccess 成功記録
+// RecordSuccess records success
 func (ip *InstructionPhase) RecordSuccess(agent string, instructionFile string) {
 	ip.Completed++
 
@@ -153,10 +153,10 @@ func (ip *InstructionPhase) RecordSuccess(agent string, instructionFile string) 
 		Str("instruction_file", instructionFile).
 		Int("completed", ip.Completed).
 		Int("remaining", ip.AgentCount-ip.Completed-ip.Failed).
-		Msg("✅ エージェントインストラクション送信完了")
+		Msg("✅ Agent instruction sending completed")
 }
 
-// RecordFailure 失敗記録
+// RecordFailure records failure
 func (ip *InstructionPhase) RecordFailure(agent string, instructionFile string, err error) {
 	ip.Failed++
 
@@ -169,10 +169,10 @@ func (ip *InstructionPhase) RecordFailure(agent string, instructionFile string, 
 		Int("failed", ip.Failed).
 		Int("remaining", ip.AgentCount-ip.Completed-ip.Failed).
 		Err(err).
-		Msg("❌ エージェントインストラクション送信失敗")
+		Msg("❌ Agent instruction sending failed")
 }
 
-// Complete バッチ完了
+// Complete completes batch
 func (ip *InstructionPhase) Complete() {
 	duration := time.Since(ip.StartTime)
 	successRate := float64(ip.Completed) / float64(ip.AgentCount) * 100
@@ -193,18 +193,18 @@ func (ip *InstructionPhase) Complete() {
 			Str("phase", "instruction_batch").
 			Str("status", "completed_with_errors").
 			Interface("details", finalDetails).
-			Msg("⚠️ インストラクション送信バッチ完了（一部失敗）")
+			Msg("⚠️ Instruction sending batch completed (partial failure)")
 	} else {
 		log.Info().
 			Str("category", "startup").
 			Str("phase", "instruction_batch").
 			Str("status", "completed").
 			Interface("details", finalDetails).
-			Msg("✅ インストラクション送信バッチ完了")
+			Msg("✅ Instruction sending batch completed")
 	}
 }
 
-// CompleteWithError バッチエラー完了
+// CompleteWithError completes batch with error
 func (ip *InstructionPhase) CompleteWithError(err error) {
 	duration := time.Since(ip.StartTime)
 
@@ -223,10 +223,10 @@ func (ip *InstructionPhase) CompleteWithError(err error) {
 		Str("status", "failed").
 		Interface("details", finalDetails).
 		Err(err).
-		Msg("❌ インストラクション送信バッチ失敗")
+		Msg("❌ Instruction sending batch failed")
 }
 
-// ConfigIntegration 設定統合ログ機能
+// ConfigIntegration configuration integration log functionality
 type ConfigIntegration interface {
 	LogConfigValidation(configPath string, validationResults map[string]interface{})
 	LogConfigMerge(sources []string, mergeResults map[string]interface{})
@@ -234,7 +234,7 @@ type ConfigIntegration interface {
 	LogConfigBackwardCompatibility(version string, compatibilityInfo map[string]interface{})
 }
 
-// LogConfigValidation 設定検証ログ
+// LogConfigValidation logs configuration validation
 func (esl *ExtendedStartupLogger) LogConfigValidation(configPath string, validationResults map[string]interface{}) {
 	if validationResults == nil {
 		validationResults = make(map[string]interface{})
@@ -245,10 +245,10 @@ func (esl *ExtendedStartupLogger) LogConfigValidation(configPath string, validat
 		Str("category", "startup").
 		Str("phase", "config_validation").
 		Interface("details", validationResults).
-		Msg("🔍 設定ファイル検証")
+		Msg("🔍 Configuration file validation")
 }
 
-// LogConfigMerge 設定マージログ
+// LogConfigMerge logs configuration merging
 func (esl *ExtendedStartupLogger) LogConfigMerge(sources []string, mergeResults map[string]interface{}) {
 	if mergeResults == nil {
 		mergeResults = make(map[string]interface{})
@@ -260,10 +260,10 @@ func (esl *ExtendedStartupLogger) LogConfigMerge(sources []string, mergeResults 
 		Str("category", "startup").
 		Str("phase", "config_merge").
 		Interface("details", mergeResults).
-		Msg("🔗 設定ファイルマージ")
+		Msg("🔗 Configuration file merging")
 }
 
-// LogConfigSchema 設定スキーマログ
+// LogConfigSchema logs configuration schema
 func (esl *ExtendedStartupLogger) LogConfigSchema(schemaVersion string, schemaDetails map[string]interface{}) {
 	if schemaDetails == nil {
 		schemaDetails = make(map[string]interface{})
@@ -274,10 +274,10 @@ func (esl *ExtendedStartupLogger) LogConfigSchema(schemaVersion string, schemaDe
 		Str("category", "startup").
 		Str("phase", "config_schema").
 		Interface("details", schemaDetails).
-		Msg("📋 設定スキーマ適用")
+		Msg("📋 Configuration schema application")
 }
 
-// LogConfigBackwardCompatibility 後方互換性ログ
+// LogConfigBackwardCompatibility logs backward compatibility
 func (esl *ExtendedStartupLogger) LogConfigBackwardCompatibility(version string, compatibilityInfo map[string]interface{}) {
 	if compatibilityInfo == nil {
 		compatibilityInfo = make(map[string]interface{})
@@ -288,5 +288,5 @@ func (esl *ExtendedStartupLogger) LogConfigBackwardCompatibility(version string,
 		Str("category", "startup").
 		Str("phase", "config_compatibility").
 		Interface("details", compatibilityInfo).
-		Msg("🔄 後方互換性処理")
+		Msg("🔄 Backward compatibility processing")
 }

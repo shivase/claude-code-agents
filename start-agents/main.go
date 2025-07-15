@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	// デバッグモードを先に判定
+	// Check debug mode first
 	args := os.Args[1:]
 	debugMode := false
 	for _, arg := range args {
@@ -21,7 +21,7 @@ func main() {
 		}
 	}
 
-	// tmux環境内での実行をチェック
+	// Check if running inside tmux environment
 	isInTmux, tmuxErr := tmux.IsInsideTmux()
 	if isInTmux {
 		tmux.PrintErrorMessage(debugMode, tmuxErr)
@@ -33,7 +33,7 @@ func main() {
 	}
 	cmd.InitializeMainSystem(logLevel)
 
-	// 起動開始ログ
+	// Startup begin log
 	startTime := time.Now()
 	startupPhase := logger.BeginPhase("application_startup", map[string]interface{}{
 		"debug_mode": debugMode,
@@ -54,26 +54,26 @@ func main() {
 	if err != nil {
 		logger.LogStartupError("argument_parsing", err, nil)
 		startupPhase.CompleteWithError(err)
-		_, _ = fmt.Fprintf(os.Stderr, "エラー: %v\n", err)
+		_, _ = fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 	if sessionName == "" {
-		sessionErr := fmt.Errorf("セッション名が指定されていません")
+		sessionErr := fmt.Errorf("session name not specified")
 		logger.LogStartupError("session_validation", sessionErr, nil)
 		startupPhase.CompleteWithError(sessionErr)
-		fmt.Println("❌ エラー: セッション名を指定してください")
+		fmt.Println("❌ Error: Please specify a session name")
 		cmd.ShowUsage()
 		os.Exit(1)
 	}
 	if !cmd.IsValidSessionName(sessionName) {
-		validationErr := fmt.Errorf("無効なセッション名: %s", sessionName)
+		validationErr := fmt.Errorf("invalid session name: %s", sessionName)
 		logger.LogStartupError("session_validation", validationErr, nil)
 		startupPhase.CompleteWithError(validationErr)
-		fmt.Println("❌ エラー: 無効なセッション名です")
+		fmt.Println("❌ Error: Invalid session name")
 		os.Exit(1)
 	}
 
-	// システム起動フェーズ
+	// System launch phase
 	logger.LogTmuxSetup(sessionName, 6, map[string]interface{}{
 		"session_name": sessionName,
 	})
@@ -81,11 +81,11 @@ func main() {
 	if err := cmd.LaunchSystem(sessionName); err != nil {
 		logger.LogStartupError("system_launch", err, nil)
 		startupPhase.CompleteWithError(err)
-		_, _ = fmt.Fprintf(os.Stderr, "起動エラー: %v\n", err)
+		_, _ = fmt.Fprintf(os.Stderr, "Launch error: %v\n", err)
 		os.Exit(1)
 	}
 
-	// 起動完了ログ
+	// Startup complete log
 	totalTime := time.Since(startTime)
 	logger.LogStartupComplete(totalTime, map[string]interface{}{
 		"session_name": sessionName,

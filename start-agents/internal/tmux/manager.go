@@ -13,18 +13,18 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// 事前コンパイルされた正規表現（パフォーマンス最適化）
+// Pre-compiled regular expressions (performance optimization)
 var (
 	agentSessionRegex = regexp.MustCompile(`-(po|manager|dev\d+)$`)
 )
 
-// TmuxManagerImpl tmux操作管理
+// TmuxManagerImpl manages tmux operations
 type TmuxManagerImpl struct {
 	sessionName string
 	layout      string
 }
 
-// NewTmuxManager tmux管理の作成
+// NewTmuxManager creates a new tmux manager
 func NewTmuxManager(sessionName string) *TmuxManagerImpl {
 	return &TmuxManagerImpl{
 		sessionName: sessionName,
@@ -32,13 +32,13 @@ func NewTmuxManager(sessionName string) *TmuxManagerImpl {
 	}
 }
 
-// SessionExists セッションの存在確認
+// SessionExists checks if a session exists
 func (tm *TmuxManagerImpl) SessionExists(sessionName string) bool {
 	cmd := exec.Command("tmux", "has-session", "-t", sessionName)
 	return cmd.Run() == nil
 }
 
-// ListSessions セッション一覧の取得
+// ListSessions retrieves session list
 func (tm *TmuxManagerImpl) ListSessions() ([]string, error) {
 	cmd := exec.Command("tmux", "list-sessions", "-F", "#{session_name}")
 	output, err := cmd.Output()
@@ -57,7 +57,7 @@ func (tm *TmuxManagerImpl) ListSessions() ([]string, error) {
 	return sessions, nil
 }
 
-// CreateSession セッションの作成
+// CreateSession creates a new session
 func (tm *TmuxManagerImpl) CreateSession(sessionName string) error {
 	if tm.SessionExists(sessionName) {
 		return fmt.Errorf("session %s already exists", sessionName)
@@ -71,10 +71,10 @@ func (tm *TmuxManagerImpl) CreateSession(sessionName string) error {
 	return nil
 }
 
-// KillSession セッションの削除
+// KillSession deletes a session
 func (tm *TmuxManagerImpl) KillSession(sessionName string) error {
 	if !tm.SessionExists(sessionName) {
-		return nil // セッションが存在しない場合はエラーとしない
+		return nil // No error if session doesn't exist
 	}
 
 	cmd := exec.Command("tmux", "kill-session", "-t", sessionName)
@@ -85,20 +85,20 @@ func (tm *TmuxManagerImpl) KillSession(sessionName string) error {
 	return nil
 }
 
-// AttachSession セッションへの接続
+// AttachSession attaches to a session
 func (tm *TmuxManagerImpl) AttachSession(sessionName string) error {
 	if !tm.SessionExists(sessionName) {
 		return fmt.Errorf("session %s does not exist", sessionName)
 	}
 
-	// tmux attach-sessionを実行（非対話的に）
+	// Execute tmux attach-session (non-interactively)
 	cmd := exec.Command("tmux", "attach-session", "-t", sessionName)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
 	if err := cmd.Run(); err != nil {
-		// 接続エラーの場合はセッション状態を確認
+		// Check session state on connection error
 		if tm.SessionExists(sessionName) {
 			log.Warn().Str("session", sessionName).Err(err).Msg("Session exists but attach failed")
 			return fmt.Errorf("session %s exists but attach failed: %w", sessionName, err)
@@ -109,46 +109,46 @@ func (tm *TmuxManagerImpl) AttachSession(sessionName string) error {
 	return nil
 }
 
-// CreateIntegratedLayout 統合監視画面レイアウトの作成（動的dev数対応）
+// CreateIntegratedLayout creates integrated monitoring screen layout (supports dynamic dev count)
 func (tm *TmuxManagerImpl) CreateIntegratedLayout(sessionName string, devCount int) error {
-	// セッションが存在しない場合は作成
+	// Create session if it doesn't exist
 	if !tm.SessionExists(sessionName) {
 		if err := tm.CreateSession(sessionName); err != nil {
 			return fmt.Errorf("failed to create session: %w", err)
 		}
 	}
 
-	// ウィンドウ名を設定
+	// Set window name
 	if err := tm.RenameWindow(sessionName, sessionName); err != nil {
 		return fmt.Errorf("failed to rename window: %w", err)
 	}
 
-	// 動的ペイン構成の作成（PO + Manager + Dev数）
+	// Create dynamic pane configuration (PO + Manager + Dev count)
 	totalPanes := 2 + devCount
 
-	// 分割のタイミングで少し待機を入れる
+	// Add a small delay for split timing
 	sleep := func() {
 		time.Sleep(50 * time.Millisecond)
 	}
 
-	// 左側にPO/Manager、右側にDev専用のレイアウトを作成
-	// 1. 最初のペインを左右分割（左側 | 右側）
+	// Create layout with PO/Manager on left, Dev on right
+	// 1. Split first pane horizontally (left | right)
 	if err := tm.SplitWindow(sessionName, "-h"); err != nil {
 		return fmt.Errorf("failed to split window horizontally: %w", err)
 	}
 	sleep()
 
-	// 2. 左側（ペイン1）を上下分割（PO | Manager）
+	// 2. Split left side (pane 1) vertically (PO | Manager)
 	if err := tm.SplitWindow(sessionName+":1.1", "-v"); err != nil {
 		return fmt.Errorf("failed to split left pane vertically: %w", err)
 	}
 	sleep()
 
-	// 3. 右側（ペイン3）を開発者用に分割
-	// 最初の開発者はペイン3を使用
-	// 2番目以降の開発者のために、常に最初の右側ペイン（ペイン3）を分割
+	// 3. Split right side (pane 3) for developers
+	// First developer uses pane 3
+	// For subsequent developers, always split the first right pane (pane 3)
 	for i := 2; i <= devCount; i++ {
-		// 常にペイン3を分割して等間隔にする
+		// Always split pane 3 to maintain equal spacing
 		target := fmt.Sprintf("%s:1.3", sessionName)
 		if err := tm.SplitWindow(target, "-v"); err != nil {
 			return fmt.Errorf("failed to split dev pane %d: %w", i, err)
@@ -156,12 +156,12 @@ func (tm *TmuxManagerImpl) CreateIntegratedLayout(sessionName string, devCount i
 		sleep()
 	}
 
-	// ペインサイズの調整
+	// Adjust pane sizes
 	if err := tm.AdjustPaneSizes(sessionName, devCount); err != nil {
 		return fmt.Errorf("failed to adjust pane sizes: %w", err)
 	}
 
-	// ペインタイトルの設定
+	// Set pane titles
 	if err := tm.SetPaneTitles(sessionName, devCount); err != nil {
 		return fmt.Errorf("failed to set pane titles: %w", err)
 	}
@@ -170,10 +170,10 @@ func (tm *TmuxManagerImpl) CreateIntegratedLayout(sessionName string, devCount i
 	return nil
 }
 
-// SetupClaudeInPanes 各ペインでClaude CLI自動起動とインストラクション送信
+// SetupClaudeInPanes starts Claude CLI automatically and sends instructions in each pane
 func (tm *TmuxManagerImpl) SetupClaudeInPanes(sessionName string, claudeCLIPath string, instructionsDir string, devCount int) error {
 
-	// 動的ペイン設定マップ（ペイン番号 → エージェント名）
+	// Dynamic pane configuration map (pane number → agent name)
 	paneAgentMap := make(map[string]string)
 	paneAgentMap["1"] = "po"
 	paneAgentMap["2"] = "manager"
@@ -183,49 +183,49 @@ func (tm *TmuxManagerImpl) SetupClaudeInPanes(sessionName string, claudeCLIPath 
 
 	for pane, agent := range paneAgentMap {
 
-		// 各ペインでClaude CLIを起動
+		// Start Claude CLI in each pane
 		if err := tm.startClaudeInPane(sessionName, pane, agent, claudeCLIPath); err != nil {
 			log.Error().Str("session", sessionName).Str("pane", pane).Str("agent", agent).Err(err).Msg("Failed to start Claude CLI in pane")
 			return fmt.Errorf("failed to start Claude CLI in pane %s (%s): %w", pane, agent, err)
 		}
 
-		// ペイン間の起動間隔を5秒に設定
+		// Set 5 second interval between pane startups
 		time.Sleep(5 * time.Second)
 	}
 
-	// Claude CLI起動完了を待機
+	// Wait for Claude CLI startup to complete
 	time.Sleep(2 * time.Second)
 
-	// インストラクションファイルを送信
+	// Send instruction files
 	for pane, agent := range paneAgentMap {
 		if err := tm.sendInstructionToPane(sessionName, pane, agent, instructionsDir); err != nil {
 			log.Warn().Str("session", sessionName).Str("pane", pane).Str("agent", agent).Err(err).Msg("Failed to send instruction to pane (non-critical)")
-			// インストラクション送信の失敗は警告レベル（継続可能）
+			// Instruction send failure is warning level (can continue)
 		}
 
-		// ペイン間でインストラクション送信間隔を2秒に設定
+		// Set 2 second interval between instruction sends
 		time.Sleep(2 * time.Second)
 	}
 
 	return nil
 }
 
-// SetupClaudeInPanesWithConfig 設定ファイルを使用した各ペインでClaude CLI自動起動とインストラクション送信
+// SetupClaudeInPanesWithConfig starts Claude CLI automatically and sends instructions in each pane using configuration
 func (tm *TmuxManagerImpl) SetupClaudeInPanesWithConfig(sessionName string, claudeCLIPath string, instructionsDir string, config interface{}, devCount int) error {
-	// TeamConfigインターフェースを使用してrole別instructionsファイルを取得
+	// Get role-specific instructions files using TeamConfig interface
 	type InstructionConfig interface {
 		GetPOInstructionFile() string
 		GetManagerInstructionFile() string
 		GetDevInstructionFile() string
 	}
 
-	// configがInstructionConfigを実装しているかチェック
+	// Check if config implements InstructionConfig
 	var instructionConfig InstructionConfig
 	if ic, ok := config.(InstructionConfig); ok {
 		instructionConfig = ic
 	}
 
-	// 動的ペイン設定マップ（ペイン番号 → エージェント名）
+	// Dynamic pane configuration map (pane number → agent name)
 	paneAgentMap := make(map[string]string)
 	paneAgentMap["1"] = "po"
 	paneAgentMap["2"] = "manager"
@@ -234,44 +234,44 @@ func (tm *TmuxManagerImpl) SetupClaudeInPanesWithConfig(sessionName string, clau
 	}
 
 	for pane, agent := range paneAgentMap {
-		// 各ペインでClaude CLIを起動
+		// Start Claude CLI in each pane
 		if err := tm.startClaudeInPane(sessionName, pane, agent, claudeCLIPath); err != nil {
 			log.Error().Str("session", sessionName).Str("pane", pane).Str("agent", agent).Err(err).Msg("Failed to start Claude CLI in pane")
 			return fmt.Errorf("failed to start Claude CLI in pane %s (%s): %w", pane, agent, err)
 		}
 
-		// ペイン間の起動間隔を5秒に設定
+		// Set 5 second interval between pane startups
 		time.Sleep(5 * time.Second)
 	}
 
-	// Claude CLI起動完了を待機
+	// Wait for Claude CLI startup to complete
 	time.Sleep(2 * time.Second)
 
-	// インストラクションファイルを送信
+	// Send instruction files
 	for pane, agent := range paneAgentMap {
 		if err := tm.SendInstructionToPaneWithConfig(sessionName, pane, agent, instructionsDir, instructionConfig); err != nil {
 			log.Warn().Str("session", sessionName).Str("pane", pane).Str("agent", agent).Err(err).Msg("Failed to send instruction to pane (non-critical)")
-			// インストラクション送信の失敗は警告レベル（継続可能）
+			// Instruction send failure is warning level (can continue)
 		}
 
-		// ペイン間でインストラクション送信間隔を2秒に設定
+		// Set 2 second interval between instruction sends
 		time.Sleep(2 * time.Second)
 	}
 
 	return nil
 }
 
-// startClaudeInPane 指定ペインでClaude CLIを起動
+// startClaudeInPane starts Claude CLI in specified pane
 func (tm *TmuxManagerImpl) startClaudeInPane(sessionName, pane, _ /* agent */, claudeCLIPath string) error {
-	// ペインが存在するか確認
+	// Check if pane exists
 	if err := tm.WaitForPaneReady(sessionName, pane, 5*time.Second); err != nil {
 		return fmt.Errorf("pane %s not ready: %w", pane, err)
 	}
 
-	// Claude CLI起動コマンドを作成
+	// Create Claude CLI start command
 	claudeCommand := fmt.Sprintf("%s --dangerously-skip-permissions", claudeCLIPath)
 
-	// ペインにClaude CLI起動コマンドを送信
+	// Send Claude CLI start command to pane
 	if err := tm.SendKeysWithEnter(sessionName, pane, claudeCommand); err != nil {
 		return fmt.Errorf("failed to send Claude CLI command to pane: %w", err)
 	}
@@ -279,11 +279,11 @@ func (tm *TmuxManagerImpl) startClaudeInPane(sessionName, pane, _ /* agent */, c
 	return nil
 }
 
-// sendInstructionToPane 指定ペインにインストラクションファイルを送信（強化版）
+// sendInstructionToPane sends instruction file to specified pane (enhanced version)
 func (tm *TmuxManagerImpl) sendInstructionToPane(sessionName, pane, agent, instructionsDir string) error {
-	log.Info().Str("session", sessionName).Str("pane", pane).Str("agent", agent).Msg("📤 インストラクション送信開始")
+	log.Info().Str("session", sessionName).Str("pane", pane).Str("agent", agent).Msg("📤 Starting instruction sending")
 
-	// インストラクションファイルのパスを決定
+	// Determine instruction file path
 	var instructionFile string
 	switch agent {
 	case "po":
@@ -293,42 +293,42 @@ func (tm *TmuxManagerImpl) sendInstructionToPane(sessionName, pane, agent, instr
 	case "dev1", "dev2", "dev3", "dev4":
 		instructionFile = filepath.Join(instructionsDir, "developer.md")
 	default:
-		log.Error().Str("agent", agent).Msg("❌ 未知のエージェントタイプ")
+		log.Error().Str("agent", agent).Msg("❌ Unknown agent type")
 		return fmt.Errorf("unknown agent type: %s", agent)
 	}
 
-	log.Info().Str("instruction_file", instructionFile).Msg("📁 インストラクションファイルパス決定")
+	log.Info().Str("instruction_file", instructionFile).Msg("📁 Instruction file path determined")
 
-	// インストラクションファイルの存在確認（強化版）
+	// Verify instruction file exists (enhanced version)
 	fileInfo, err := os.Stat(instructionFile)
 	if os.IsNotExist(err) {
-		log.Warn().Str("instruction_file", instructionFile).Msg("⚠️ インストラクションファイルが存在しません（スキップ）")
-		return nil // ファイルが存在しない場合はスキップ（エラーではない）
+		log.Warn().Str("instruction_file", instructionFile).Msg("⚠️ Instruction file does not exist (skipping)")
+		return nil // Skip if file doesn't exist (not an error)
 	}
 	if err != nil {
-		log.Error().Str("instruction_file", instructionFile).Err(err).Msg("❌ ファイル情報取得エラー")
+		log.Error().Str("instruction_file", instructionFile).Err(err).Msg("❌ Failed to get file information")
 		return fmt.Errorf("failed to stat instruction file: %w", err)
 	}
 	if fileInfo.Size() == 0 {
-		log.Warn().Str("instruction_file", instructionFile).Msg("⚠️ インストラクションファイルが空です（スキップ）")
+		log.Warn().Str("instruction_file", instructionFile).Msg("⚠️ Instruction file is empty (skipping)")
 		return nil
 	}
 
-	log.Info().Str("instruction_file", instructionFile).Int64("file_size", fileInfo.Size()).Msg("✅ ファイル存在確認完了")
+	log.Info().Str("instruction_file", instructionFile).Int64("file_size", fileInfo.Size()).Msg("✅ File existence verified")
 
-	// Claude CLI準備完了待機（強化版）
+	// Wait for Claude CLI to be ready (enhanced version)
 	if err := tm.waitForClaudeReady(sessionName, pane, 10*time.Second); err != nil {
-		log.Warn().Str("session", sessionName).Str("pane", pane).Err(err).Msg("⚠️ Claude CLI準備待機タイムアウト（続行）")
+		log.Warn().Str("session", sessionName).Str("pane", pane).Err(err).Msg("⚠️ Claude CLI readiness wait timeout (continuing)")
 	}
 
-	// catコマンドでインストラクションファイルを送信（リトライ機能付き）
+	// Send instruction file using cat command (with retry functionality)
 	catCommand := fmt.Sprintf("cat \"%s\"", instructionFile)
 
 	for attempt := 1; attempt <= 3; attempt++ {
-		log.Info().Str("command", catCommand).Int("attempt", attempt).Msg("📋 catコマンド送信中")
+		log.Info().Str("command", catCommand).Int("attempt", attempt).Msg("📋 Sending cat command")
 
 		if err := tm.SendKeysWithEnter(sessionName, pane, catCommand); err != nil {
-			log.Warn().Err(err).Int("attempt", attempt).Msg("⚠️ catコマンド送信失敗")
+			log.Warn().Err(err).Int("attempt", attempt).Msg("⚠️ Failed to send cat command")
 			if attempt == 3 {
 				return fmt.Errorf("failed to send instruction file after 3 attempts: %w", err)
 			}
@@ -336,28 +336,28 @@ func (tm *TmuxManagerImpl) sendInstructionToPane(sessionName, pane, agent, instr
 			continue
 		}
 
-		// catコマンド実行完了を待機
+		// Wait for cat command execution to complete
 		time.Sleep(2 * time.Second)
-		log.Info().Int("attempt", attempt).Msg("✅ catコマンド送信成功")
+		log.Info().Int("attempt", attempt).Msg("✅ Cat command sent successfully")
 		break
 	}
 
-	// Claude CLI実行のためのEnter送信（最適化版）
+	// Send Enter for Claude CLI execution (optimized version)
 	time.Sleep(1 * time.Second)
-	log.Info().Msg("🔄 Claude CLI実行のためのEnter送信")
+	log.Info().Msg("🔄 Sending Enter for Claude CLI execution")
 
 	for i := 0; i < 3; i++ {
 		if err := tm.SendKeysToPane(sessionName, pane, "C-m"); err != nil {
-			log.Warn().Err(err).Int("attempt", i+1).Msg("⚠️ Enter送信エラー")
+			log.Warn().Err(err).Int("attempt", i+1).Msg("⚠️ Error sending Enter")
 		}
 		time.Sleep(500 * time.Millisecond)
 	}
 
-	log.Info().Str("session", sessionName).Str("pane", pane).Str("agent", agent).Msg("✅ インストラクション送信完了")
+	log.Info().Str("session", sessionName).Str("pane", pane).Str("agent", agent).Msg("✅ Instruction sending completed")
 	return nil
 }
 
-// CreateIndividualLayout 個別セッション方式の作成
+// CreateIndividualLayout creates individual session layout
 func (tm *TmuxManagerImpl) CreateIndividualLayout(sessionName string, devCount int) error {
 	agents := []string{"po", "manager"}
 	for i := 1; i <= devCount; i++ {
@@ -371,7 +371,7 @@ func (tm *TmuxManagerImpl) CreateIndividualLayout(sessionName string, devCount i
 			return fmt.Errorf("failed to create session for %s: %w", agent, err)
 		}
 
-		// ウィンドウ名を設定
+		// Set window name
 		if err := tm.RenameWindow(agentSession, agentSession); err != nil {
 			return fmt.Errorf("failed to rename window for %s: %w", agent, err)
 		}
@@ -381,7 +381,7 @@ func (tm *TmuxManagerImpl) CreateIndividualLayout(sessionName string, devCount i
 	return nil
 }
 
-// SplitWindow ウィンドウの分割
+// SplitWindow splits a window
 func (tm *TmuxManagerImpl) SplitWindow(target, direction string) error {
 	cmd := exec.Command("tmux", "split-window", direction, "-t", target)
 	output, err := cmd.CombinedOutput()
@@ -391,7 +391,7 @@ func (tm *TmuxManagerImpl) SplitWindow(target, direction string) error {
 	return nil
 }
 
-// RenameWindow ウィンドウ名の変更
+// RenameWindow renames a window
 func (tm *TmuxManagerImpl) RenameWindow(sessionName, windowName string) error {
 	cmd := exec.Command("tmux", "rename-window", "-t", sessionName, windowName)
 	if err := cmd.Run(); err != nil {
@@ -400,85 +400,85 @@ func (tm *TmuxManagerImpl) RenameWindow(sessionName, windowName string) error {
 	return nil
 }
 
-// AdjustPaneSizes ペインサイズの調整（動的dev数対応・等間隔実装）
+// AdjustPaneSizes adjusts pane sizes (supports dynamic dev count with equal spacing)
 func (tm *TmuxManagerImpl) AdjustPaneSizes(sessionName string, devCount int) error {
-	totalPanes := 2 + devCount // PO + Manager + Dev数
+	totalPanes := 2 + devCount // PO + Manager + Dev count
 
-	// devCount=0の場合のゼロ除算保護
+	// Protection against division by zero when devCount=0
 	if devCount <= 0 {
-		log.Warn().Str("session", sessionName).Int("dev_count", devCount).Msg("dev数が0以下のため、ペインサイズ調整をスキップ")
+		log.Warn().Str("session", sessionName).Int("dev_count", devCount).Msg("Skipping pane size adjustment as dev count is 0 or less")
 		return fmt.Errorf("devCount must be greater than 0, got: %d", devCount)
 	}
 
-	// 左側（PO/Manager）を全体の50%、右側（Dev）を50%に設定
+	// Set left side (PO/Manager) to 50%, right side (Dev) to 50%
 	leftSidePercentage := 50
 
-	log.Info().Str("session", sessionName).Int("dev_count", devCount).Int("total_panes", totalPanes).Msg("等間隔ペイン分割開始")
+	log.Info().Str("session", sessionName).Int("dev_count", devCount).Int("total_panes", totalPanes).Msg("Starting equal spacing pane division")
 
-	// ウィンドウサイズを取得
+	// Get window size
 	windowWidth, windowHeight, err := tm.getWindowSize(sessionName)
 	if err != nil {
-		log.Warn().Err(err).Msg("ウィンドウサイズ取得失敗、デフォルト値を使用")
+		log.Warn().Err(err).Msg("Failed to get window size, using default values")
 		windowWidth = 120
 		windowHeight = 40
 	}
 
-	// ウィンドウサイズの妥当性チェック
+	// Check window size validity
 	if windowHeight <= 0 {
-		log.Warn().Int("window_height", windowHeight).Msg("無効なウィンドウ高さ、デフォルト値を使用")
+		log.Warn().Int("window_height", windowHeight).Msg("Invalid window height, using default value")
 		windowHeight = 40
 	}
 
-	// 左側の幅を計算（全体の50%）
+	// Calculate left side width (50% of total)
 	leftWidth := (windowWidth * leftSidePercentage) / 100
 
-	// 1. 左右分割の調整（左側50%, 右側50%）
+	// 1. Adjust left-right split (left 50%, right 50%)
 	time.Sleep(100 * time.Millisecond)
 	leftCmd := exec.Command("tmux", "resize-pane", "-t", fmt.Sprintf("%s:1.1", sessionName), "-x", fmt.Sprintf("%d", leftWidth)) // #nosec G204
 	if err := leftCmd.Run(); err != nil {
-		log.Warn().Str("pane", "1").Int("width", leftWidth).Err(err).Msg("左側ペイン調整失敗")
+		log.Warn().Str("pane", "1").Int("width", leftWidth).Err(err).Msg("Failed to adjust left pane")
 	}
 
-	// 2. 左側の上下分割調整（PO/Manager 50%ずつ）
+	// 2. Adjust left side vertical split (PO/Manager 50% each)
 	time.Sleep(100 * time.Millisecond)
 	poHeight := windowHeight / 2
 	poCmd := exec.Command("tmux", "resize-pane", "-t", fmt.Sprintf("%s:1.1", sessionName), "-y", fmt.Sprintf("%d", poHeight)) // #nosec G204
 	if err := poCmd.Run(); err != nil {
-		log.Warn().Str("pane", "PO").Int("height", poHeight).Err(err).Msg("PO/Manager分割調整失敗")
+		log.Warn().Str("pane", "PO").Int("height", poHeight).Err(err).Msg("Failed to adjust PO/Manager split")
 	}
 
-	// 3. 右側の開発者ペインを等間隔で調整（ゼロ除算保護済み）
-	// devCountは既に0以下でないことが確認済み
+	// 3. Adjust right side developer panes with equal spacing (division by zero protected)
+	// devCount is already confirmed to be greater than 0
 	devPaneHeight := windowHeight / devCount
 
-	// 各開発者ペインの高さを設定
+	// Set height for each developer pane
 	for i := 1; i <= devCount; i++ {
-		paneNumber := i + 2 // PO(1), Manager(2)の後は3から
+		paneNumber := i + 2 // After PO(1), Manager(2), starts from 3
 
-		// 各ペインの高さを均等に設定
+		// Set each pane height equally
 		time.Sleep(100 * time.Millisecond)
 		cmd := exec.Command("tmux", "resize-pane", "-t", fmt.Sprintf("%s:1.%d", sessionName, paneNumber), "-y", fmt.Sprintf("%d", devPaneHeight)) // #nosec G204
 		if err := cmd.Run(); err != nil {
-			log.Warn().Str("pane", fmt.Sprintf("%d", paneNumber)).Int("height", devPaneHeight).Err(err).Msg("ペイン等間隔リサイズ失敗")
+			log.Warn().Str("pane", fmt.Sprintf("%d", paneNumber)).Int("height", devPaneHeight).Err(err).Msg("Failed to resize pane with equal spacing")
 		} else {
-			log.Debug().Str("pane", fmt.Sprintf("%d", paneNumber)).Int("height", devPaneHeight).Msg("ペイン等間隔リサイズ成功")
+			log.Debug().Str("pane", fmt.Sprintf("%d", paneNumber)).Int("height", devPaneHeight).Msg("Successfully resized pane with equal spacing")
 		}
 	}
 
-	// 4. 最後に左右の幅を再調整（50%ずつを維持）
+	// 4. Finally readjust left-right width (maintain 50% each)
 	time.Sleep(100 * time.Millisecond)
 	finalLeftCmd := exec.Command("tmux", "resize-pane", "-t", fmt.Sprintf("%s:1.1", sessionName), "-x", fmt.Sprintf("%d", leftWidth)) // #nosec G204
 	if err := finalLeftCmd.Run(); err != nil {
-		log.Warn().Err(err).Msg("最終的な左右幅調整失敗")
+		log.Warn().Err(err).Msg("Failed to perform final left-right width adjustment")
 	}
 
-	log.Info().Str("session", sessionName).Int("dev_count", devCount).Msg("等間隔ペイン分割完了")
+	log.Info().Str("session", sessionName).Int("dev_count", devCount).Msg("Equal spacing pane division completed")
 	return nil
 }
 
-// SetPaneTitles ペインタイトルの設定（動的dev数対応）
+// SetPaneTitles sets pane titles (supports dynamic dev count)
 func (tm *TmuxManagerImpl) SetPaneTitles(sessionName string, devCount int) error {
-	// ペインタイトルを表示するように設定
+	// Configure to display pane titles
 	cmd := exec.Command("tmux", "set-option", "-t", sessionName, "pane-border-status", "top")
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to set pane border status: %w", err)
@@ -489,7 +489,7 @@ func (tm *TmuxManagerImpl) SetPaneTitles(sessionName string, devCount int) error
 		return fmt.Errorf("failed to set pane border format: %w", err)
 	}
 
-	// 自動リネームを無効化
+	// Disable automatic rename
 	cmd = exec.Command("tmux", "set-window-option", "-t", sessionName, "automatic-rename", "off")
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to disable automatic rename: %w", err)
@@ -500,12 +500,12 @@ func (tm *TmuxManagerImpl) SetPaneTitles(sessionName string, devCount int) error
 		return fmt.Errorf("failed to disable allow rename: %w", err)
 	}
 
-	// 各ペインのタイトル設定（動的dev数対応）
+	// Set title for each pane (supports dynamic dev count)
 	titles := make(map[string]string)
-	titles["1"] = "PO"      // 左上
-	titles["2"] = "Manager" // 左下
+	titles["1"] = "PO"      // Top left
+	titles["2"] = "Manager" // Bottom left
 
-	// 動的に開発者タイトルを設定
+	// Dynamically set developer titles
 	for i := 1; i <= devCount; i++ {
 		paneNumber := fmt.Sprintf("%d", i+2)
 		titles[paneNumber] = fmt.Sprintf("Dev%d", i)
@@ -522,7 +522,7 @@ func (tm *TmuxManagerImpl) SetPaneTitles(sessionName string, devCount int) error
 	return nil
 }
 
-// GetPaneCount ペイン数の取得
+// GetPaneCount retrieves pane count
 func (tm *TmuxManagerImpl) GetPaneCount(sessionName string) (int, error) {
 	cmd := exec.Command("tmux", "list-panes", "-t", sessionName)
 	output, err := cmd.Output()
@@ -538,7 +538,7 @@ func (tm *TmuxManagerImpl) GetPaneCount(sessionName string) (int, error) {
 	return paneCount, nil
 }
 
-// GetPaneList ペイン一覧の取得
+// GetPaneList retrieves pane list
 func (tm *TmuxManagerImpl) GetPaneList(sessionName string) ([]string, error) {
 	cmd := exec.Command("tmux", "list-panes", "-t", sessionName, "-F", "#{pane_index}:#{pane_title}")
 	output, err := cmd.Output()
@@ -557,7 +557,7 @@ func (tm *TmuxManagerImpl) GetPaneList(sessionName string) ([]string, error) {
 	return panes, nil
 }
 
-// SendKeysToPane ペインにキーを送信
+// SendKeysToPane sends keys to a pane
 func (tm *TmuxManagerImpl) SendKeysToPane(sessionName, pane, keys string) error {
 	target := fmt.Sprintf("%s:1.%s", sessionName, pane)
 	cmd := exec.Command("tmux", "send-keys", "-t", target, keys) // #nosec G204
@@ -567,7 +567,7 @@ func (tm *TmuxManagerImpl) SendKeysToPane(sessionName, pane, keys string) error 
 	return nil
 }
 
-// SendKeysWithEnter ペインにキーを送信（Enter付き）
+// SendKeysWithEnter sends keys to a pane with Enter
 func (tm *TmuxManagerImpl) SendKeysWithEnter(sessionName, pane, keys string) error {
 	target := fmt.Sprintf("%s:1.%s", sessionName, pane)
 	cmd := exec.Command("tmux", "send-keys", "-t", target, keys, "C-m") // #nosec G204
@@ -577,7 +577,7 @@ func (tm *TmuxManagerImpl) SendKeysWithEnter(sessionName, pane, keys string) err
 	return nil
 }
 
-// GetAITeamSessions AIチーム関連セッションの取得
+// GetAITeamSessions retrieves AI team related sessions
 func (tm *TmuxManagerImpl) GetAITeamSessions(expectedPaneCount int) (map[string][]string, error) {
 	sessions, err := tm.ListSessions()
 	if err != nil {
@@ -591,7 +591,7 @@ func (tm *TmuxManagerImpl) GetAITeamSessions(expectedPaneCount int) (map[string]
 	}
 
 	for _, session := range sessions {
-		// 統合監視画面の判定（動的ペイン数構成）
+		// Determine integrated monitoring screen (dynamic pane count configuration)
 		paneCount, err := tm.GetPaneCount(session)
 		log.Debug().Str("session", session).Int("pane_count", paneCount).Int("expected_pane_count", expectedPaneCount).Err(err).Msg("Session analysis")
 
@@ -600,16 +600,16 @@ func (tm *TmuxManagerImpl) GetAITeamSessions(expectedPaneCount int) (map[string]
 			result["integrated"] = append(result["integrated"], session)
 			log.Debug().Str("session", session).Msg("Added as integrated session")
 		case agentSessionRegex.MatchString(session):
-			// 個別セッション方式の判定
+			// Determine individual session layout
 			baseName := agentSessionRegex.ReplaceAllString(session, "")
 			if !containsString(result["individual"], baseName) {
 				result["individual"] = append(result["individual"], baseName)
 				log.Debug().Str("session", session).Str("base_name", baseName).Msg("Added as individual session")
 			}
 		default:
-			// 数字だけのセッション（「1」等）や既存のAIセッションの可能性があるかチェック
+			// Check for numeric-only sessions (like "1") or potential existing AI sessions
 			if err == nil && paneCount >= 1 {
-				// 数字だけのセッション名や短い名前のセッションは潜在的なAIセッション
+				// Numeric-only or short session names are potential AI sessions
 				if len(session) <= 3 || strings.Contains(session, "ai") || strings.Contains(session, "claude") {
 					result["integrated"] = append(result["integrated"], session)
 					log.Debug().Str("session", session).Msg("Added as potential AI session")
@@ -627,36 +627,36 @@ func (tm *TmuxManagerImpl) GetAITeamSessions(expectedPaneCount int) (map[string]
 	return result, nil
 }
 
-// FindDefaultAISession デフォルトAIセッションの検出
+// FindDefaultAISession finds default AI session
 func (tm *TmuxManagerImpl) FindDefaultAISession(expectedPaneCount int) (string, error) {
 	aiSessions, err := tm.GetAITeamSessions(expectedPaneCount)
 	if err != nil {
 		return "", fmt.Errorf("failed to get AI team sessions: %w", err)
 	}
 
-	// 統合監視画面セッションを優先
+	// Prioritize integrated monitoring screen sessions
 	if len(aiSessions["integrated"]) > 0 {
 		return aiSessions["integrated"][0], nil
 	}
 
-	// 個別セッション方式の場合
+	// For individual session layout
 	if len(aiSessions["individual"]) > 0 {
 		return aiSessions["individual"][0], nil
 	}
 
-	// AIセッションが見つからない場合もセッションを探す
+	// Look for sessions even if no AI sessions found
 	sessions, err := tm.ListSessions()
 	if err != nil {
 		return "ai-teams", err
 	}
 
-	// 潜在的なAIセッションを検出（数字だけのセッション名や短い名前）
+	// Detect potential AI sessions (numeric-only or short session names)
 	for _, session := range sessions {
 		paneCount, err := tm.GetPaneCount(session)
 		if err != nil {
 			continue
 		}
-		// 数字だけのセッション名や短い名前、AI関連キーワードのセッションをチェック
+		// Check for numeric-only session names, short names, or AI-related keywords
 		if paneCount >= 1 && (len(session) <= 3 ||
 			strings.Contains(session, "ai") ||
 			strings.Contains(session, "claude") ||
@@ -665,38 +665,38 @@ func (tm *TmuxManagerImpl) FindDefaultAISession(expectedPaneCount int) (string, 
 		}
 	}
 
-	// 最終的にデフォルト値を返す
+	// Finally return default value
 	return "ai-teams", nil
 }
 
-// DetectActiveAISession アクティブなAIセッションの検出
+// DetectActiveAISession detects active AI session
 func (tm *TmuxManagerImpl) DetectActiveAISession(expectedPaneCount int) (string, string, error) {
 	aiSessions, err := tm.GetAITeamSessions(expectedPaneCount)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to get AI team sessions: %w", err)
 	}
 
-	// 統合監視画面セッションを優先
+	// Prioritize integrated monitoring screen sessions
 	if len(aiSessions["integrated"]) > 0 {
 		return aiSessions["integrated"][0], "integrated", nil
 	}
 
-	// 個別セッション方式の場合
+	// For individual session layout
 	if len(aiSessions["individual"]) > 0 {
 		return aiSessions["individual"][0], "individual", nil
 	}
 
-	// AIセッションが見つからない場合
+	// When no AI sessions found
 	return "", "", fmt.Errorf("no active AI sessions found")
 }
 
-// DeleteAITeamSessions AIチーム関連セッションの削除
+// DeleteAITeamSessions deletes AI team related sessions
 func (tm *TmuxManagerImpl) DeleteAITeamSessions(sessionName string, devCount int) error {
 	log.Info().Str("session", sessionName).Msg("Deleting AI team sessions")
 
 	deletedCount := 0
 
-	// 統合監視画面の場合
+	// For integrated monitoring screen
 	expectedPaneCount := 2 + devCount
 	if tm.SessionExists(sessionName) {
 		paneCount, err := tm.GetPaneCount(sessionName)
@@ -716,7 +716,7 @@ func (tm *TmuxManagerImpl) DeleteAITeamSessions(sessionName string, devCount int
 		}
 	}
 
-	// 個別セッション方式の場合
+	// For individual session layout
 	agents := []string{"po", "manager"}
 	for i := 1; i <= devCount; i++ {
 		agents = append(agents, fmt.Sprintf("dev%d", i))
@@ -740,7 +740,7 @@ func (tm *TmuxManagerImpl) DeleteAITeamSessions(sessionName string, devCount int
 	return nil
 }
 
-// containsString スライス内の文字列の存在確認
+// containsString checks if string exists in slice
 func containsString(slice []string, item string) bool {
 	for _, s := range slice {
 		if s == item {
@@ -750,13 +750,13 @@ func containsString(slice []string, item string) bool {
 	return false
 }
 
-// WaitForPaneReady ペインの準備完了待機
+// WaitForPaneReady waits for pane to be ready
 func (tm *TmuxManagerImpl) WaitForPaneReady(sessionName, pane string, timeout time.Duration) error {
 	target := fmt.Sprintf("%s:1.%s", sessionName, pane)
 	start := time.Now()
 
 	for time.Since(start) < timeout {
-		// ペインの存在確認
+		// Check if pane exists
 		cmd := exec.Command("tmux", "list-panes", "-t", sessionName)
 		output, err := cmd.Output()
 		if err != nil {
@@ -764,7 +764,7 @@ func (tm *TmuxManagerImpl) WaitForPaneReady(sessionName, pane string, timeout ti
 			continue
 		}
 
-		// ペインが存在するかチェック
+		// Check if pane exists
 		if strings.Contains(string(output), pane) {
 			return nil
 		}
@@ -775,15 +775,15 @@ func (tm *TmuxManagerImpl) WaitForPaneReady(sessionName, pane string, timeout ti
 	return fmt.Errorf("timeout waiting for pane %s to be ready", target)
 }
 
-// waitForClaudeReady Claude CLI準備完了待機（新規実装）
+// waitForClaudeReady waits for Claude CLI to be ready (new implementation)
 func (tm *TmuxManagerImpl) waitForClaudeReady(sessionName, pane string, timeout time.Duration) error {
 	target := fmt.Sprintf("%s:1.%s", sessionName, pane)
 	start := time.Now()
 
-	log.Info().Str("target", target).Dur("timeout", timeout).Msg("🔄 Claude CLI準備完了待機開始")
+	log.Info().Str("target", target).Dur("timeout", timeout).Msg("🔄 Starting Claude CLI readiness wait")
 
 	for time.Since(start) < timeout {
-		// ペインの内容を取得してClaude CLIが準備完了かチェック
+		// Get pane content and check if Claude CLI is ready
 		cmd := exec.Command("tmux", "capture-pane", "-t", target, "-p") // #nosec G204
 		output, err := cmd.Output()
 		if err != nil {
@@ -793,23 +793,23 @@ func (tm *TmuxManagerImpl) waitForClaudeReady(sessionName, pane string, timeout 
 
 		paneContent := string(output)
 
-		// Claude CLIが起動完了した場合の典型的な出力パターンをチェック
+		// Check typical output patterns when Claude CLI has started
 		if strings.Contains(paneContent, "claude") ||
 			strings.Contains(paneContent, ">") ||
 			strings.Contains(paneContent, "$") ||
 			len(strings.TrimSpace(paneContent)) > 10 {
-			log.Info().Str("target", target).Msg("✅ Claude CLI準備完了検知")
+			log.Info().Str("target", target).Msg("✅ Claude CLI readiness detected")
 			return nil
 		}
 
 		time.Sleep(500 * time.Millisecond)
 	}
 
-	log.Warn().Str("target", target).Dur("elapsed", time.Since(start)).Msg("⚠️ Claude CLI準備完了待機タイムアウト")
+	log.Warn().Str("target", target).Dur("elapsed", time.Since(start)).Msg("⚠️ Claude CLI readiness wait timeout")
 	return fmt.Errorf("timeout waiting for Claude CLI to be ready in pane %s", target)
 }
 
-// GetSessionInfo セッション情報の取得
+// GetSessionInfo retrieves session information
 func (tm *TmuxManagerImpl) GetSessionInfo(sessionName string, expectedPaneCount int) (map[string]interface{}, error) {
 	if !tm.SessionExists(sessionName) {
 		return nil, fmt.Errorf("session %s does not exist", sessionName)
@@ -820,21 +820,21 @@ func (tm *TmuxManagerImpl) GetSessionInfo(sessionName string, expectedPaneCount 
 		"exists": true,
 	}
 
-	// ペイン数の取得
+	// Get pane count
 	paneCount, err := tm.GetPaneCount(sessionName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get pane count: %w", err)
 	}
 	info["pane_count"] = paneCount
 
-	// ペイン一覧の取得
+	// Get pane list
 	panes, err := tm.GetPaneList(sessionName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get pane list: %w", err)
 	}
 	info["panes"] = panes
 
-	// セッションタイプの判定
+	// Determine session type
 	if paneCount == expectedPaneCount {
 		info["type"] = "integrated"
 	} else {
@@ -844,9 +844,9 @@ func (tm *TmuxManagerImpl) GetSessionInfo(sessionName string, expectedPaneCount 
 	return info, nil
 }
 
-// getWindowSize ウィンドウのサイズを取得
+// getWindowSize retrieves window size
 func (tm *TmuxManagerImpl) getWindowSize(sessionName string) (int, int, error) {
-	// 幅を取得
+	// Get width
 	widthCmd := exec.Command("tmux", "display-message", "-t", sessionName, "-p", "#{window_width}")
 	widthOutput, err := widthCmd.Output()
 	if err != nil {
@@ -858,7 +858,7 @@ func (tm *TmuxManagerImpl) getWindowSize(sessionName string) (int, int, error) {
 		return 0, 0, fmt.Errorf("failed to parse window width: %w", err)
 	}
 
-	// 高さを取得
+	// Get height
 	heightCmd := exec.Command("tmux", "display-message", "-t", sessionName, "-p", "#{window_height}")
 	heightOutput, err := heightCmd.Output()
 	if err != nil {

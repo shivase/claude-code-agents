@@ -10,9 +10,9 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// InitConsoleLogger zerologをConsoleWriterで初期化
+// InitConsoleLogger initializes zerolog with ConsoleWriter
 func InitConsoleLogger(level string) {
-	// 構造化ログ表示用のカスタムConsoleWriterの設定
+	// Configure custom ConsoleWriter for structured log display
 	consoleWriter := zerolog.ConsoleWriter{
 		Out:        os.Stdout,
 		TimeFormat: "15:04:05",
@@ -48,7 +48,7 @@ func InitConsoleLogger(level string) {
 		},
 	}
 
-	// ログレベルの設定
+	// Set log level
 	var logLevel zerolog.Level
 	switch level {
 	case "debug":
@@ -65,21 +65,21 @@ func InitConsoleLogger(level string) {
 		logLevel = zerolog.InfoLevel
 	}
 
-	// グローバルレベルを設定
+	// Set global level
 	zerolog.SetGlobalLevel(logLevel)
 
-	// グローバルロガーの設定
+	// Configure global logger
 	log.Logger = zerolog.New(consoleWriter).
 		Level(logLevel).
 		With().
 		Timestamp().
 		Logger()
 
-	// タイムスタンプ設定
+	// Set timestamp format
 	zerolog.TimeFieldFormat = time.RFC3339
 }
 
-// SetLogLevel ログレベルの動的変更
+// SetLogLevel dynamically changes log level
 func SetLogLevel(level string) {
 	var logLevel zerolog.Level
 	switch level {
@@ -100,7 +100,7 @@ func SetLogLevel(level string) {
 	zerolog.SetGlobalLevel(logLevel)
 }
 
-// InitWithDebugFlag --debugフラグ対応の初期化
+// InitWithDebugFlag initialization supporting --debug flag
 func InitWithDebugFlag(debugEnabled bool, baseLogLevel string) {
 	var finalLogLevel string
 
@@ -118,7 +118,7 @@ func InitWithDebugFlag(debugEnabled bool, baseLogLevel string) {
 	}
 }
 
-// GetCurrentLogLevel 現在のログレベルを取得
+// GetCurrentLogLevel gets current log level
 func GetCurrentLogLevel() string {
 	level := zerolog.GlobalLevel()
 	switch level {
@@ -137,12 +137,12 @@ func GetCurrentLogLevel() string {
 	}
 }
 
-// IsDebugEnabled デバッグモードが有効かチェック
+// IsDebugEnabled checks if debug mode is enabled
 func IsDebugEnabled() bool {
 	return zerolog.GlobalLevel() <= zerolog.DebugLevel
 }
 
-// LogSystemInfo システム情報をログ出力
+// LogSystemInfo logs system information
 func LogSystemInfo() {
 	log.Info().
 		Str("log_level", GetCurrentLogLevel()).
@@ -151,7 +151,7 @@ func LogSystemInfo() {
 		Msg("Logger system initialized")
 }
 
-// ApplyConfigLogLevel 設定ファイルからログレベルを適用
+// ApplyConfigLogLevel applies log level from configuration file
 func ApplyConfigLogLevel(configLogLevel string, debugOverride bool) {
 	if debugOverride {
 		SetLogLevel("debug")
@@ -168,7 +168,7 @@ func ApplyConfigLogLevel(configLogLevel string, debugOverride bool) {
 	}
 }
 
-// ValidateLogLevel ログレベルの妥当性チェック
+// ValidateLogLevel validates log level
 func ValidateLogLevel(level string) bool {
 	validLevels := []string{"debug", "info", "warn", "error", "fatal"}
 	for _, validLevel := range validLevels {
@@ -179,7 +179,7 @@ func ValidateLogLevel(level string) bool {
 	return false
 }
 
-// GetLogLevelPriority ログレベルの優先度を取得（デバッグ用）
+// GetLogLevelPriority gets log level priority (for debugging)
 func GetLogLevelPriority() int {
 	level := zerolog.GlobalLevel()
 	switch level {
@@ -198,7 +198,7 @@ func GetLogLevelPriority() int {
 	}
 }
 
-// LogWithError エラーログと詳細情報の統合出力
+// LogWithError integrated output of error log and detailed information
 func LogWithError(err error, message string, fields map[string]interface{}) {
 	logEvent := log.Error().Err(err)
 
@@ -220,7 +220,7 @@ func LogWithError(err error, message string, fields map[string]interface{}) {
 	logEvent.Msg(message)
 }
 
-// LogDebugWithCondition 条件付きデバッグログ
+// LogDebugWithCondition conditional debug logging
 func LogDebugWithCondition(condition bool, message string, fields map[string]interface{}) {
 	if !condition || !IsDebugEnabled() {
 		return
@@ -246,7 +246,7 @@ func LogDebugWithCondition(condition bool, message string, fields map[string]int
 	logEvent.Msg(message)
 }
 
-// LogStructured 構造化ログ出力ヘルパー
+// LogStructured structured log output helper
 func LogStructured(level string, message string, fields map[string]interface{}) {
 	var logEvent *zerolog.Event
 
@@ -283,22 +283,22 @@ func LogStructured(level string, message string, fields map[string]interface{}) 
 	logEvent.Msg(message)
 }
 
-// LogProgress プログレス表示用構造化ログ
+// LogProgress structured log for progress display
 func LogProgress(operation string, details map[string]interface{}) {
 	LogStructured("info", fmt.Sprintf("🔄 %s", operation), details)
 }
 
-// LogSuccess 成功表示用構造化ログ
+// LogSuccess structured log for success display
 func LogSuccess(operation string, details map[string]interface{}) {
 	LogStructured("info", fmt.Sprintf("✅ %s", operation), details)
 }
 
-// LogWarning 警告表示用構造化ログ
+// LogWarning structured log for warning display
 func LogWarning(operation string, details map[string]interface{}) {
 	LogStructured("warn", fmt.Sprintf("⚠️ %s", operation), details)
 }
 
-// LogError エラー表示用構造化ログ
+// LogError structured log for error display
 func LogError(operation string, err error, details map[string]interface{}) {
 	if details == nil {
 		details = make(map[string]interface{})
@@ -309,11 +309,11 @@ func LogError(operation string, err error, details map[string]interface{}) {
 	LogStructured("error", fmt.Sprintf("❌ %s", operation), details)
 }
 
-// TestLoggerIntegration ログ統合テスト
+// TestLoggerIntegration logger integration test
 func TestLoggerIntegration() error {
 	originalLevel := GetCurrentLogLevel()
 
-	// 各ログレベルのテスト
+	// Test each log level
 	testLevels := []string{"debug", "info", "warn", "error"}
 
 	for _, testLevel := range testLevels {
@@ -329,7 +329,7 @@ func TestLoggerIntegration() error {
 		}
 	}
 
-	// 元のレベルに戻す
+	// Restore original level
 	SetLogLevel(originalLevel)
 
 	log.Info().Msg("Logger integration test completed successfully")

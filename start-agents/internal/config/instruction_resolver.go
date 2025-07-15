@@ -6,22 +6,22 @@ import (
 	"sync"
 )
 
-// InstructionResolverInterface instruction解決インターフェース
+// InstructionResolverInterface defines instruction resolver interface
 type InstructionResolverInterface interface {
-	// ResolveInstructionPath 指定されたロールのinstructionファイルパスを解決
+	// ResolveInstructionPath resolves instruction file path for specified role
 	ResolveInstructionPath(role string) (string, error)
 
-	// ResolveInstructionPathWithEnv 環境指定でinstructionファイルパスを解決
+	// ResolveInstructionPathWithEnv resolves instruction file path with environment
 	ResolveInstructionPathWithEnv(role, environment string) (string, error)
 
-	// GetAvailableRoles 利用可能なロール一覧を取得
+	// GetAvailableRoles gets list of available roles
 	GetAvailableRoles() []string
 
-	// ValidateInstructionPaths すべてのinstructionパスを検証
+	// ValidateInstructionPaths validates all instruction paths
 	ValidateInstructionPaths() *ValidationResult
 }
 
-// InstructionResolver instruction解決器
+// InstructionResolver resolves instruction file paths
 type InstructionResolver struct {
 	config       *TeamConfig
 	pathResolver PathResolverInterface
@@ -30,7 +30,7 @@ type InstructionResolver struct {
 	cacheMutex   sync.RWMutex
 }
 
-// NewInstructionResolver 新しいinstruction解決器を作成
+// NewInstructionResolver creates a new instruction resolver
 func NewInstructionResolver(config *TeamConfig) *InstructionResolver {
 	return &InstructionResolver{
 		config:       config,
@@ -40,34 +40,34 @@ func NewInstructionResolver(config *TeamConfig) *InstructionResolver {
 	}
 }
 
-// ResolveInstructionPath ロール指定でinstructionファイルパスを解決
+// ResolveInstructionPath resolves instruction file path for role
 func (ir *InstructionResolver) ResolveInstructionPath(role string) (string, error) {
 	return ir.ResolveInstructionPathWithEnv(role, ir.config.Environment)
 }
 
 // ResolveInstructionPathWithEnv 環境指定でinstructionファイルパスを解決
 func (ir *InstructionResolver) ResolveInstructionPathWithEnv(role, environment string) (string, error) {
-	// キャッシュチェック
+	// Check cache
 	cacheKey := fmt.Sprintf("%s:%s", role, environment)
 	if cached := ir.getCachedPath(cacheKey); cached != "" {
 		return cached, nil
 	}
 
-	// 解決順序：環境設定 → 基本設定 → 既存設定 → デフォルト → フォールバック
+	// Resolution order: environment config -> base config -> legacy config -> default -> fallback
 	resolvedPath, err := ir.resolvePathWithFallback(role, environment)
 	if err != nil {
 		return "", err
 	}
 
-	// キャッシュに保存
+	// Save to cache
 	ir.setCachedPath(cacheKey, resolvedPath)
 
 	return resolvedPath, nil
 }
 
-// resolvePathWithFallback フォールバック付きパス解決（5段階）
+// resolvePathWithFallback resolves path with fallback (5 stages)
 func (ir *InstructionResolver) resolvePathWithFallback(role, environment string) (string, error) {
-	// 1. 環境別設定をチェック
+	// 1. Check environment-specific config
 	if envPath := ir.getEnvironmentSpecificPath(role, environment); envPath != "" {
 		if resolved, err := ir.pathResolver.ResolvePath(envPath); err == nil {
 			if ir.validator.ValidateFileExists(resolved) {
@@ -76,7 +76,7 @@ func (ir *InstructionResolver) resolvePathWithFallback(role, environment string)
 		}
 	}
 
-	// 2. 基本設定をチェック
+	// 2. Check base config
 	if basePath := ir.getBasePath(role); basePath != "" {
 		if resolved, err := ir.pathResolver.ResolvePath(basePath); err == nil {
 			if ir.validator.ValidateFileExists(resolved) {
@@ -85,7 +85,7 @@ func (ir *InstructionResolver) resolvePathWithFallback(role, environment string)
 		}
 	}
 
-	// 3. 既存設定をチェック（後方互換性）
+	// 3. Check legacy config (backward compatibility)
 	if legacyPath := ir.getLegacyPath(role); legacyPath != "" {
 		fullPath := filepath.Join(ir.config.InstructionsDir, legacyPath)
 		if resolved, err := ir.pathResolver.ResolvePath(fullPath); err == nil {
@@ -95,7 +95,7 @@ func (ir *InstructionResolver) resolvePathWithFallback(role, environment string)
 		}
 	}
 
-	// 4. デフォルト設定を使用
+	// 4. Use default config
 	defaultPath := ir.getDefaultPath(role)
 	fallbackDir := ir.config.FallbackInstructionDir
 	if fallbackDir == "" {
@@ -109,11 +109,11 @@ func (ir *InstructionResolver) resolvePathWithFallback(role, environment string)
 		}
 	}
 
-	// 5. 最終フォールバック：ファイルが存在しなくてもパスを返す
+	// 5. Final fallback: return path even if file doesn't exist
 	return ir.pathResolver.ResolvePath(fullPath)
 }
 
-// getEnvironmentSpecificPath 環境別パス取得
+// getEnvironmentSpecificPath gets environment-specific path
 func (ir *InstructionResolver) getEnvironmentSpecificPath(role, environment string) string {
 	if ir.config.InstructionConfig == nil || environment == "" {
 		return ""
@@ -136,7 +136,7 @@ func (ir *InstructionResolver) getEnvironmentSpecificPath(role, environment stri
 	}
 }
 
-// getBasePath 基本パス取得
+// getBasePath gets base path
 func (ir *InstructionResolver) getBasePath(role string) string {
 	if ir.config.InstructionConfig == nil {
 		return ""
@@ -154,7 +154,7 @@ func (ir *InstructionResolver) getBasePath(role string) string {
 	}
 }
 
-// getLegacyPath 既存設定パス取得
+// getLegacyPath gets legacy configuration path
 func (ir *InstructionResolver) getLegacyPath(role string) string {
 	switch role {
 	case "po":
@@ -168,7 +168,7 @@ func (ir *InstructionResolver) getLegacyPath(role string) string {
 	}
 }
 
-// getDefaultPath デフォルトパス取得
+// getDefaultPath gets default path
 func (ir *InstructionResolver) getDefaultPath(role string) string {
 	extension := ".md"
 	if ir.config.InstructionConfig != nil &&
@@ -198,21 +198,21 @@ func (ir *InstructionResolver) ValidateInstructionPaths() *ValidationResult {
 	return ir.validator.ValidateConfig(ir.config)
 }
 
-// getCachedPath キャッシュからパスを取得
+// getCachedPath gets path from cache
 func (ir *InstructionResolver) getCachedPath(key string) string {
 	ir.cacheMutex.RLock()
 	defer ir.cacheMutex.RUnlock()
 	return ir.cache[key]
 }
 
-// setCachedPath キャッシュにパスを保存
+// setCachedPath saves path to cache
 func (ir *InstructionResolver) setCachedPath(key, path string) {
 	ir.cacheMutex.Lock()
 	defer ir.cacheMutex.Unlock()
 	ir.cache[key] = path
 }
 
-// ClearCache キャッシュをクリア
+// ClearCache clears the cache
 func (ir *InstructionResolver) ClearCache() {
 	ir.cacheMutex.Lock()
 	defer ir.cacheMutex.Unlock()

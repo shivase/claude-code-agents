@@ -16,42 +16,42 @@ func TestParseArguments_SimpleValidation(t *testing.T) {
 		expectError       bool
 	}{
 		{
-			name:              "基本セッション名",
+			name:              "Basic session name",
 			args:              []string{"ai-teams"},
 			expectedSession:   "ai-teams",
 			expectedResetMode: false,
 			expectError:       false,
 		},
 		{
-			name:              "引数なし",
+			name:              "No arguments",
 			args:              []string{},
 			expectedSession:   "",
 			expectedResetMode: false,
 			expectError:       false,
 		},
 		{
-			name:              "リセットフラグ付き",
+			name:              "With reset flag",
 			args:              []string{"--reset", "test-session"},
 			expectedSession:   "test-session",
 			expectedResetMode: true,
 			expectError:       false,
 		},
 		{
-			name:              "デバッグフラグエラー",
+			name:              "Debug flag error",
 			args:              []string{"--debug"},
 			expectedSession:   "",
 			expectedResetMode: false,
 			expectError:       true,
 		},
 		{
-			name:              "詳細フラグ",
+			name:              "Verbose flag",
 			args:              []string{"--verbose", "test-session"},
 			expectedSession:   "test-session",
 			expectedResetMode: false,
 			expectError:       false,
 		},
 		{
-			name:              "サイレントフラグ",
+			name:              "Silent flag",
 			args:              []string{"--silent", "test-session"},
 			expectedSession:   "test-session",
 			expectedResetMode: false,
@@ -82,21 +82,21 @@ func TestParseArguments_EdgeCases(t *testing.T) {
 		expectError       bool
 	}{
 		{
-			name:              "空のセッション名",
+			name:              "Empty session name",
 			args:              []string{""},
 			expectedSession:   "",
 			expectedResetMode: false,
 			expectError:       false,
 		},
 		{
-			name:              "特殊文字を含むセッション名",
+			name:              "Session name with special characters",
 			args:              []string{"test-session_123"},
 			expectedSession:   "test-session_123",
 			expectedResetMode: false,
 			expectError:       false,
 		},
 		{
-			name:              "日本語セッション名",
+			name:              "Japanese session name",
 			args:              []string{"テスト-セッション"},
 			expectedSession:   "テスト-セッション",
 			expectedResetMode: false,
@@ -127,21 +127,21 @@ func TestParseArguments_ComplexCombinations(t *testing.T) {
 		expectError       bool
 	}{
 		{
-			name:              "リセットとセッション名",
+			name:              "Reset and session name",
 			args:              []string{"--reset", "complex-session"},
 			expectedSession:   "complex-session",
 			expectedResetMode: true,
 			expectError:       false,
 		},
 		{
-			name:              "詳細とリセットとセッション名",
+			name:              "Verbose, reset and session name",
 			args:              []string{"--verbose", "--reset", "verbose-session"},
 			expectedSession:   "verbose-session",
 			expectedResetMode: true,
 			expectError:       false,
 		},
 		{
-			name:              "サイレントとセッション名",
+			name:              "Silent and session name",
 			args:              []string{"--silent", "silent-session"},
 			expectedSession:   "silent-session",
 			expectedResetMode: false,
@@ -163,7 +163,7 @@ func TestParseArguments_ComplexCombinations(t *testing.T) {
 	}
 }
 
-// ベンチマークテスト
+// Benchmark test
 func BenchmarkParseArguments_Simple(b *testing.B) {
 	args := []string{"test-session"}
 	for i := 0; i < b.N; i++ {

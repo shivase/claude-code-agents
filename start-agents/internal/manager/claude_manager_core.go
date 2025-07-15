@@ -21,7 +21,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// ClaudeConfig - Claude CLI設定
+// ClaudeConfig - Claude CLI configuration
 type ClaudeConfig struct {
 	Model                  string `json:"model"`
 	Theme                  string `json:"theme"`
@@ -30,7 +30,7 @@ type ClaudeConfig struct {
 	SkipInitialSetup       bool   `json:"skipInitialSetup"`
 }
 
-// AgentConfig - エージェント設定
+// AgentConfig - Agent configuration
 type AgentConfig struct {
 	Name            string
 	InstructionFile string
@@ -38,57 +38,57 @@ type AgentConfig struct {
 	WorkingDir      string
 }
 
-// ClaudeProcess - Claude CLIプロセス管理（CI環境PTY問題修正版）
+// ClaudeProcess - Claude CLI process management (CI environment PTY issue fixed version)
 type ClaudeProcess struct {
 	Config      *AgentConfig
 	Cmd         *exec.Cmd
 	PTY         *os.File
 	Logger      zerolog.Logger
 	cancel      context.CancelFunc
-	isRunning   atomic.Bool // 原子的操作でレースコンディション防止
-	ptyClosed   atomic.Bool // PTYクローズ状態（原子的操作）
-	ptyMutex    sync.Mutex  // PTYアクセスの排他制御
+	isRunning   atomic.Bool // Atomic operation to prevent race conditions
+	ptyClosed   atomic.Bool // PTY close state (atomic operation)
+	ptyMutex    sync.Mutex  // Mutex for exclusive PTY access control
 	restartChan chan struct{}
 	messageChan chan string
-	isCIEnv     bool // CI環境検出フラグ
-	isMockEnv   bool // モック環境検出フラグ
+	isCIEnv     bool // CI environment detection flag
+	isMockEnv   bool // Mock environment detection flag
 }
 
-// isCIEnvironment - CI環境検出（GitHub Actions、一般的CI、モック環境）
+// isCIEnvironment - CI environment detection (GitHub Actions, common CI, mock environment)
 func isCIEnvironment() bool {
-	return os.Getenv("CI") == "true" || 
-		os.Getenv("GITHUB_ACTIONS") == "true" || 
+	return os.Getenv("CI") == "true" ||
+		os.Getenv("GITHUB_ACTIONS") == "true" ||
 		os.Getenv("CLAUDE_MOCK_ENV") == "true"
 }
 
-// isTestEnvironment - テスト環境検出
+// isTestEnvironment - Test environment detection
 func isTestEnvironment() bool {
-	return os.Getenv("CLAUDE_MOCK_ENV") == "true" || 
+	return os.Getenv("CLAUDE_MOCK_ENV") == "true" ||
 		os.Getenv("GO_TEST") == "true"
 }
 
-// safePTYClose - PTYの安全なクローズ（CI環境完全対応版）
+// safePTYClose - Safe PTY close (fully CI environment compatible version)
 func (cp *ClaudeProcess) safePTYClose() error {
-	// 原子的操作で二重クローズチェック
+	// Atomic operation to check for double close
 	if cp.ptyClosed.Load() {
 		cp.Logger.Debug().Msg("PTY already closed (atomic check)")
 		return nil
 	}
 
-	// ミューテックスでクリティカルセクション保護
+	// Protect critical section with mutex
 	cp.ptyMutex.Lock()
 	defer cp.ptyMutex.Unlock()
 
-	// ダブルチェックパターン（競合状態完全排除）
+	// Double-check pattern (complete race condition elimination)
 	if cp.ptyClosed.Load() || cp.PTY == nil {
 		cp.Logger.Debug().Msg("PTY already closed or nil (double check)")
 		return nil
 	}
 
-	// CI/テスト環境でのPTY操作は保守的に実行
+	// PTY operations in CI/test environments are executed conservatively
 	if cp.isCIEnv || cp.isMockEnv {
 		cp.Logger.Debug().Msg("CI/Mock environment: safe PTY close")
-		// CI環境では可能な限りエラーを抑制
+		// Suppress errors as much as possible in CI environment
 		if err := cp.PTY.Close(); err != nil {
 			if !strings.Contains(err.Error(), "file already closed") {
 				cp.Logger.Debug().Err(err).Msg("PTY close in CI (non-critical error)")
@@ -97,12 +97,12 @@ func (cp *ClaudeProcess) safePTYClose() error {
 			cp.Logger.Debug().Msg("PTY closed successfully in CI")
 		}
 	} else {
-		// 通常環境での標準的なクローズ
+		// Standard close in normal environment
 		err := cp.PTY.Close()
 		if err != nil {
 			cp.Logger.Warn().Err(err).Msg("PTY close warning")
 			if !cp.ptyClosed.CompareAndSwap(false, true) {
-				return nil // 他のゴルーチンが既にクローズ済み
+				return nil // Already closed by another goroutine
 			}
 			return err
 		} else {
@@ -110,15 +110,15 @@ func (cp *ClaudeProcess) safePTYClose() error {
 		}
 	}
 
-	// 原子的にクローズ状態を設定
+	// Atomically set close state
 	cp.ptyClosed.Store(true)
 	return nil
 }
 
-// ClaudeManager - Claude CLI管理システム（containedctx修正版）
+// ClaudeManager - Claude CLI management system (containedctx fixed version)
 type ClaudeManager struct {
 	processes  map[string]*ClaudeProcess
-	mu         sync.RWMutex // プロセスマップの並行アクセス保護
+	mu         sync.RWMutex // Protect concurrent access to process map
 	config     *ClaudeConfig
 	logger     zerolog.Logger
 	cancel     context.CancelFunc
@@ -127,14 +127,14 @@ type ClaudeManager struct {
 	workingDir string
 }
 
-// NewClaudeManager - マネージャー初期化
+// NewClaudeManager - Initialize manager
 func NewClaudeManager(workingDir string) (*ClaudeManager, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get home directory: %w", err)
 	}
 
-	// Claude CLIパスの検出
+	// Detect Claude CLI path
 	claudePath, err := detectClaudePath()
 	if err != nil {
 		return nil, fmt.Errorf("failed to detect Claude CLI path: %w", err)
@@ -153,7 +153,7 @@ func NewClaudeManager(workingDir string) (*ClaudeManager, error) {
 		workingDir: workingDir,
 	}
 
-	// 設定ファイルの初期化
+	// Initialize configuration file
 	if err := cm.setupConfig(); err != nil {
 		return nil, fmt.Errorf("failed to setup config: %w", err)
 	}
@@ -161,21 +161,21 @@ func NewClaudeManager(workingDir string) (*ClaudeManager, error) {
 	return cm, nil
 }
 
-// detectClaudePath - Claude CLIパスの検出
+// detectClaudePath - Detect Claude CLI path
 func detectClaudePath() (string, error) {
-	// 動的npm パスの検出を最初に試す
+	// Try dynamic npm path detection first
 	if npmPath := detectNpmClaudeCodePath(); npmPath != "" {
 		return npmPath, nil
 	}
 
-	// 一般的なパスを順番に確認（claude-codeコマンドを優先）
+	// Check common paths in order (prioritize claude-code command)
 	paths := []string{
-		// npm グローバルインストール（claude-code）
+		// npm global install (claude-code)
 		"/usr/local/lib/node_modules/@anthropic-ai/claude-code/cli.js",
 		"/opt/homebrew/lib/node_modules/@anthropic-ai/claude-code/cli.js",
 		"/usr/local/lib/node_modules/@anthropic/claude-code/bin/claude-code",
 		"/opt/homebrew/lib/node_modules/@anthropic/claude-code/bin/claude-code",
-		// 従来のclaudeコマンド
+		// Traditional claude command
 		"~/.claude/local/claude",
 		"/usr/local/bin/claude",
 		"/opt/homebrew/bin/claude",
@@ -188,12 +188,12 @@ func detectClaudePath() (string, error) {
 		}
 	}
 
-	// PATHから検索（claude-codeを優先）
+	// Search from PATH (prioritize claude-code)
 	if path, err := exec.LookPath("claude-code"); err == nil {
 		return path, nil
 	}
 
-	// PATHから従来のclaudeコマンドを検索
+	// Search for traditional claude command from PATH
 	if path, err := exec.LookPath("claude"); err == nil {
 		return path, nil
 	}
@@ -201,23 +201,23 @@ func detectClaudePath() (string, error) {
 	return "", fmt.Errorf("claude CLI not found in any expected locations")
 }
 
-// detectNpmClaudeCodePath - npm グローバルインストールパスの動的検出
+// detectNpmClaudeCodePath - Dynamic detection of npm global install path
 func detectNpmClaudeCodePath() string {
-	// CI環境やテスト環境ではnpm検出をスキップ
+	// Skip npm detection in CI or test environments
 	if os.Getenv("CI") == "true" || os.Getenv("CLAUDE_MOCK_ENV") == "true" {
 		return ""
 	}
 
-	// npmコマンドの存在確認
+	// Check for npm command existence
 	if _, err := exec.LookPath("npm"); err != nil {
 		return ""
 	}
 
-	// タイムアウト付きコンテキスト（3秒）
+	// Context with timeout (3 seconds)
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	// npm root -g でグローバルインストールパスを取得
+	// Get global install path with npm root -g
 	cmd := exec.CommandContext(ctx, "npm", "root", "-g")
 	output, err := cmd.Output()
 	if err != nil {
@@ -229,16 +229,16 @@ func detectNpmClaudeCodePath() string {
 		return ""
 	}
 
-	// 複数のパッケージ名を試す
+	// Try multiple package names
 	candidatePaths := []string{
-		// @anthropic-ai/claude-code (実際のパッケージ名)
+		// @anthropic-ai/claude-code (actual package name)
 		filepath.Join(npmRoot, "@anthropic-ai", "claude-code", "cli.js"),
-		// @anthropic/claude-code (将来の可能性)
+		// @anthropic/claude-code (future possibility)
 		filepath.Join(npmRoot, "@anthropic", "claude-code", "bin", "claude-code"),
 		filepath.Join(npmRoot, "@anthropic", "claude-code", "cli.js"),
 	}
 
-	// パスの存在確認
+	// Check path existence
 	for _, claudeCodePath := range candidatePaths {
 		if _, err := os.Stat(claudeCodePath); err == nil {
 			return claudeCodePath
@@ -248,7 +248,7 @@ func detectNpmClaudeCodePath() string {
 	return ""
 }
 
-// expandPath - パス展開ヘルパー
+// expandPath - Path expansion helper
 func expandPath(path string) string {
 	if strings.HasPrefix(path, "~") {
 		homeDir, err := os.UserHomeDir()
@@ -265,12 +265,12 @@ func expandPath(path string) string {
 	return path
 }
 
-// setupConfig - Claude設定ファイルの初期化（タイムアウト付き）
+// setupConfig - Initialize Claude configuration file (with timeout)
 func (cm *ClaudeManager) setupConfig() error {
-	// テスト/CI環境用の短いタイムアウト設定
+	// Short timeout setting for test/CI environments
 	timeout := 30 * time.Second
 	if os.Getenv("CI") == "true" || os.Getenv("CLAUDE_MOCK_ENV") == "true" {
-		timeout = 5 * time.Second // CI環境では5秒に短縮
+		timeout = 5 * time.Second // Reduce to 5 seconds in CI environment
 	}
 
 	// タイムアウト付きコンテキスト
@@ -280,12 +280,12 @@ func (cm *ClaudeManager) setupConfig() error {
 	return cm.setupConfigWithContext(ctx)
 }
 
-// setupConfigWithContext - コンテキスト付き設定ファイル初期化
+// setupConfigWithContext - Initialize configuration file with context
 func (cm *ClaudeManager) setupConfigWithContext(ctx context.Context) error {
 	configDir := filepath.Join(cm.homeDir, ".claude")
 	configFile := filepath.Join(configDir, "settings.json")
 
-	// ディレクトリ作成（コンテキストチェック）
+	// Create directory (context check)
 	select {
 	case <-ctx.Done():
 		return fmt.Errorf("config setup timeout: %w", ctx.Err())
@@ -296,7 +296,7 @@ func (cm *ClaudeManager) setupConfigWithContext(ctx context.Context) error {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
-	// 既存の設定ファイルがあるかチェック（コンテキストチェック）
+	// Check if configuration file already exists (context check)
 	select {
 	case <-ctx.Done():
 		return fmt.Errorf("config setup timeout: %w", ctx.Err())
@@ -308,7 +308,7 @@ func (cm *ClaudeManager) setupConfigWithContext(ctx context.Context) error {
 		return nil
 	}
 
-	// デフォルト設定を作成
+	// Create default configuration
 	defaultConfig := &ClaudeConfig{
 		Model:                  "sonnet",
 		Theme:                  "dark",
@@ -317,7 +317,7 @@ func (cm *ClaudeManager) setupConfigWithContext(ctx context.Context) error {
 		SkipInitialSetup:       true,
 	}
 
-	// JSONマーシャル（コンテキストチェック）
+	// JSON marshal (context check)
 	select {
 	case <-ctx.Done():
 		return fmt.Errorf("config setup timeout: %w", ctx.Err())
@@ -329,7 +329,7 @@ func (cm *ClaudeManager) setupConfigWithContext(ctx context.Context) error {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
 
-	// ファイル書き込み（コンテキストチェック）
+	// Write file (context check)
 	select {
 	case <-ctx.Done():
 		return fmt.Errorf("config setup timeout: %w", ctx.Err())
@@ -345,9 +345,9 @@ func (cm *ClaudeManager) setupConfigWithContext(ctx context.Context) error {
 	return nil
 }
 
-// StartAgent - エージェントプロセス開始（context引数で受け取り）
+// StartAgent - Start agent process (receive context as argument)
 func (cm *ClaudeManager) StartAgent(ctx context.Context, config *AgentConfig) error {
-	// 設定を調整
+	// Adjust configuration
 	config.SessionName = config.Name
 
 	cm.mu.Lock()
@@ -366,19 +366,19 @@ func (cm *ClaudeManager) StartAgent(ctx context.Context, config *AgentConfig) er
 	cm.processes[config.Name] = process
 	cm.mu.Unlock()
 
-	// プロセス監視開始
+	// Start process monitoring
 	go cm.monitorProcess(ctx, process)
 
 	return nil
 }
 
-// createProcess - プロセス作成（CI環境検出付き）
+// createProcess - Create process (with CI environment detection)
 func (cm *ClaudeManager) createProcess(ctx context.Context, config *AgentConfig) (*ClaudeProcess, error) {
 	processCtx, cancel := context.WithCancel(ctx)
 
 	logger := cm.logger.With().Str("agent", config.Name).Logger()
 
-	// 環境検出
+	// Environment detection
 	isCIEnv := isCIEnvironment()
 	isMockEnv := isTestEnvironment()
 
@@ -392,7 +392,7 @@ func (cm *ClaudeManager) createProcess(ctx context.Context, config *AgentConfig)
 		isMockEnv:   isMockEnv,
 	}
 
-	// 初期状態設定
+	// Set initial state
 	process.isRunning.Store(false)
 	process.ptyClosed.Store(false)
 
@@ -406,40 +406,40 @@ func (cm *ClaudeManager) createProcess(ctx context.Context, config *AgentConfig)
 	return process, nil
 }
 
-// start - プロセス開始（CI環境対応版）
+// start - Start process (CI environment compatible version)
 func (cp *ClaudeProcess) start(ctx context.Context, claudePath string) error {
 	if cp.isRunning.Load() {
 		return fmt.Errorf("process already running")
 	}
 
-	// CI/Mock環境でのPTY作成スキップオプション
+	// Option to skip PTY creation in CI/Mock environment
 	if cp.isMockEnv && os.Getenv("CLAUDE_MOCK_PTY_SKIP") == "true" {
 		cp.Logger.Info().Msg("Mock environment: PTY creation skipped")
 		cp.isRunning.Store(true)
 		return nil
 	}
 
-	// script -q /dev/null 相当の実装
+	// Implementation equivalent to script -q /dev/null
 	cmd := exec.CommandContext(ctx, claudePath, "--dangerously-skip-permissions")
 	cmd.Dir = cp.Config.WorkingDir
 
-	// 環境変数設定
+	// Set environment variables
 	cmd.Env = append(os.Environ(),
 		"TERM=xterm-256color",
 		"SHELL=/bin/bash",
 	)
 
-	// CI環境での追加環境変数
+	// Additional environment variables for CI environment
 	if cp.isCIEnv {
 		cmd.Env = append(cmd.Env, "CLAUDE_CI_MODE=true")
 	}
 
-	// PTYの作成（CI環境では保守的エラーハンドリング）
+	// Create PTY (conservative error handling in CI environment)
 	ptyFile, err := pty.Start(cmd)
 	if err != nil {
 		if cp.isCIEnv && strings.Contains(err.Error(), "no such device") {
 			cp.Logger.Warn().Err(err).Msg("PTY creation failed in CI (expected)")
-			// CI環境でPTY作成に失敗した場合はモック扱い
+			// Treat as mock if PTY creation fails in CI environment
 			cp.isRunning.Store(true)
 			return nil
 		}
@@ -453,18 +453,18 @@ func (cp *ClaudeProcess) start(ctx context.Context, claudePath string) error {
 
 	cp.Logger.Info().Bool("ci_env", cp.isCIEnv).Msg("Claude process started")
 
-	// 初期指示送信（CI環境では短縮）
+	// Send initial instructions (shortened in CI environment)
 	go cp.sendInitialInstructions()
 
 	return nil
 }
 
-// sendInitialInstructions - 初期指示送信
+// sendInitialInstructions - Send initial instructions
 func (cp *ClaudeProcess) sendInitialInstructions() {
-	// プロセス起動を待つ（CI環境では短縮）
+	// Wait for process startup (shortened in CI environment)
 	waitTime := 2 * time.Second
 	if os.Getenv("CI") == "true" || os.Getenv("CLAUDE_MOCK_ENV") == "true" {
-		waitTime = 100 * time.Millisecond // CI環境では100ミリ秒に短縮
+		waitTime = 100 * time.Millisecond // Reduce to 100ms in CI environment
 	}
 	time.Sleep(waitTime)
 
@@ -475,16 +475,16 @@ func (cp *ClaudeProcess) sendInitialInstructions() {
 			return
 		}
 
-		// 指示内容を送信
+		// Send instruction content
 		if err := cp.sendMessage(string(content)); err != nil {
 			cp.Logger.Error().Err(err).Msg("failed to send initial instructions")
 		}
 	}
 }
 
-// sendMessage - メッセージ送信（CI環境対応版）
+// sendMessage - Send message (CI environment compatible version)
 func (cp *ClaudeProcess) sendMessage(message string) error {
-	// Mock環境でのPTYスキップ処理
+	// PTY skip handling in Mock environment
 	if cp.isMockEnv && cp.PTY == nil {
 		cp.Logger.Debug().Str("message", message).Msg("Mock environment: message send simulated")
 		return nil
@@ -497,24 +497,24 @@ func (cp *ClaudeProcess) sendMessage(message string) error {
 		return fmt.Errorf("process not running or PTY closed")
 	}
 
-	// プロンプトクリア
+	// Clear prompt
 	if _, err := cp.PTY.Write([]byte{3}); err != nil { // Ctrl+C
 		return fmt.Errorf("failed to send Ctrl+C: %w", err)
 	}
 
-	// Ctrl+C後の待機時間（CI環境では短縮）
+	// Wait time after Ctrl+C (shortened in CI environment)
 	waitTime := 400 * time.Millisecond
 	if os.Getenv("CI") == "true" || os.Getenv("CLAUDE_MOCK_ENV") == "true" {
-		waitTime = 50 * time.Millisecond // CI環境では50ミリ秒に短縮
+		waitTime = 50 * time.Millisecond // Reduce to 50ms in CI environment
 	}
 	time.Sleep(waitTime)
 
-	// メッセージ送信
+	// Send message
 	if _, err := cp.PTY.Write([]byte(message)); err != nil {
 		return fmt.Errorf("failed to send message: %w", err)
 	}
 
-	// Enter送信
+	// Send Enter
 	if _, err := cp.PTY.Write([]byte{13}); err != nil { // Enter
 		return fmt.Errorf("failed to send enter: %w", err)
 	}
@@ -523,7 +523,7 @@ func (cp *ClaudeProcess) sendMessage(message string) error {
 	return nil
 }
 
-// monitorProcess - プロセス監視（context引数で受け取り）
+// monitorProcess - Process monitoring (receive context as argument)
 func (cm *ClaudeManager) monitorProcess(ctx context.Context, process *ClaudeProcess) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -531,16 +531,16 @@ func (cm *ClaudeManager) monitorProcess(ctx context.Context, process *ClaudeProc
 		}
 	}()
 
-	// プロセス出力読み取り
+	// Read process output
 	go cm.readProcessOutput(ctx, process)
 
-	// メッセージ処理
+	// Process messages
 	go cm.processMessages(ctx, process)
 
-	// プロセス終了監視
+	// Monitor process exit
 	go cm.watchProcessExit(process)
 
-	// 自動復旧監視
+	// Automatic recovery monitoring
 	for {
 		select {
 		case <-ctx.Done():
@@ -554,12 +554,12 @@ func (cm *ClaudeManager) monitorProcess(ctx context.Context, process *ClaudeProc
 	}
 }
 
-// readProcessOutput - プロセス出力読み取り（context引数で受け取り）
+// readProcessOutput - Read process output (receive context as argument)
 func (cm *ClaudeManager) readProcessOutput(ctx context.Context, process *ClaudeProcess) {
 	reader := bufio.NewReader(process.PTY)
 
-	// PTYに読み取りタイムアウトを設定
-	// 100ms読み取りタイムアウト
+	// Set read timeout for PTY
+	// 100ms read timeout
 	if err := process.PTY.SetReadDeadline(time.Now().Add(100 * time.Millisecond)); err != nil {
 		process.Logger.Warn().Err(err).Msg("failed to set PTY read deadline")
 	}
@@ -569,29 +569,29 @@ func (cm *ClaudeManager) readProcessOutput(ctx context.Context, process *ClaudeP
 		case <-ctx.Done():
 			return
 		default:
-			// タイムアウト付き読み取り
+			// Read with timeout
 			line, err := reader.ReadString('\n')
 			if err != nil {
 				if err == io.EOF {
 					process.Logger.Info().Msg("process output ended")
 					return
 				}
-				// タイムアウトや他のエラーの場合は短い待機を入れてCPU使用率を下げる
+				// Add short wait for timeouts or other errors to reduce CPU usage
 				time.Sleep(10 * time.Millisecond)
-				// 次回の読み取りのためにタイムアウトを再設定
+				// Reset timeout for next read
 				if err := process.PTY.SetReadDeadline(time.Now().Add(100 * time.Millisecond)); err != nil {
 					process.Logger.Warn().Err(err).Msg("failed to reset PTY read deadline")
 				}
 				continue
 			}
 
-			// 出力をログに記録
+			// Log output
 			process.Logger.Debug().Str("output", strings.TrimSpace(line)).Msg("process output")
 		}
 	}
 }
 
-// processMessages - メッセージ処理（context引数で受け取り）
+// processMessages - Process messages (receive context as argument)
 func (cm *ClaudeManager) processMessages(ctx context.Context, process *ClaudeProcess) {
 	for {
 		select {
@@ -605,9 +605,9 @@ func (cm *ClaudeManager) processMessages(ctx context.Context, process *ClaudePro
 	}
 }
 
-// watchProcessExit - プロセス終了監視（原子的操作版）
+// watchProcessExit - Monitor process exit (atomic operation version)
 func (cm *ClaudeManager) watchProcessExit(process *ClaudeProcess) {
-	// Mock環境ではCmd.Waitをスキップ
+	// Skip Cmd.Wait in Mock environment
 	if process.isMockEnv && process.Cmd == nil {
 		process.Logger.Debug().Msg("Mock environment: process exit watch skipped")
 		return
@@ -621,27 +621,27 @@ func (cm *ClaudeManager) watchProcessExit(process *ClaudeProcess) {
 
 	process.isRunning.Store(false)
 
-	// 自動復旧をトリガー
+	// Trigger automatic recovery
 	select {
 	case process.restartChan <- struct{}{}:
 	default:
 	}
 }
 
-// restartProcess - プロセス再起動（安全なPTYクローズ付き）
+// restartProcess - Restart process (with safe PTY close)
 func (cm *ClaudeManager) restartProcess(ctx context.Context, process *ClaudeProcess) error {
 	process.Logger.Info().Msg("restarting process")
 
-	// 既存プロセスの安全なクリーンアップ
+	// Safe cleanup of existing process
 	if err := process.safePTYClose(); err != nil {
 		process.Logger.Warn().Err(err).Msg("failed to close PTY during restart")
 	}
 
-	// 状態リセット
+	// Reset state
 	process.isRunning.Store(false)
 	process.ptyClosed.Store(false)
 
-	// 新しいプロセスを開始
+	// Start new process
 	if err := process.start(ctx, cm.claudePath); err != nil {
 		return fmt.Errorf("failed to restart process: %w", err)
 	}
@@ -649,7 +649,7 @@ func (cm *ClaudeManager) restartProcess(ctx context.Context, process *ClaudeProc
 	return nil
 }
 
-// SendMessage - エージェントにメッセージ送信
+// SendMessage - Send message to agent
 func (cm *ClaudeManager) SendMessage(agentName, message string) error {
 	cm.mu.RLock()
 	process, exists := cm.processes[agentName]
@@ -659,10 +659,10 @@ func (cm *ClaudeManager) SendMessage(agentName, message string) error {
 		return fmt.Errorf("agent %s not found", agentName)
 	}
 
-	// メッセージ送信タイムアウト（CI環境では短縮）
+	// Message send timeout (shortened in CI environment)
 	timeout := 5 * time.Second
 	if os.Getenv("CI") == "true" || os.Getenv("CLAUDE_MOCK_ENV") == "true" {
-		timeout = 1 * time.Second // CI環境では1秒に短縮
+		timeout = 1 * time.Second // Reduce to 1 second in CI environment
 	}
 
 	select {
@@ -673,7 +673,7 @@ func (cm *ClaudeManager) SendMessage(agentName, message string) error {
 	}
 }
 
-// StopAgent - エージェント停止
+// StopAgent - Stop agent
 func (cm *ClaudeManager) StopAgent(agentName string) error {
 	cm.mu.Lock()
 	process, exists := cm.processes[agentName]
@@ -687,7 +687,7 @@ func (cm *ClaudeManager) StopAgent(agentName string) error {
 	process.Logger.Info().Msg("stopping agent")
 	process.cancel()
 
-	// 安全なPTYクローズ（二重クローズ防止）
+	// Safe PTY close (prevent double close)
 	if err := process.safePTYClose(); err != nil {
 		process.Logger.Warn().Err(err).Msg("failed to close PTY during stop")
 	}
@@ -695,16 +695,16 @@ func (cm *ClaudeManager) StopAgent(agentName string) error {
 	return nil
 }
 
-// Shutdown - 全体終了
+// Shutdown - Complete shutdown
 func (cm *ClaudeManager) Shutdown() error {
 	cm.logger.Info().Msg("shutting down Claude manager")
 
-	// 全プロセス停止
+	// Stop all processes
 	for name, process := range cm.processes {
 		cm.logger.Info().Str("agent", name).Msg("stopping agent")
 		process.cancel()
 
-		// 安全なPTYクローズ（二重クローズ防止）
+		// Safe PTY close (prevent double close)
 		if err := process.safePTYClose(); err != nil {
 			cm.logger.Warn().Err(err).Str("agent", name).Msg("failed to close PTY during shutdown")
 		}
@@ -714,7 +714,7 @@ func (cm *ClaudeManager) Shutdown() error {
 	return nil
 }
 
-// GetAgentStatus - エージェント状態取得
+// GetAgentStatus - Get agent status
 func (cm *ClaudeManager) GetAgentStatus(agentName string) (bool, error) {
 	cm.mu.RLock()
 	process, exists := cm.processes[agentName]
@@ -727,7 +727,7 @@ func (cm *ClaudeManager) GetAgentStatus(agentName string) (bool, error) {
 	return process.isRunning.Load(), nil
 }
 
-// ListAgents - エージェント一覧取得
+// ListAgents - Get agent list
 func (cm *ClaudeManager) ListAgents() []string {
 	cm.mu.RLock()
 	agents := make([]string, 0, len(cm.processes))
@@ -739,13 +739,13 @@ func (cm *ClaudeManager) ListAgents() []string {
 	return agents
 }
 
-// StartWithSignalHandling - シグナルハンドリング付きシステム開始
+// StartWithSignalHandling - Start system with signal handling
 func (cm *ClaudeManager) StartWithSignalHandling() error {
-	// シグナルハンドリング
+	// Signal handling
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	// 終了シグナル待機
+	// Wait for termination signal
 	go func() {
 		<-sigChan
 		cm.logger.Info().Msg("received shutdown signal")

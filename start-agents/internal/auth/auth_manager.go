@@ -12,16 +12,16 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// ClaudeAuthManager Claude認証管理
+// ClaudeAuthManager manages Claude authentication
 type ClaudeAuthManager struct {
 }
 
-// NewClaudeAuthManager 認証管理を作成
+// NewClaudeAuthManager creates authentication manager
 func NewClaudeAuthManager() *ClaudeAuthManager {
 	return &ClaudeAuthManager{}
 }
 
-// AuthStatus 認証状態
+// AuthStatus represents authentication status
 type AuthStatus struct {
 	IsAuthenticated bool                   `json:"isAuthenticated"`
 	UserID          string                 `json:"userID"`
@@ -29,14 +29,14 @@ type AuthStatus struct {
 	LastChecked     int64                  `json:"lastChecked"`
 }
 
-// CheckAuthenticationStatus 認証状態をチェック
+// CheckAuthenticationStatus checks authentication status
 func (cam *ClaudeAuthManager) CheckAuthenticationStatus() (*AuthStatus, error) {
-	log.Info().Msg("🔍 Claude認証状態確認中")
+	log.Debug().Msg("🔍 Checking Claude authentication status")
 
-	// Claudeファイルの読み込み
+	// Load Claude file
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return nil, fmt.Errorf("ホームディレクトリの取得に失敗: %w", err)
+		return nil, fmt.Errorf("failed to get home directory: %w", err)
 	}
 
 	claudeJsonPath := filepath.Join(homeDir, ".claude", "claude.json")
@@ -45,44 +45,44 @@ func (cam *ClaudeAuthManager) CheckAuthenticationStatus() (*AuthStatus, error) {
 		LastChecked: time.Now().Unix(),
 	}
 
-	// ファイルの存在確認
+	// Check file existence
 	if _, err := os.Stat(claudeJsonPath); err != nil {
-		log.Warn().Str("config_path", claudeJsonPath).Msg("⚠️ Claude設定ファイルが見つかりません")
+		log.Warn().Str("config_path", claudeJsonPath).Msg("⚠️ Claude configuration file not found")
 		return authStatus, err
 	}
 
-	// ファイルの読み込み
+	// Read file
 	fileData, err := os.ReadFile(claudeJsonPath) // #nosec G304
 	if err != nil {
-		log.Warn().Err(err).Msg("⚠️ Claude設定ファイルの読み込みに失敗")
+		log.Warn().Err(err).Msg("⚠️ Failed to read Claude configuration file")
 		return authStatus, nil
 	}
 
-	// JSONのパース
+	// Parse JSON
 	var data map[string]interface{}
 	if err := json.Unmarshal(fileData, &data); err != nil {
-		log.Warn().Err(err).Msg("⚠️ Claude設定ファイルのJSONパースに失敗")
+		log.Warn().Err(err).Msg("⚠️ Failed to parse Claude configuration JSON")
 		return authStatus, nil
 	}
 
-	log.Info().Msg("✅ Claude設定ファイル読み込み完了")
+	log.Debug().Msg("✅ Claude configuration file loaded successfully")
 
-	// userIDの存在確認
+	// Check userID existence
 	if userID, exists := data["userID"]; exists && userID != nil {
 		if userIDStr, ok := userID.(string); ok && userIDStr != "" {
 			authStatus.UserID = userIDStr
 			authStatus.IsAuthenticated = true
-			log.Info().Str("user_id_prefix", userIDStr[:8]+"...").Msg("✅ 既存認証確認")
+			log.Debug().Str("user_id_prefix", userIDStr[:8]+"...").Msg("✅ Existing authentication confirmed")
 		}
 	}
 
-	// OAuthアカウント情報の確認
+	// Check OAuth account info
 	if oauthAccount, exists := data["oauthAccount"]; exists && oauthAccount != nil {
 		if oauthMap, ok := oauthAccount.(map[string]interface{}); ok {
 			authStatus.OAuthAccount = oauthMap
 			authStatus.IsAuthenticated = true
 			if email, exists := oauthMap["emailAddress"]; exists {
-				log.Info().Interface("email", email).Msg("📧 OAuth認証済み")
+				log.Debug().Interface("email", email).Msg("📧 OAuth authenticated")
 			}
 		}
 	}
@@ -90,175 +90,175 @@ func (cam *ClaudeAuthManager) CheckAuthenticationStatus() (*AuthStatus, error) {
 	return authStatus, nil
 }
 
-// CheckSettingsFile Claude設定ファイルの存在確認
+// CheckSettingsFile checks Claude settings file existence
 func (cam *ClaudeAuthManager) CheckSettingsFile() error {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return fmt.Errorf("ホームディレクトリの取得に失敗: %w", err)
+		return fmt.Errorf("failed to get home directory: %w", err)
 	}
 
-	// ~/.claude/settings.json の存在確認
+	// Check existence of ~/.claude/settings.json
 	settingsPath := filepath.Join(homeDir, ".claude", "settings.json")
 	if _, err := os.Stat(settingsPath); err != nil {
-		return fmt.Errorf("claude設定ファイルが見つかりません: %s", settingsPath)
+		return fmt.Errorf("claude settings file not found: %s", settingsPath)
 	}
 
-	log.Info().Str("settings_path", settingsPath).Msg("✅ Claude設定ファイル確認完了")
+	log.Debug().Str("settings_path", settingsPath).Msg("✅ Claude settings file check completed")
 	return nil
 }
 
-// PreAuthChecker 事前認証チェッカー
+// PreAuthChecker performs pre-authentication checks
 type PreAuthChecker struct {
 	claudePath string
 }
 
-// NewPreAuthChecker 事前認証チェッカーを作成
+// NewPreAuthChecker creates pre-authentication checker
 func NewPreAuthChecker(claudePath string) *PreAuthChecker {
 	return &PreAuthChecker{
 		claudePath: claudePath,
 	}
 }
 
-// CheckAuthenticationBeforeStart 開始前の認証確認
+// CheckAuthenticationBeforeStart checks authentication before start
 func (pac *PreAuthChecker) CheckAuthenticationBeforeStart() error {
-	log.Info().Msg("ℹ️ tmux起動前にClaude認証状態を確認します")
+	log.Debug().Msg("ℹ️ Checking Claude authentication status before tmux start")
 
-	// Claude設定ファイルの確認
+	// Check Claude settings file
 	cam := NewClaudeAuthManager()
 	if err := cam.CheckSettingsFile(); err != nil {
-		return fmt.Errorf("claude設定ファイル確認失敗: %w", err)
+		return fmt.Errorf("claude settings file check failed: %w", err)
 	}
 
-	// 認証状態の確認（排他アクセス版）
-	log.Info().Msg("🔄 Claude認証状態確認中（排他アクセス版）")
+	// Check authentication status (exclusive access version)
+	log.Debug().Msg("🔄 Checking Claude authentication status (exclusive access)")
 
-	// 並列起動時の認証整合性チェック
+	// Check authentication consistency for parallel startup
 	if err := cam.ValidateAuthConcurrency(); err != nil {
-		return fmt.Errorf("並列認証整合性チェック失敗: %w", err)
+		return fmt.Errorf("parallel authentication consistency check failed: %w", err)
 	}
 
-	// 認証状態の確認
+	// Check authentication status
 	authStatus, err := cam.CheckAuthenticationStatus()
 	if err != nil {
-		return fmt.Errorf("認証状態確認失敗: %w", err)
+		return fmt.Errorf("authentication status check failed: %w", err)
 	}
 
 	if !authStatus.IsAuthenticated {
-		log.Warn().Msg("⚠️ Claude認証が必要です")
-		log.Info().Msg("💡 対話式認証を開始します。画面に従って認証を完了してください")
-		log.Info().Msg("────────────────────────────────────────────────────────")
+		log.Warn().Msg("⚠️ Claude authentication required")
+		log.Debug().Msg("💡 Starting interactive authentication. Please follow the on-screen instructions")
+		log.Debug().Msg("────────────────────────────────────────────────────────")
 
-		// 対話式認証の実行
+		// Execute interactive authentication
 		if err := cam.PerformInteractiveAuth(); err != nil {
-			return fmt.Errorf("claude認証確認失敗: %w", err)
+			return fmt.Errorf("claude authentication check failed: %w", err)
 		}
 	}
 
-	log.Info().Msg("✅ Claude認証確認が完了しました")
+	log.Debug().Msg("✅ Claude authentication check completed")
 	return nil
 }
 
-// PerformInteractiveAuth 対話式認証を実行
+// PerformInteractiveAuth performs interactive authentication
 func (cam *ClaudeAuthManager) PerformInteractiveAuth() error {
-	log.Info().Msg("🔐 Claude認証状態確認開始")
+	log.Debug().Msg("🔐 Starting Claude authentication status check")
 
-	// シンプルなテストコマンドで認証状態を確認
+	// Check authentication status with simple test command
 	cmd := exec.Command("claude", "--print", "test")
 	output, err := cmd.Output()
 	if err != nil {
-		return fmt.Errorf("認証確認失敗: %w", err)
+		return fmt.Errorf("authentication check failed: %w", err)
 	}
 
-	// 出力があれば認証は成功
+	// Authentication successful if output exists
 	if len(output) == 0 {
-		return fmt.Errorf("claude認証応答が空です")
+		return fmt.Errorf("claude authentication response is empty")
 	}
 
-	log.Info().Msg("✅ Claude認証確認完了")
+	log.Debug().Msg("✅ Claude authentication check completed")
 	return nil
 }
 
-// EnsureAuthentication 認証を確実に行う
+// EnsureAuthentication ensures authentication is complete
 func (cam *ClaudeAuthManager) EnsureAuthentication() error {
 	// 認証状態確認
 	authStatus, err := cam.CheckAuthenticationStatus()
 	if err != nil {
-		return fmt.Errorf("認証状態確認失敗: %w", err)
+		return fmt.Errorf("authentication status check failed: %w", err)
 	}
 
-	// 既に認証済みの場合は早期終了
+	// Return early if already authenticated
 	if authStatus.IsAuthenticated {
-		log.Info().Str("user_id_prefix", authStatus.UserID[:8]+"...").Msg("✅ Claude認証済み")
+		log.Debug().Str("user_id_prefix", authStatus.UserID[:8]+"...").Msg("✅ Claude authenticated")
 		return nil
 	}
 
-	// 認証が必要な場合は対話式認証を実行
-	log.Warn().Msg("⚠️ Claude認証が必要です。対話式認証を開始します")
+	// Execute interactive authentication if needed
+	log.Warn().Msg("⚠️ Claude authentication required. Starting interactive authentication")
 
 	if err := cam.PerformInteractiveAuth(); err != nil {
-		return fmt.Errorf("認証実行失敗: %w", err)
+		return fmt.Errorf("authentication execution failed: %w", err)
 	}
 
-	// 認証後の状態確認
+	// Check status after authentication
 	authStatus, err = cam.CheckAuthenticationStatus()
 	if err != nil {
-		return fmt.Errorf("認証後状態確認失敗: %w", err)
+		return fmt.Errorf("post-authentication status check failed: %w", err)
 	}
 
 	if !authStatus.IsAuthenticated {
-		return fmt.Errorf("認証処理完了後も認証状態が無効です")
+		return fmt.Errorf("authentication status still invalid after authentication process")
 	}
 
-	log.Info().Msg("🎉 Claude認証が正常に完了しました")
+	log.Debug().Msg("🎉 Claude authentication completed successfully")
 	return nil
 }
 
-// ValidateAuthConcurrency 並列起動時の認証整合性チェック
+// ValidateAuthConcurrency validates authentication consistency for parallel startup
 func (cam *ClaudeAuthManager) ValidateAuthConcurrency() error {
-	log.Info().Msg("🔄 並列Claude起動認証整合性チェック")
+	log.Debug().Msg("🔄 Checking parallel Claude startup authentication consistency")
 
-	// Claude Codeプロセス数を確認
+	// Check Claude Code process count
 	cmd := exec.Command("pgrep", "-f", "claude")
 	output, err := cmd.Output()
 	if err != nil {
-		log.Warn().Err(err).Msg("Claude プロセス数確認に失敗")
-		return nil // 非致命的エラーとして継続
+		log.Warn().Err(err).Msg("Failed to check Claude process count")
+		return nil // Continue as non-fatal error
 	}
 
 	processCount := len(strings.Split(strings.TrimSpace(string(output)), "\n"))
 	if processCount > 1 {
-		log.Warn().Int("process_count", processCount).Msg("⚠️ 複数Claude Code プロセス検出")
+		log.Warn().Int("process_count", processCount).Msg("⚠️ Multiple Claude Code processes detected")
 
-		// 並列アクセス時は短い待機で認証状態の安定化を図る
+		// Wait briefly for authentication state stabilization during parallel access
 		time.Sleep(100 * time.Millisecond)
 	}
 
 	return nil
 }
 
-// SafeAuthUpdate 認証状態の安全な更新
+// SafeAuthUpdate safely updates authentication state
 func (cam *ClaudeAuthManager) SafeAuthUpdate(updateFunc func(map[string]interface{}) error) error {
-	// 簡易実装：ダミー動作
+	// Simple implementation: dummy operation
 	data := make(map[string]interface{})
 	return updateFunc(data)
 }
 
-// CleanupCorruptedFiles 破損ファイルのクリーンアップ
+// CleanupCorruptedFiles cleans up corrupted files
 func (cam *ClaudeAuthManager) CleanupCorruptedFiles() error {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return fmt.Errorf("ホームディレクトリの取得に失敗: %w", err)
+		return fmt.Errorf("failed to get home directory: %w", err)
 	}
 	claudeDir := filepath.Join(homeDir, ".claude")
 
-	// 1週間以上古い破損ファイルを削除
+	// Delete corrupted files older than 1 week
 	entries, err := os.ReadDir(claudeDir)
 	if err != nil {
-		return fmt.Errorf("claudeディレクトリの読み込みに失敗: %w", err)
+		return fmt.Errorf("failed to read claude directory: %w", err)
 	}
 
 	cleaned := 0
-	cutoff := time.Now().AddDate(0, 0, -7) // 1週間前
+	cutoff := time.Now().AddDate(0, 0, -7) // 1 week ago
 
 	for _, entry := range entries {
 		name := entry.Name()
@@ -271,7 +271,7 @@ func (cam *ClaudeAuthManager) CleanupCorruptedFiles() error {
 
 			if info.ModTime().Before(cutoff) {
 				if err := os.Remove(fullPath); err != nil {
-					log.Warn().Err(err).Str("file", fullPath).Msg("破損ファイルの削除に失敗")
+					log.Warn().Err(err).Str("file", fullPath).Msg("Failed to delete corrupted file")
 				} else {
 					cleaned++
 				}
@@ -280,7 +280,7 @@ func (cam *ClaudeAuthManager) CleanupCorruptedFiles() error {
 	}
 
 	if cleaned > 0 {
-		log.Info().Int("cleaned_count", cleaned).Msg("🧹 古い破損ファイルをクリーンアップしました")
+		log.Debug().Int("cleaned_count", cleaned).Msg("🧹 Cleaned up old corrupted files")
 	}
 
 	return nil

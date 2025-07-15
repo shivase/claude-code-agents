@@ -8,16 +8,16 @@ import (
 	"github.com/shivase/claude-code-agents/internal/auth"
 )
 
-// TestNewClaudeAuthManager - 認証マネージャー作成のテスト
+// TestNewClaudeAuthManager - Test creating authentication manager
 func TestNewClaudeAuthManager(t *testing.T) {
 	manager := auth.NewClaudeAuthManager()
 	assert.NotNil(t, manager)
 }
 
-// TestNewPreAuthChecker - 事前認証チェッカー作成のテスト
+// TestNewPreAuthChecker - Test creating pre-authentication checker
 func TestNewPreAuthChecker(t *testing.T) {
 	claudePath := "/test/path"
 	checker := auth.NewPreAuthChecker(claudePath)
 	assert.NotNil(t, checker)
-	// claudePathはプライベートフィールドなので直接アクセスできない
+	// claudePath is a private field so it cannot be accessed directly
 }

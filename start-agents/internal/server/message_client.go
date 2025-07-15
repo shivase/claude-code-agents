@@ -10,29 +10,29 @@ import (
 	"github.com/shivase/claude-code-agents/internal/tmux"
 )
 
-// MessageClient - tmuxベースのメッセージクライアント
+// MessageClient - tmux-based message client
 type MessageClient struct {
 	sessionName string
 	tmuxManager *tmux.TmuxManagerImpl
 }
 
-// NewMessageClient - クライアント作成（自動セッション検出対応）
+// NewMessageClient - Create client (with automatic session detection)
 func NewMessageClient(sessionName string) *MessageClient {
 	tmuxManager := tmux.NewTmuxManager(sessionName)
 
-	// セッション名が空の場合は自動検出
+	// Auto-detect if session name is empty
 	if sessionName == "" {
-		expectedPaneCount := 6 // デフォルト値（PO + Manager + 4 Dev）
+		expectedPaneCount := 6 // Default value (PO + Manager + 4 Dev)
 		if detectedSession, err := tmuxManager.FindDefaultAISession(expectedPaneCount); err == nil {
 			sessionName = detectedSession
 		} else {
-			sessionName = "ai-teams" // フォールバック
+			sessionName = "ai-teams" // Fallback
 		}
 	}
 
-	// 指定されたセッションが存在しない場合、自動検出を試行
+	// If specified session doesn't exist, try auto-detection
 	if !tmuxManager.SessionExists(sessionName) {
-		expectedPaneCount := 6 // デフォルト値（PO + Manager + 4 Dev）
+		expectedPaneCount := 6 // Default value (PO + Manager + 4 Dev)
 		if detectedSession, err := tmuxManager.FindDefaultAISession(expectedPaneCount); err == nil {
 			sessionName = detectedSession
 		}
@@ -44,14 +44,14 @@ func NewMessageClient(sessionName string) *MessageClient {
 	}
 }
 
-// SendMessage - tmuxベースのメッセージ送信
+// SendMessage - Send message via tmux
 func (mc *MessageClient) SendMessage(agent, message string) error {
 	paneIndex, err := mc.getAgentPaneIndex(agent)
 	if err != nil {
 		return fmt.Errorf("failed to get pane index for agent %s: %w", agent, err)
 	}
 
-	// tmuxペインにメッセージを送信
+	// Send message to tmux pane
 	if err := mc.tmuxManager.SendKeysWithEnter(mc.sessionName, strconv.Itoa(paneIndex), message); err != nil {
 		return fmt.Errorf("failed to send message to agent %s: %w", agent, err)
 	}
@@ -60,7 +60,7 @@ func (mc *MessageClient) SendMessage(agent, message string) error {
 	return nil
 }
 
-// ListAgents - tmuxベースのエージェント一覧取得
+// ListAgents - Get agent list via tmux
 func (mc *MessageClient) ListAgents() ([]string, error) {
 	panes, err := mc.tmuxManager.GetPaneList(mc.sessionName)
 	if err != nil {
@@ -81,37 +81,37 @@ func (mc *MessageClient) ListAgents() ([]string, error) {
 	return agents, nil
 }
 
-// GetStatus - tmuxベースのエージェント状態取得
+// GetStatus - Get agent status via tmux
 func (mc *MessageClient) GetStatus(agent string) (bool, error) {
 	paneIndex, err := mc.getAgentPaneIndex(agent)
 	if err != nil {
 		return false, fmt.Errorf("failed to get pane index for agent %s: %w", agent, err)
 	}
 
-	// tmuxペインが存在するかチェック
+	// Check if tmux pane exists
 	cmd := exec.Command("tmux", "list-panes", "-t", mc.sessionName) // #nosec G204
 	output, err := cmd.Output()
 	if err != nil {
 		return false, fmt.Errorf("failed to check pane status: %w", err)
 	}
 
-	// ペインが存在するかチェック
+	// Check if pane exists
 	return strings.Contains(string(output), fmt.Sprintf("%d:", paneIndex)), nil
 }
 
-// IsServerRunning - tmuxセッションの実行状態確認
+// IsServerRunning - Check tmux session running state
 func (mc *MessageClient) IsServerRunning() bool {
 	return mc.tmuxManager.SessionExists(mc.sessionName)
 }
 
-// GetSessionName - セッション名の取得
+// GetSessionName - Get session name
 func (mc *MessageClient) GetSessionName() string {
 	return mc.sessionName
 }
 
-// CheckConnection - tmuxセッション接続テスト（柔軟な検出）
+// CheckConnection - Check tmux session connection (flexible detection)
 func (mc *MessageClient) CheckConnection() error {
-	// まず自動検出を試行（セッションが存在しない場合、または存在してもAIセッションでない場合）
+	// First try auto-detection (if session doesn't exist or exists but not an AI session)
 	if !mc.tmuxManager.SessionExists(mc.sessionName) {
 		detectedSession, sessionType, err := mc.tmuxManager.DetectActiveAISession(6)
 		if err != nil {
@@ -121,13 +121,13 @@ func (mc *MessageClient) CheckConnection() error {
 		mc.sessionName = detectedSession
 		log.Info().Str("session", detectedSession).Str("type", sessionType).Msg("Auto-detected AI session")
 	} else {
-		// 既存セッションがAIセッションかどうかを判定
+		// Check if existing session is an AI session
 		paneCount, err := mc.tmuxManager.GetPaneCount(mc.sessionName)
 		if err != nil {
 			return fmt.Errorf("failed to get pane count for session %s: %w", mc.sessionName, err)
 		}
 
-		// 6ペインまたは1ペインでない場合、他のAIセッションを検出
+		// If not 6 panes or 1 pane, detect other AI sessions
 		if paneCount != 6 && paneCount != 1 {
 			detectedSession, sessionType, err := mc.tmuxManager.DetectActiveAISession(6)
 			if err != nil {
@@ -139,13 +139,13 @@ func (mc *MessageClient) CheckConnection() error {
 		}
 	}
 
-	// 最終的なペイン数確認
+	// Final pane count check
 	paneCount, err := mc.tmuxManager.GetPaneCount(mc.sessionName)
 	if err != nil {
 		return fmt.Errorf("failed to get pane count for session %s: %w", mc.sessionName, err)
 	}
 
-	// 統合監視画面（6ペイン）または個別セッション（1ペイン）を許可
+	// Allow integrated monitoring (6 panes) or individual session (1 pane)
 	if paneCount != 6 && paneCount != 1 {
 		return fmt.Errorf("expected 6 panes (integrated) or 1 pane (individual) but found %d in session %s", paneCount, mc.sessionName)
 	}
@@ -153,21 +153,21 @@ func (mc *MessageClient) CheckConnection() error {
 	return nil
 }
 
-// getAgentPaneIndex - エージェント名からペインインデックスを取得（claude.shと同じ構成）
+// getAgentPaneIndex - Get pane index from agent name (same configuration as claude.sh)
 func (mc *MessageClient) getAgentPaneIndex(agent string) (int, error) {
 	switch strings.ToLower(agent) {
 	case "po":
-		return 1, nil // 左上
+		return 1, nil // Top left
 	case "manager":
-		return 2, nil // 左下
+		return 2, nil // Bottom left
 	case "dev1":
-		return 3, nil // 右上
+		return 3, nil // Top right
 	case "dev2":
-		return 4, nil // 右上中
+		return 4, nil // Top right middle
 	case "dev3":
-		return 5, nil // 右下中
+		return 5, nil // Bottom right middle
 	case "dev4":
-		return 6, nil // 右下
+		return 6, nil // Bottom right
 	default:
 		return -1, fmt.Errorf("unknown agent: %s", agent)
 	}

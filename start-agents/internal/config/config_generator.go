@@ -10,53 +10,53 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// ConfigGenerator 設定ファイル生成機能
+// ConfigGenerator generates configuration files
 type ConfigGenerator struct {
 	targetPath string
 	backupPath string
 }
 
-// NewConfigGenerator 新しいConfigGeneratorインスタンスを作成
+// NewConfigGenerator creates a new ConfigGenerator instance
 func NewConfigGenerator() *ConfigGenerator {
 	return &ConfigGenerator{}
 }
 
-// GenerateConfig 設定ファイルを生成
+// GenerateConfig generates configuration file
 func (cg *ConfigGenerator) GenerateConfig(templateContent string) error {
-	// ターゲットパスの設定
+	// Set target path
 	if err := cg.setTargetPath(); err != nil {
 		return fmt.Errorf("failed to set target path: %w", err)
 	}
 
-	// ディレクトリの自動作成
+	// Ensure directory exists
 	if err := cg.ensureDirectory(); err != nil {
 		return fmt.Errorf("failed to ensure directory: %w", err)
 	}
 
-	// 既存ファイルのチェック
+	// Check existing file
 	if err := cg.checkExistingFile(); err != nil {
 		return fmt.Errorf("existing file check failed: %w", err)
 	}
 
-	// 設定ファイルの生成
+	// Generate configuration file
 	if err := cg.writeConfigFile(templateContent); err != nil {
 		return fmt.Errorf("failed to write config file: %w", err)
 	}
 
-	// 成功メッセージの表示
+	// Display success message
 	cg.displaySuccessMessage()
 
 	return nil
 }
 
-// setTargetPath ターゲットパスの設定
+// setTargetPath sets the target path
 func (cg *ConfigGenerator) setTargetPath() error {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return fmt.Errorf("failed to get home directory: %w", err)
 	}
 
-	// 統一された設定ディレクトリパス
+	// Unified configuration directory path
 	configDir := filepath.Join(homeDir, ".claude", "claude-code-agents")
 	cg.targetPath = filepath.Join(configDir, "agents.conf")
 	cg.backupPath = filepath.Join(configDir, fmt.Sprintf("agents.conf.backup.%d", time.Now().Unix()))
@@ -69,11 +69,11 @@ func (cg *ConfigGenerator) setTargetPath() error {
 	return nil
 }
 
-// ensureDirectory ディレクトリの自動作成
+// ensureDirectory ensures directory exists and creates if necessary
 func (cg *ConfigGenerator) ensureDirectory() error {
 	dir := filepath.Dir(cg.targetPath)
 
-	// ディレクトリが存在しない場合は作成
+	// Create directory if it doesn't exist
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		if err := os.MkdirAll(dir, 0750); err != nil {
 			return fmt.Errorf("failed to create directory %s: %w", dir, err)
@@ -81,7 +81,7 @@ func (cg *ConfigGenerator) ensureDirectory() error {
 		log.Info().Str("directory", dir).Msg("Directory created")
 	}
 
-	// 必要な子ディレクトリも作成
+	// Create necessary subdirectories
 	subdirs := []string{
 		"logs",
 		"instructions",
@@ -102,7 +102,7 @@ func (cg *ConfigGenerator) ensureDirectory() error {
 	return nil
 }
 
-// checkExistingFile 既存ファイルの確認と上書き防止
+// checkExistingFile checks for existing file and prevents overwrite
 func (cg *ConfigGenerator) checkExistingFile() error {
 	if _, err := os.Stat(cg.targetPath); err == nil {
 		return fmt.Errorf("config file already exists at %s. Use --force to overwrite or manually remove the existing file", cg.targetPath)
@@ -111,19 +111,19 @@ func (cg *ConfigGenerator) checkExistingFile() error {
 	return nil
 }
 
-// writeConfigFile 設定ファイルの書き込み
+// writeConfigFile writes configuration file
 func (cg *ConfigGenerator) writeConfigFile(content string) error {
-	// 安全なファイル操作：一時ファイルを作成してから移動
+	// Safe file operation: create temporary file then move
 	tempFile := cg.targetPath + ".tmp"
 
-	// 一時ファイルに書き込み
+	// Write to temporary file
 	if err := os.WriteFile(tempFile, []byte(content), 0600); err != nil {
 		return fmt.Errorf("failed to write temporary file: %w", err)
 	}
 
-	// 一時ファイルを最終的な場所に移動
+	// Move temporary file to final location
 	if err := os.Rename(tempFile, cg.targetPath); err != nil {
-		// 移動に失敗した場合は一時ファイルを削除
+		// Remove temporary file if move failed
 		if err := os.Remove(tempFile); err != nil {
 			log.Warn().Err(err).Str("file", tempFile).Msg("Failed to remove temporary file")
 		}
@@ -134,7 +134,7 @@ func (cg *ConfigGenerator) writeConfigFile(content string) error {
 	return nil
 }
 
-// displaySuccessMessage 成功メッセージの表示
+// displaySuccessMessage displays success message
 func (cg *ConfigGenerator) displaySuccessMessage() {
 	fmt.Println("🎉 Configuration file generated successfully!")
 	fmt.Println("=" + strings.Repeat("=", 45))
@@ -149,38 +149,38 @@ func (cg *ConfigGenerator) displaySuccessMessage() {
 	fmt.Println()
 }
 
-// ForceGenerateConfig 強制的に設定ファイルを生成（上書き可能）
+// ForceGenerateConfig forcefully generates configuration file (overwrite enabled)
 func (cg *ConfigGenerator) ForceGenerateConfig(templateContent string) error {
-	// ターゲットパスの設定
+	// Set target path
 	if err := cg.setTargetPath(); err != nil {
 		return fmt.Errorf("failed to set target path: %w", err)
 	}
 
-	// ディレクトリの自動作成
+	// Ensure directory exists
 	if err := cg.ensureDirectory(); err != nil {
 		return fmt.Errorf("failed to ensure directory: %w", err)
 	}
 
-	// 既存ファイルのバックアップ
+	// Backup existing file
 	if err := cg.backupExistingFile(); err != nil {
 		return fmt.Errorf("failed to backup existing file: %w", err)
 	}
 
-	// 設定ファイルの生成
+	// Generate configuration file
 	if err := cg.writeConfigFile(templateContent); err != nil {
 		return fmt.Errorf("failed to write config file: %w", err)
 	}
 
-	// 成功メッセージの表示
+	// Display success message
 	cg.displayForceSuccessMessage()
 
 	return nil
 }
 
-// backupExistingFile 既存ファイルのバックアップ
+// backupExistingFile backs up existing file
 func (cg *ConfigGenerator) backupExistingFile() error {
 	if _, err := os.Stat(cg.targetPath); err == nil {
-		// 既存ファイルをバックアップ
+		// Backup existing file
 		if err := os.Rename(cg.targetPath, cg.backupPath); err != nil {
 			return fmt.Errorf("failed to backup existing file: %w", err)
 		}
@@ -190,7 +190,7 @@ func (cg *ConfigGenerator) backupExistingFile() error {
 	return nil
 }
 
-// displayForceSuccessMessage 強制生成成功メッセージの表示
+// displayForceSuccessMessage displays force generation success message
 func (cg *ConfigGenerator) displayForceSuccessMessage() {
 	fmt.Println("🎉 Configuration file generated successfully! (Force mode)")
 	fmt.Println("=" + strings.Repeat("=", 55))
@@ -208,13 +208,13 @@ func (cg *ConfigGenerator) displayForceSuccessMessage() {
 	fmt.Println()
 }
 
-// fileExists ファイルの存在確認
+// fileExists checks if file exists
 func fileExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
 }
 
-// ValidateConfigDirectory 設定ディレクトリの検証
+// ValidateConfigDirectory validates configuration directory
 func (cg *ConfigGenerator) ValidateConfigDirectory() error {
 	if cg.targetPath == "" {
 		if err := cg.setTargetPath(); err != nil {
@@ -224,12 +224,12 @@ func (cg *ConfigGenerator) ValidateConfigDirectory() error {
 
 	dir := filepath.Dir(cg.targetPath)
 
-	// ディレクトリの存在確認
+	// Check directory existence
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		return fmt.Errorf("config directory does not exist: %s", dir)
 	}
 
-	// 書き込み権限の確認
+	// Check write permission
 	testFile := filepath.Join(dir, ".write_test")
 	if err := os.WriteFile(testFile, []byte("test"), 0600); err != nil {
 		return fmt.Errorf("no write permission in config directory: %s", dir)
@@ -241,7 +241,7 @@ func (cg *ConfigGenerator) ValidateConfigDirectory() error {
 	return nil
 }
 
-// GetConfigInfo 設定情報の取得
+// GetConfigInfo gets configuration information
 func (cg *ConfigGenerator) GetConfigInfo() (string, bool, error) {
 	if err := cg.setTargetPath(); err != nil {
 		return "", false, fmt.Errorf("failed to set target path: %w", err)

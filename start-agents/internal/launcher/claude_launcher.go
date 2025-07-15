@@ -136,19 +136,19 @@ func (cl *ClaudeLauncher) launchInSession(sessionName, claudeCmd string) error {
 func (cl *ClaudeLauncher) StartAllAgents() error {
 	log.Info().Msg("Starting Claude CLI for all agents")
 
-	utils.DisplayInfo("Claude CLI一括起動", "システムを起動しています")
+	utils.DisplayInfo("Claude CLI Batch Launch", "Starting system")
 
 	// 統合監視画面の場合
 	if cl.tmuxManager.SessionExists(cl.config.SessionName) {
 		paneCount, err := cl.tmuxManager.GetPaneCount(cl.config.SessionName)
 		if err == nil && paneCount == 6 {
-			utils.DisplayInfo("統合監視画面モード", "6ペインでClaude CLIを起動します")
+			utils.DisplayInfo("Integrated Monitoring Mode", "Launching Claude CLI in 6 panes")
 			return cl.startIntegratedAgents()
 		}
 	}
 
-	// 個別セッション方式の場合
-	utils.DisplayInfo("個別セッションモード", "個別セッションでClaude CLIを起動します")
+	// For individual session mode
+	utils.DisplayInfo("Individual Session Mode", "Launching Claude CLI in individual sessions")
 	return cl.startIndividualAgents()
 }
 
@@ -256,16 +256,16 @@ func (cl *ClaudeLauncher) startIndividualAgents() error {
 
 // SendInstructionToAgent エージェントにインストラクションを送信
 func (cl *ClaudeLauncher) SendInstructionToAgent(target, instructionFile string) error {
-	log.Info().Str("instruction_file", instructionFile).Str("target", target).Msg("📤 インストラクション送信開始")
+	log.Info().Str("instruction_file", instructionFile).Str("target", target).Msg("📤 Starting instruction sending")
 
-	// targetがペイン形式 (session:pane) かセッション形式かを判定
+	// Determine if target is pane format (session:pane) or session format
 	if strings.Contains(target, ":") {
-		// ペイン形式の場合、sendInstructionToPaneWithConfigを使用
+		// For pane format, use sendInstructionToPaneWithConfig
 		parts := strings.Split(target, ":")
 		sessionName := parts[0]
 		pane := parts[1]
 
-		// エージェント名を推定（ペイン番号から）
+		// Estimate agent name (from pane number)
 		var agent string
 		switch {
 		case strings.Contains(pane, ".1"):
@@ -281,7 +281,7 @@ func (cl *ClaudeLauncher) SendInstructionToAgent(target, instructionFile string)
 		case strings.Contains(pane, ".6"):
 			agent = "dev4"
 		default:
-			// デフォルトとしてinstructionFileからエージェント名を推定
+			// Estimate agent name from instructionFile as default
 			switch instructionFile {
 			case "po.md":
 				agent = "po"
@@ -292,74 +292,74 @@ func (cl *ClaudeLauncher) SendInstructionToAgent(target, instructionFile string)
 			}
 		}
 
-		// tmux managerの設定ベース送信機能を使用
+		// Use tmux manager's configuration-based sending function
 		return cl.tmuxManager.SendInstructionToPaneWithConfig(sessionName, pane, agent, cl.config.InstructionsDir, nil)
 	}
 
-	// セッション形式の場合は従来の処理を実行
+	// For session format, execute conventional processing
 	instructionPath := filepath.Join(cl.config.InstructionsDir, instructionFile)
 
-	// ファイルの存在確認
+	// Check file existence
 	if _, err := os.Stat(instructionPath); err != nil {
-		log.Error().Str("instruction_path", instructionPath).Msg("❌ インストラクションファイル確認失敗")
+		log.Error().Str("instruction_path", instructionPath).Msg("❌ Instruction file check failed")
 		return fmt.Errorf("instruction file not found: %s", instructionPath)
 	}
 
 	log.Info().Str("target", target).Str("file", instructionFile).Msg("Sending instruction to agent")
 
-	// ファイル内容を読み込み
+	// Read file contents
 	_, err := os.ReadFile(instructionPath) // #nosec G304
 	if err != nil {
-		log.Error().Str("instruction_path", instructionPath).Msg("❌ ファイル読み込み失敗")
+		log.Error().Str("instruction_path", instructionPath).Msg("❌ File read failed")
 		return fmt.Errorf("failed to read instruction file: %w", err)
 	}
 
-	// instructionsファイル内容を送信（Claude CLIのRead機能を活用）
-	// ファイルパスをClaude CLIに送信してRead機能を使用
+	// Send instructions file content (utilize Claude CLI's Read function)
+	// Send file path to Claude CLI to use Read function
 	readCmd := fmt.Sprintf("cat \"%s\"", instructionPath)
 
-	log.Info().Str("read_cmd", readCmd).Msg("📋 インストラクション読み込みコマンド送信")
+	log.Info().Str("read_cmd", readCmd).Msg("📋 Sending instruction read command")
 
-	// catコマンドを送信
+	// Send cat command
 	cmd := exec.Command("tmux", "send-keys", "-t", target, readCmd, "C-m") // #nosec G204
 	if err := cmd.Run(); err != nil {
-		log.Warn().Err(err).Msg("⚠️ インストラクション読み込みコマンド送信エラー")
+		log.Warn().Err(err).Msg("⚠️ Instruction read command sending error")
 		return fmt.Errorf("failed to send instruction read command: %w", err)
 	}
 
-	// catコマンド実行の待機
+	// Wait for cat command execution
 	time.Sleep(2 * time.Second)
-	log.Info().Msg("📋 インストラクション読み込み完了")
+	log.Info().Msg("📋 Instruction reading completed")
 
-	// catコマンド結果をClaude CLIで実行するため、確実にEnterキーを送信
-	time.Sleep(2 * time.Second) // Claude CLIの準備時間を確保
+	// Send Enter key reliably to execute cat command result in Claude CLI
+	time.Sleep(2 * time.Second) // Ensure Claude CLI preparation time
 
-	log.Info().Msg("🔄 Claude CLI実行のためのEnter送信開始")
+	log.Info().Msg("🔄 Starting Enter sending for Claude CLI execution")
 
-	// Claude CLIを実行状態にするため複数回Enterを送信
+	// Send Enter multiple times to put Claude CLI in execution state
 	for i := 0; i < 5; i++ {
 		cmd = exec.Command("tmux", "send-keys", "-t", target, "C-m")
 		if err := cmd.Run(); err != nil {
-			log.Warn().Err(err).Int("attempt", i+1).Msg("⚠️ Enter送信エラー")
+			log.Warn().Err(err).Int("attempt", i+1).Msg("⚠️ Enter sending error")
 		}
-		time.Sleep(500 * time.Millisecond) // 各Enter間の間隔を延長
+		time.Sleep(500 * time.Millisecond) // Extend interval between each Enter
 	}
 
-	log.Info().Str("target", target).Msg("✅ インストラクション送信完了")
+	log.Info().Str("target", target).Msg("✅ Instruction sending completed")
 	return nil
 }
 
-// GetClaudeStartCommand Claude CLI起動用のコマンドを取得
+// GetClaudeStartCommand gets command for launching Claude CLI
 func (cl *ClaudeLauncher) GetClaudeStartCommand() string {
 	homeDir, _ := os.UserHomeDir()
 	return fmt.Sprintf("CLAUDE_CONFIG_DIR=\"%s\" \"%s\" --dangerously-skip-permissions",
 		filepath.Join(homeDir, ".claude"), cl.config.ClaudePath)
 }
 
-// optimizeClaudeCLIDisplay Claude CLIの表示を最適化（scriptコマンド削除により簡素化）
+// optimizeClaudeCLIDisplay optimizes Claude CLI display (simplified by removing script command)
 func (cl *ClaudeLauncher) optimizeClaudeCLIDisplay() {
-	log.Info().Msg("✅ Claude CLI表示最適化：scriptコマンドを削除したため、自動的に最適サイズで表示されます")
+	log.Info().Msg("✅ Claude CLI display optimization: Automatically displayed at optimal size due to script command removal")
 
-	// scriptコマンドを削除したため、Claude CLIが自動的にペインサイズを認識する
-	// 特別な最適化処理は不要
+	// Since script command was removed, Claude CLI automatically recognizes pane size
+	// No special optimization processing required
 }

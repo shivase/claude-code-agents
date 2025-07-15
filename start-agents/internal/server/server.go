@@ -9,7 +9,7 @@ import (
 	"github.com/shivase/claude-code-agents/internal/tmux"
 )
 
-// MessageServer - tmuxベースのメッセージサーバー
+// MessageServer - tmux-based message server
 type MessageServer struct {
 	sessionName string
 	tmuxManager *tmux.TmuxManagerImpl
@@ -17,7 +17,7 @@ type MessageServer struct {
 	running     bool
 }
 
-// Start - サーバー開始（tmuxベース）
+// Start - Start server (tmux-based)
 func (ms *MessageServer) Start() {
 	if ms.running {
 		return
@@ -26,11 +26,11 @@ func (ms *MessageServer) Start() {
 	ms.running = true
 	log.Info().Str("session", ms.sessionName).Msg("MessageServer started (tmux-based)")
 
-	// バックグラウンドでヘルスチェック実行
+	// Execute health check in background
 	go ms.healthCheckLoop()
 }
 
-// healthCheckLoop - ヘルスチェックループ
+// healthCheckLoop - Health check loop
 func (ms *MessageServer) healthCheckLoop() {
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
@@ -45,7 +45,7 @@ func (ms *MessageServer) healthCheckLoop() {
 	}
 }
 
-// performHealthCheck - ヘルスチェック実行
+// performHealthCheck - Perform health check
 func (ms *MessageServer) performHealthCheck() {
 	if !ms.tmuxManager.SessionExists(ms.sessionName) {
 		log.Error().Str("session", ms.sessionName).Msg("tmux session disappeared")
@@ -65,7 +65,7 @@ func (ms *MessageServer) performHealthCheck() {
 	log.Debug().Str("session", ms.sessionName).Int("panes", paneCount).Msg("health check passed")
 }
 
-// SendMessage - tmuxベースのメッセージ送信
+// SendMessage - Send message via tmux
 func (ms *MessageServer) SendMessage(agent, message string) error {
 	if !ms.running {
 		return fmt.Errorf("message server is not running")
@@ -84,7 +84,7 @@ func (ms *MessageServer) SendMessage(agent, message string) error {
 	return nil
 }
 
-// ListAgents - エージェント一覧取得
+// ListAgents - Get agent list
 func (ms *MessageServer) ListAgents() ([]string, error) {
 	if !ms.running {
 		return nil, fmt.Errorf("message server is not running")
@@ -109,7 +109,7 @@ func (ms *MessageServer) ListAgents() ([]string, error) {
 	return agents, nil
 }
 
-// GetAgentStatus - エージェント状態取得
+// GetAgentStatus - Get agent status
 func (ms *MessageServer) GetAgentStatus(agent string) (bool, error) {
 	if !ms.running {
 		return false, fmt.Errorf("message server is not running")
@@ -120,7 +120,7 @@ func (ms *MessageServer) GetAgentStatus(agent string) (bool, error) {
 		return false, fmt.Errorf("failed to get pane index for agent %s: %w", agent, err)
 	}
 
-	// tmuxペインが存在するかチェック
+	// Check if tmux pane exists
 	panes, err := ms.tmuxManager.GetPaneList(ms.sessionName)
 	if err != nil {
 		return false, fmt.Errorf("failed to get pane list: %w", err)
@@ -135,7 +135,7 @@ func (ms *MessageServer) GetAgentStatus(agent string) (bool, error) {
 	return false, nil
 }
 
-// getAgentPaneIndex - エージェント名からペインインデックスを取得
+// getAgentPaneIndex - Get pane index from agent name
 func (ms *MessageServer) getAgentPaneIndex(agent string) (int, error) {
 	switch strings.ToLower(agent) {
 	case "po":
@@ -155,7 +155,7 @@ func (ms *MessageServer) getAgentPaneIndex(agent string) (int, error) {
 	}
 }
 
-// Stop - サーバー停止
+// Stop - Stop server
 func (ms *MessageServer) Stop() error {
 	if !ms.running {
 		return nil
@@ -168,12 +168,12 @@ func (ms *MessageServer) Stop() error {
 	return nil
 }
 
-// IsRunning - サーバー実行状態確認
+// IsRunning - Check if server is running
 func (ms *MessageServer) IsRunning() bool {
 	return ms.running
 }
 
-// GetSessionName - セッション名取得
+// GetSessionName - Get session name
 func (ms *MessageServer) GetSessionName() string {
 	return ms.sessionName
 }

@@ -8,73 +8,73 @@ import (
 	"github.com/shivase/claude-code-agents/internal/utils"
 )
 
-// DisplayConfigCommand 設定情報詳細表示コマンド
+// DisplayConfigCommand displays detailed configuration information
 func DisplayConfigCommand() error {
-	fmt.Println("🔧 AI Teams System - 設定情報詳細表示")
+	fmt.Println("🔧 AI Teams System - Configuration Details")
 	fmt.Println("=========================================")
 
-	// 1. 統一設定の読み込み
+	// 1. Load unified configuration
 	unifiedConfig, err := config.LoadUnifiedConfig()
 	if err != nil {
-		fmt.Printf("⚠️ 統一設定の読み込みに失敗: %v\n", err)
-		fmt.Println("📝 基本設定情報のみ表示します")
+		fmt.Printf("⚠️ Failed to load unified configuration: %v\n", err)
+		fmt.Println("📝 Displaying basic configuration only")
 
-		// フォールバック：基本設定のみ表示
+		// Fallback: display basic configuration only
 		displayBasicConfigFallback()
 		return nil
 	}
 
-	// 2. TeamConfig 全設定値の詳細表示
-	fmt.Println("\n📁 TeamConfig - チーム設定")
+	// 2. Display all TeamConfig values in detail
+	fmt.Println("\n📁 TeamConfig - Team Settings")
 	fmt.Println("---------------------------")
 	displayTeamConfig(unifiedConfig.Team)
 
-	// 3. CommonConfig 全設定値の詳細表示
-	fmt.Println("\n⚙️ CommonConfig - 共通設定")
+	// 3. Display all CommonConfig values in detail
+	fmt.Println("\n⚙️ CommonConfig - Common Settings")
 	fmt.Println("----------------------------")
-	fmt.Println("   ⚠️ CommonConfig は削除されました（import cycle解決のため）")
+	fmt.Println("   ⚠️ CommonConfig has been removed (to resolve import cycle)")
 
-	// 4. パス情報の完全表示
-	fmt.Println("\n📂 Path Configuration - パス設定")
+	// 4. Display complete path information
+	fmt.Println("\n📂 Path Configuration - Path Settings")
 	fmt.Println("----------------------------------")
 	displayPathConfiguration(unifiedConfig.Paths)
 
-	// 5. システム設定の詳細表示
-	fmt.Println("\n🖥️ System Settings - システム設定")
+	// 5. Display system settings in detail
+	fmt.Println("\n🖥️ System Settings")
 	fmt.Println("-----------------------------------")
 	displaySystemSettings(unifiedConfig.Team)
 
-	// 6. 認証設定の詳細表示
-	fmt.Println("\n🔐 Authentication Settings - 認証設定")
+	// 6. Display authentication settings in detail
+	fmt.Println("\n🔐 Authentication Settings")
 	fmt.Println("--------------------------------------")
 	displayAuthenticationSettings(unifiedConfig.Team)
 
-	// 7. 設定ファイルの存在確認と検証結果表示
-	fmt.Println("\n📋 Configuration File Validation - 設定ファイル検証")
+	// 7. Display configuration file existence check and validation results
+	fmt.Println("\n📋 Configuration File Validation")
 	fmt.Println("----------------------------------------------------")
 	displayConfigurationValidation(unifiedConfig.Paths)
 
-	// 8. 有効設定値の表示
-	fmt.Println("\n✅ Effective Configuration - 有効設定値")
+	// 8. Display effective configuration values
+	fmt.Println("\n✅ Effective Configuration")
 	fmt.Println("----------------------------------------")
-	fmt.Println("   有効設定値の表示は実装中です")
+	fmt.Println("   Effective configuration display is under implementation")
 
-	// 9. ディレクトリ解決情報
-	fmt.Println("\n📁 Directory Resolution - ディレクトリ解決")
+	// 9. Directory resolution information
+	fmt.Println("\n📁 Directory Resolution")
 	fmt.Println("------------------------------------------")
 	resolver := utils.GetGlobalDirectoryResolver()
 	resolver.DisplayDirectoryInfo()
 
 	fmt.Println("=========================================")
-	fmt.Printf("🕐 設定表示完了時刻: %s\n", time.Now().Format("2006-01-02 15:04:05"))
+	fmt.Printf("🕐 Configuration display completed at: %s\n", time.Now().Format("2006-01-02 15:04:05"))
 
 	return nil
 }
 
-// displayTeamConfig TeamConfig詳細表示
+// displayTeamConfig displays TeamConfig details
 func displayTeamConfig(teamConfig *config.TeamConfig) {
 	if teamConfig == nil {
-		fmt.Println("⚠️ TeamConfig が読み込まれていません")
+		fmt.Println("⚠️ TeamConfig not loaded")
 		return
 	}
 
@@ -104,10 +104,10 @@ func displayTeamConfig(teamConfig *config.TeamConfig) {
 	fmt.Printf("   Max Restart Attempts: %d\n", teamConfig.MaxRestartAttempts)
 }
 
-// displayPathConfiguration パス設定詳細表示
+// displayPathConfiguration displays path configuration details
 func displayPathConfiguration(paths *config.ConfigPaths) {
 	if paths == nil {
-		fmt.Println("⚠️ Path Configuration が読み込まれていません")
+		fmt.Println("⚠️ Path Configuration not loaded")
 		return
 	}
 
@@ -121,40 +121,40 @@ func displayPathConfiguration(paths *config.ConfigPaths) {
 	fmt.Printf("   Claude CLI Path:      %s\n", paths.ClaudeCLIPath)
 }
 
-// displaySystemSettings システム設定詳細表示
+// displaySystemSettings displays system settings details
 func displaySystemSettings(teamConfig *config.TeamConfig) {
 	if teamConfig == nil {
-		fmt.Println("⚠️ System Settings が読み込まれていません")
+		fmt.Println("⚠️ System Settings not loaded")
 		return
 	}
 
-	fmt.Printf("   最大プロセス数:       %d\n", teamConfig.MaxProcesses)
-	fmt.Printf("   最大メモリ使用量:     %d MB\n", teamConfig.MaxMemoryMB)
-	fmt.Printf("   最大CPU使用率:        %.1f%%\n", teamConfig.MaxCPUPercent)
-	fmt.Printf("   ヘルスチェック間隔:   %s\n", teamConfig.HealthCheckInterval)
-	fmt.Printf("   最大再起動試行回数:   %d\n", teamConfig.MaxRestartAttempts)
-	fmt.Printf("   プロセスタイムアウト: %s\n", teamConfig.ProcessTimeout)
-	fmt.Printf("   起動タイムアウト:     %s\n", teamConfig.StartupTimeout)
-	fmt.Printf("   終了タイムアウト:     %s\n", teamConfig.ShutdownTimeout)
-	fmt.Printf("   再起動遅延:           %s\n", teamConfig.RestartDelay)
+	fmt.Printf("   Max Processes:        %d\n", teamConfig.MaxProcesses)
+	fmt.Printf("   Max Memory Usage:     %d MB\n", teamConfig.MaxMemoryMB)
+	fmt.Printf("   Max CPU Usage:        %.1f%%\n", teamConfig.MaxCPUPercent)
+	fmt.Printf("   Health Check Interval: %s\n", teamConfig.HealthCheckInterval)
+	fmt.Printf("   Max Restart Attempts: %d\n", teamConfig.MaxRestartAttempts)
+	fmt.Printf("   Process Timeout:      %s\n", teamConfig.ProcessTimeout)
+	fmt.Printf("   Startup Timeout:      %s\n", teamConfig.StartupTimeout)
+	fmt.Printf("   Shutdown Timeout:     %s\n", teamConfig.ShutdownTimeout)
+	fmt.Printf("   Restart Delay:        %s\n", teamConfig.RestartDelay)
 }
 
-// displayAuthenticationSettings 認証設定詳細表示
+// displayAuthenticationSettings displays authentication settings details
 func displayAuthenticationSettings(teamConfig *config.TeamConfig) {
 	if teamConfig == nil {
-		fmt.Println("⚠️ Authentication Settings が読み込まれていません")
+		fmt.Println("⚠️ Authentication Settings not loaded")
 		return
 	}
 
-	fmt.Printf("   認証チェック間隔:     %s\n", teamConfig.AuthCheckInterval)
-	fmt.Printf("   認証バックアップ:     %s\n", teamConfig.AuthBackupDir)
+	fmt.Printf("   Auth Check Interval:  %s\n", teamConfig.AuthCheckInterval)
+	fmt.Printf("   Auth Backup Dir:      %s\n", teamConfig.AuthBackupDir)
 	fmt.Printf("   Claude CLI Path:      %s\n", teamConfig.ClaudeCLIPath)
 }
 
-// displayConfigurationValidation 設定ファイル検証
+// displayConfigurationValidation validates configuration files
 func displayConfigurationValidation(paths *config.ConfigPaths) {
 	if paths == nil {
-		fmt.Println("⚠️ Path Configuration が読み込まれていません")
+		fmt.Println("⚠️ Path Configuration not loaded")
 		return
 	}
 
@@ -180,30 +180,30 @@ func displayConfigurationValidation(paths *config.ConfigPaths) {
 	}
 }
 
-// displayBasicConfigFallback 基本設定フォールバック表示
+// displayBasicConfigFallback displays basic configuration fallback
 func displayBasicConfigFallback() {
-	fmt.Println("\n📁 基本設定情報")
+	fmt.Println("\n📁 Basic Configuration Information")
 	fmt.Println("--------------")
 
-	// 基本的な設定情報のみ表示
+	// Display only basic configuration information
 	configPath := config.GetDefaultTeamConfigPath()
-	fmt.Printf("   設定ファイルパス:     %s\n", configPath)
+	fmt.Printf("   Config File Path:     %s\n", configPath)
 
 	if utils.ValidatePath(configPath) {
-		fmt.Println("   設定ファイル状態:     ✅ 存在")
+		fmt.Println("   Config File Status:   ✅ Exists")
 	} else {
-		fmt.Println("   設定ファイル状態:     ❌ 不在")
+		fmt.Println("   Config File Status:   ❌ Not Found")
 	}
 }
 
-// DisplaySessionConfigCommand セッション設定詳細表示コマンド
+// DisplaySessionConfigCommand displays session configuration details
 func DisplaySessionConfigCommand(sessionName string) error {
-	fmt.Printf("🔧 セッション設定詳細表示: %s\n", sessionName)
+	fmt.Printf("🔧 Session Configuration Details: %s\n", sessionName)
 	fmt.Println("=====================================")
 
-	// セッション固有の設定情報を表示
-	fmt.Printf("   セッション名:         %s\n", sessionName)
-	fmt.Printf("   表示時刻:             %s\n", time.Now().Format("2006-01-02 15:04:05"))
+	// Display session-specific configuration information
+	fmt.Printf("   Session Name:         %s\n", sessionName)
+	fmt.Printf("   Display Time:         %s\n", time.Now().Format("2006-01-02 15:04:05"))
 
 	return nil
 }

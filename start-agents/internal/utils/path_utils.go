@@ -6,13 +6,13 @@ import (
 	"strings"
 )
 
-// ExpandPath チルダ（~）を含むパスを展開する
+// ExpandPath expands paths containing tilde (~)
 func ExpandPath(path string) (string, error) {
 	if path == "" {
 		return path, nil
 	}
 
-	// チルダで始まる場合
+	// If starts with tilde
 	if strings.HasPrefix(path, "~") {
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
@@ -24,20 +24,20 @@ func ExpandPath(path string) (string, error) {
 			return filepath.Join(homeDir, path[1:]), nil
 		}
 
-		// ~user/foo の場合は展開しない（ユーザー指定）
+		// Don't expand ~user/foo case (user specified)
 		return path, nil
 	}
 
 	return path, nil
 }
 
-// ExpandPathSafe チルダ展開のセーフ版（エラー時は元のパスを返す）
+// ExpandPathSafe safe version of tilde expansion (returns original path on error)
 func ExpandPathSafe(path string) string {
-	// URLエンコードされた攻撃的なパスを検出・拒否
+	// Detect and reject URL-encoded malicious paths
 	if strings.Contains(path, "%2F") || strings.Contains(path, "%2f") ||
 		strings.Contains(path, "%5C") || strings.Contains(path, "%5c") ||
 		strings.Contains(path, "%00") {
-		// エンコードされた攻撃文字が含まれている場合は安全化
+		// Sanitize if encoded attack characters are found
 		path = strings.ReplaceAll(path, "%2F", "_")
 		path = strings.ReplaceAll(path, "%2f", "_")
 		path = strings.ReplaceAll(path, "%5C", "_")
@@ -52,16 +52,16 @@ func ExpandPathSafe(path string) string {
 	return expanded
 }
 
-// NormalizePath パスの正規化（チルダ展開 + 絶対パス変換）
+// NormalizePath normalizes path (tilde expansion + absolute path conversion)
 func NormalizePath(path string) (string, error) {
 	if path == "" {
 		return path, nil
 	}
 
-	// チルダ展開
+	// Tilde expansion
 	expanded := ExpandPathSafe(path)
 
-	// 絶対パス化
+	// Make absolute path
 	if !filepath.IsAbs(expanded) {
 		abs, err := filepath.Abs(expanded)
 		if err != nil {
@@ -73,7 +73,7 @@ func NormalizePath(path string) (string, error) {
 	return filepath.Clean(expanded), nil
 }
 
-// EnsureDirectory ディレクトリの存在確認と作成
+// EnsureDirectory checks directory existence and creates it
 func EnsureDirectory(path string) error {
 	normalizedPath, err := NormalizePath(path)
 	if err != nil {
@@ -83,14 +83,14 @@ func EnsureDirectory(path string) error {
 	return os.MkdirAll(normalizedPath, 0750)
 }
 
-// PathExists パスの存在確認
+// PathExists checks path existence
 func PathExists(path string) bool {
 	normalizedPath := ExpandPathSafe(path)
 	_, err := os.Stat(normalizedPath)
 	return err == nil
 }
 
-// IsDirectory ディレクトリかどうかを確認
+// IsDirectory checks if path is directory
 func IsDirectory(path string) bool {
 	normalizedPath := ExpandPathSafe(path)
 	info, err := os.Stat(normalizedPath)
@@ -100,13 +100,13 @@ func IsDirectory(path string) bool {
 	return info.IsDir()
 }
 
-// JoinPath パスを結合し、チルダ展開する
+// JoinPath joins paths and expands tilde
 func JoinPath(base string, elements ...string) (string, error) {
 	path := filepath.Join(base, filepath.Join(elements...))
 	return NormalizePath(path)
 }
 
-// JoinPathSafe パス結合のセーフ版
+// JoinPathSafe safe version of path joining
 func JoinPathSafe(base string, elements ...string) string {
 	path, err := JoinPath(base, elements...)
 	if err != nil {

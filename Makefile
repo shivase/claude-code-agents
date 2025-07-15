@@ -3,13 +3,13 @@
 
 .PHONY: install help clean build test fmt lint install-instructions
 .PHONY: hooks-install send-agent-install start-agents-install
-.PHONY: hooks-help send-agent-help start-agents-help
+.PHONY: hooks-help send-agent-help start-agents-help hooks-setup
 
 # デフォルトターゲット
 all: install
 
 # 全プロジェクトのインストール
-install: hooks-install send-agent-install start-agents-install install-instructions
+install: hooks-install send-agent-install start-agents-install install-instructions hooks-setup
 	@echo "✅ 全てのコンポーネントのインストールが完了しました"
 
 # 各プロジェクトのインストール
@@ -40,6 +40,41 @@ install-instructions:
 	done
 	@echo "✅ Instructions installation completed"
 
+# Git Hooks セットアップ
+hooks-setup:
+	@echo "🪝 Setting up Git Hooks..."
+	@if [ ! -d ".git" ]; then \
+		echo "❌ Error: Not a Git repository"; \
+		exit 1; \
+	fi
+	@mkdir -p .git/hooks
+	@# OS検出とシンボリックリンク作成
+	@if [ "$$(uname)" = "Darwin" ] || [ "$$(uname)" = "Linux" ]; then \
+		if [ -L ".git/hooks/pre-commit" ]; then \
+			echo "🔗 Removing existing pre-commit symlink..."; \
+			rm -f .git/hooks/pre-commit; \
+		elif [ -f ".git/hooks/pre-commit" ]; then \
+			echo "📦 Backing up existing pre-commit hook..."; \
+			cp .git/hooks/pre-commit .git/hooks/pre-commit.backup; \
+			rm -f .git/hooks/pre-commit; \
+		fi; \
+		echo "🔗 Creating symlink for pre-commit hook..."; \
+		ln -sf "$$(pwd)/scripts/hooks/pre-commit" .git/hooks/pre-commit; \
+		chmod +x .git/hooks/pre-commit; \
+		echo "✅ Git Hooks setup completed with symlinks"; \
+	else \
+		echo "🪟 Windows detected, using copy method..."; \
+		if [ -f ".git/hooks/pre-commit" ]; then \
+			echo "📦 Backing up existing pre-commit hook..."; \
+			cp .git/hooks/pre-commit .git/hooks/pre-commit.backup; \
+		fi; \
+		echo "📄 Copying pre-commit hook..."; \
+		cp scripts/hooks/pre-commit .git/hooks/pre-commit; \
+		chmod +x .git/hooks/pre-commit; \
+		echo "✅ Git Hooks setup completed with copy method"; \
+	fi
+	@echo "🎯 Pre-commit hook installed and ready to use"
+
 # ヘルプの表示
 help:
 	@echo "🤖 Cloud Code Agents - 統合ビルドシステム"
@@ -47,6 +82,7 @@ help:
 	@echo "利用可能なターゲット:"
 	@echo "  install           - 全コンポーネントをビルド・インストール"
 	@echo "  install-instructions - instructionsフォルダを~/.claude/claude-code-agents/instructionsにコピー"
+	@echo "  hooks-setup       - Git Hooksの自動セットアップ"
 	@echo "  help              - このヘルプメッセージを表示"
 	@echo "  clean             - 全プロジェクトのビルド成果物をクリーンアップ"
 	@echo "  build             - 全プロジェクトをビルド"

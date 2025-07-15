@@ -2,50 +2,50 @@ package tmux
 
 import "time"
 
-// TmuxManagerInterface tmux操作管理のインターフェース
+// TmuxManagerInterface interface for tmux operation management
 type TmuxManagerInterface interface {
-	// SessionExists セッションの存在確認
+	// SessionExists checks if a session exists
 	SessionExists(sessionName string) bool
-	// ListSessions セッション一覧の取得
+	// ListSessions retrieves session list
 	ListSessions() ([]string, error)
-	// CreateSession セッションの作成
+	// CreateSession creates a new session
 	CreateSession(sessionName string) error
-	// KillSession セッションの削除
+	// KillSession deletes a session
 	KillSession(sessionName string) error
-	// AttachSession セッションへの接続
+	// AttachSession attaches to a session
 	AttachSession(sessionName string) error
-	// CreateIntegratedLayout 統合監視画面レイアウトの作成
+	// CreateIntegratedLayout creates integrated monitoring screen layout
 	CreateIntegratedLayout(sessionName string, devCount int) error
-	// CreateIndividualLayout 個別セッション方式の作成
+	// CreateIndividualLayout creates individual session layout
 	CreateIndividualLayout(sessionName string) error
-	// SplitWindow ウィンドウの分割
+	// SplitWindow splits a window
 	SplitWindow(target, direction string) error
-	// RenameWindow ウィンドウ名の変更
+	// RenameWindow renames a window
 	RenameWindow(sessionName, windowName string) error
-	// AdjustPaneSizes ペインサイズの調整
+	// AdjustPaneSizes adjusts pane sizes
 	AdjustPaneSizes(sessionName string, devCount int) error
-	// SetPaneTitles ペインタイトルの設定
+	// SetPaneTitles sets pane titles
 	SetPaneTitles(sessionName string, devCount int) error
-	// GetPaneCount ペイン数の取得
+	// GetPaneCount retrieves pane count
 	GetPaneCount(sessionName string) (int, error)
-	// GetPaneList ペイン一覧の取得
+	// GetPaneList retrieves pane list
 	GetPaneList(sessionName string) ([]string, error)
-	// SendKeysToPane ペインにキーを送信
+	// SendKeysToPane sends keys to a pane
 	SendKeysToPane(sessionName, pane, keys string) error
-	// SendKeysWithEnter ペインにキーを送信（Enter付き）
+	// SendKeysWithEnter sends keys to a pane with Enter
 	SendKeysWithEnter(sessionName, pane, keys string) error
-	// GetAITeamSessions AIチーム関連セッションの取得
+	// GetAITeamSessions retrieves AI team related sessions
 	GetAITeamSessions(expectedPaneCount int) (map[string][]string, error)
-	// FindDefaultAISession デフォルトAIセッションの検出
+	// FindDefaultAISession finds default AI session
 	FindDefaultAISession(expectedPaneCount int) (string, error)
-	// DetectActiveAISession アクティブなAIセッションの検出
+	// DetectActiveAISession detects active AI session
 	DetectActiveAISession(expectedPaneCount int) (string, string, error)
-	// DeleteAITeamSessions AIチーム関連セッションの削除
+	// DeleteAITeamSessions deletes AI team related sessions
 	DeleteAITeamSessions(sessionName string, devCount int) error
-	// WaitForPaneReady ペインの準備完了待機
+	// WaitForPaneReady waits for pane to be ready
 	WaitForPaneReady(sessionName, pane string, timeout time.Duration) error
-	// GetSessionInfo セッション情報の取得
+	// GetSessionInfo retrieves session information
 	GetSessionInfo(sessionName string) (map[string]interface{}, error)
-	// SendInstructionToPaneWithConfig 設定ファイルを使用してインストラクションファイルを送信
+	// SendInstructionToPaneWithConfig sends instruction file using configuration
 	SendInstructionToPaneWithConfig(sessionName, pane, agent, instructionsDir string, config interface{}) error
 }

@@ -28,45 +28,45 @@ func executeHook(cmd *cobra.Command, args []string) error {
 	if !isValidRole(role) {
 		homeDir, _ := os.UserHomeDir()
 		instructionsDir := filepath.Join(homeDir, ".claude", "claude-code-agents", "instructions")
-		fmt.Println("❌ エラー: 無効な役割です。")
-		fmt.Printf("📁 instructionsファイルが見つかりません: %s.%s\n", instructionsDir, role)
-		fmt.Println("📝 使用例: /reload-role [role名称]")
-		return fmt.Errorf("指定されたrole名に該当するinstructionファイルが存在しません: %s", role)
+		fmt.Println("❌ Error: Invalid role.")
+		fmt.Printf("📁 Instructions file not found: %s.%s\n", instructionsDir, role)
+		fmt.Println("📝 Usage: /reload-role [role name]")
+		return fmt.Errorf("instruction file for the specified role does not exist: %s", role)
 	}
 
-	// mdファイルのパスを構築
+	// Build the md file path
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return fmt.Errorf("ホームディレクトリの取得に失敗しました: %w", err)
+		return fmt.Errorf("failed to get home directory: %w", err)
 	}
 
 	mdFile := filepath.Join(homeDir, ".claude", "claude-code-agents", "instructions", role+".md")
 
-	// ファイルが存在するかチェック
+	// Check if the file exists
 	if _, err := os.Stat(mdFile); os.IsNotExist(err) {
-		fmt.Printf("❌ エラー: %s が見つかりません。\n", mdFile)
-		return fmt.Errorf("ファイルが見つかりません: %s", mdFile)
+		fmt.Printf("❌ Error: %s not found.\n", mdFile)
+		return fmt.Errorf("file not found: %s", mdFile)
 	}
 
 	// ファイルの内容を読み込み
 	content, err := os.ReadFile(mdFile)
 	if err != nil {
-		return fmt.Errorf("ファイルの読み込みに失敗しました: %w", err)
+		return fmt.Errorf("failed to read file: %w", err)
 	}
 
 	// 結果を出力
-	fmt.Printf("🔄 %sの役割定義を再読み込み中...\n", role)
+	fmt.Printf("🔄 Reloading role definition for %s...\n", role)
 	fmt.Println("")
-	fmt.Printf("📋 ファイル: %s\n", mdFile)
+	fmt.Printf("📋 File: %s\n", mdFile)
 	fmt.Println("")
-	fmt.Println("🔄 前の役割定義をリセットしています...")
-	fmt.Println("📖 新しい役割定義を適用します：")
+	fmt.Println("🔄 Resetting previous role definition...")
+	fmt.Println("📖 Applying new role definition:")
 	fmt.Println("----------------------------------------")
 	fmt.Print(string(content))
 	fmt.Println("----------------------------------------")
 	fmt.Println("")
-	fmt.Printf("✅ %sの役割定義を正常に再読み込みしました。\n", role)
-	fmt.Println("💡 前の役割定義は完全にリセットされ、新しい役割定義のみが適用されます。")
+	fmt.Printf("✅ Successfully reloaded role definition for %s.\n", role)
+	fmt.Println("💡 Previous role definition has been completely reset, and only the new role definition is applied.")
 
 	return nil
 }
@@ -78,10 +78,10 @@ func isValidRole(role string) bool {
 		return false
 	}
 
-	// mdファイルのパスを構築
+	// Build the md file path
 	mdFile := filepath.Join(homeDir, ".claude", "claude-code-agents", "instructions", role+".md")
 
-	// ファイルが存在するかチェック
+	// Check if the file exists
 	if _, err := os.Stat(mdFile); os.IsNotExist(err) {
 		return false
 	}
@@ -147,7 +147,7 @@ func TestExecuteHookRegexValidation(t *testing.T) {
 			expected: true,
 		},
 		{
-			name:     "特殊文字を含む役割名",
+			name:     "Role name with special characters",
 			input:    "/reload-role dev-ops",
 			expected: true,
 		},
@@ -203,32 +203,32 @@ func TestIsValidRole(t *testing.T) {
 		expected bool
 	}{
 		{
-			name:     "存在する役割 - developer",
+			name:     "Existing role - developer",
 			role:     "developer",
 			expected: true,
 		},
 		{
-			name:     "存在する役割 - manager",
+			name:     "Existing role - manager",
 			role:     "manager",
 			expected: true,
 		},
 		{
-			name:     "存在する役割 - po",
+			name:     "Existing role - po",
 			role:     "po",
 			expected: true,
 		},
 		{
-			name:     "存在しない役割",
+			name:     "Non-existent role",
 			role:     "nonexistent",
 			expected: false,
 		},
 		{
-			name:     "空の役割名",
+			name:     "Empty role name",
 			role:     "",
 			expected: false,
 		},
 		{
-			name:     "特殊文字を含む役割名",
+			name:     "Role name with special characters",
 			role:     "dev-ops",
 			expected: false,
 		},
@@ -265,37 +265,37 @@ func TestErrorHandling(t *testing.T) {
 		description string
 	}{
 		{
-			name: "ホームディレクトリが存在しない場合",
+			name: "Home directory does not exist",
 			setupFunc: func(tmpDir string) error {
 				// .claudeディレクトリを作成しない
 				return nil
 			},
 			args:        []string{"/reload-role developer"},
 			expectedErr: true,
-			description: "ホームディレクトリに.claudeディレクトリが存在しない場合のエラー",
+			description: "Error when .claude directory does not exist in home directory",
 		},
 		{
-			name: "instructionsディレクトリが存在しない場合",
+			name: "Instructions directory does not exist",
 			setupFunc: func(tmpDir string) error {
 				// .claudeディレクトリのみ作成
 				return os.MkdirAll(filepath.Join(tmpDir, ".claude"), 0755)
 			},
 			args:        []string{"/reload-role developer"},
 			expectedErr: true,
-			description: "instructionsディレクトリが存在しない場合のエラー",
+			description: "Error when instructions directory does not exist",
 		},
 		{
-			name: "指定された役割ファイルが存在しない場合",
+			name: "Specified role file does not exist",
 			setupFunc: func(tmpDir string) error {
 				// instructionsディレクトリまで作成するが、ファイルは作成しない
 				return os.MkdirAll(filepath.Join(tmpDir, ".claude", "claude-code-agents", "instructions"), 0755)
 			},
 			args:        []string{"/reload-role nonexistent"},
 			expectedErr: true,
-			description: "指定された役割ファイルが存在しない場合のエラー",
+			description: "Error when specified role file does not exist",
 		},
 		{
-			name: "空の役割ファイルが存在する場合",
+			name: "Empty role file exists",
 			setupFunc: func(tmpDir string) error {
 				instructionsDir := filepath.Join(tmpDir, ".claude", "claude-code-agents", "instructions")
 				err := os.MkdirAll(instructionsDir, 0755)
@@ -307,7 +307,7 @@ func TestErrorHandling(t *testing.T) {
 			},
 			args:        []string{"/reload-role empty"},
 			expectedErr: false,
-			description: "空の役割ファイルが存在する場合は正常に処理される",
+			description: "Empty role file is processed normally when it exists",
 		},
 	}
 
@@ -345,49 +345,49 @@ func TestIsRunningInTmux(t *testing.T) {
 		expected bool
 	}{
 		{
-			name: "TMUX環境変数が設定されている場合",
+			name: "TMUX environment variable is set",
 			envVars: map[string]string{
 				"TMUX": "/tmp/tmux-1000/default,1234,0",
 			},
 			expected: true,
 		},
 		{
-			name: "TERM環境変数がscreenの場合",
+			name: "TERM environment variable is screen",
 			envVars: map[string]string{
 				"TERM": "screen",
 			},
 			expected: true,
 		},
 		{
-			name: "TERM環境変数がscreen-256colorの場合",
+			name: "TERM environment variable is screen-256color",
 			envVars: map[string]string{
 				"TERM": "screen-256color",
 			},
 			expected: true,
 		},
 		{
-			name: "TERM環境変数がtmuxの場合",
+			name: "TERM environment variable is tmux",
 			envVars: map[string]string{
 				"TERM": "tmux",
 			},
 			expected: true,
 		},
 		{
-			name: "TERM環境変数がtmux-256colorの場合",
+			name: "TERM environment variable is tmux-256color",
 			envVars: map[string]string{
 				"TERM": "tmux-256color",
 			},
 			expected: true,
 		},
 		{
-			name: "tmux関連の環境変数が設定されていない場合",
+			name: "No tmux-related environment variables are set",
 			envVars: map[string]string{
 				"TERM": "xterm-256color",
 			},
 			expected: false,
 		},
 		{
-			name:     "環境変数が何も設定されていない場合",
+			name:     "No environment variables are set",
 			envVars:  map[string]string{},
 			expected: false,
 		},

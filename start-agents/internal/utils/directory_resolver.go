@@ -9,7 +9,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// DirectoryResolver ディレクトリ解決機能
+// DirectoryResolver resolves directory paths
 type DirectoryResolver struct {
 	originalWorkingDir string
 	projectRoot        string
@@ -17,36 +17,36 @@ type DirectoryResolver struct {
 	isInSubdirectory   bool
 }
 
-// NewDirectoryResolver 新しいディレクトリ解決器を作成
+// NewDirectoryResolver creates a new directory resolver
 func NewDirectoryResolver() *DirectoryResolver {
 	resolver := &DirectoryResolver{}
 	if err := resolver.Initialize(); err != nil {
-		// エラーログは記録するが、処理を続行
+		// Log error but continue processing
 		fmt.Fprintf(os.Stderr, "Warning: directory resolver initialization failed: %v\n", err)
 	}
 	return resolver
 }
 
-// Initialize ディレクトリ解決器の初期化
+// Initialize initializes the directory resolver
 func (dr *DirectoryResolver) Initialize() error {
-	// 元の作業ディレクトリを保存
+	// Save original working directory
 	if wd, err := os.Getwd(); err == nil {
 		dr.originalWorkingDir = wd
 	} else {
 		return fmt.Errorf("failed to get current working directory: %w", err)
 	}
 
-	// バイナリのパスを取得
+	// Get binary path
 	if exe, err := os.Executable(); err == nil {
 		dr.binaryPath = exe
 	} else {
 		return fmt.Errorf("failed to get executable path: %w", err)
 	}
 
-	// プロジェクトルートを決定
+	// Determine project root
 	dr.determineProjectRoot()
 
-	// サブディレクトリ内実行かどうかを判定
+	// Check if running from subdirectory
 	dr.isInSubdirectory = dr.isRunningFromSubdirectory()
 
 	log.Info().
@@ -59,12 +59,12 @@ func (dr *DirectoryResolver) Initialize() error {
 	return nil
 }
 
-// determineProjectRoot プロジェクトルートを決定
+// determineProjectRoot determines the project root
 func (dr *DirectoryResolver) determineProjectRoot() {
-	// 1. バイナリのパスから推測
+	// 1. Infer from binary path
 	binaryDir := filepath.Dir(dr.binaryPath)
 
-	// バイナリがbuildディレクトリにある場合、その親ディレクトリを確認
+	// If binary is in build directory, check its parent directory
 	if strings.HasSuffix(binaryDir, "build") {
 		parentDir := filepath.Dir(binaryDir)
 		if dr.isProjectRoot(parentDir) {
@@ -73,7 +73,7 @@ func (dr *DirectoryResolver) determineProjectRoot() {
 		}
 	}
 
-	// 2. 現在のディレクトリから上位に向かって検索
+	// 2. Search upward from current directory
 	searchDir := dr.originalWorkingDir
 	for {
 		if dr.isProjectRoot(searchDir) {
@@ -83,19 +83,19 @@ func (dr *DirectoryResolver) determineProjectRoot() {
 
 		parent := filepath.Dir(searchDir)
 		if parent == searchDir {
-			// ルートディレクトリに到達
+			// Reached root directory
 			break
 		}
 		searchDir = parent
 	}
 
-	// 3. デフォルトとして現在のディレクトリを使用
+	// 3. Use current directory as default
 	dr.projectRoot = dr.originalWorkingDir
 }
 
-// isProjectRoot プロジェクトルートかどうかを判定
+// isProjectRoot determines if directory is project root
 func (dr *DirectoryResolver) isProjectRoot(dir string) bool {
-	// プロジェクトルートの特徴的なファイル・ディレクトリをチェック
+	// Check for characteristic files/directories of project root
 	indicators := []string{
 		"start-agents",
 		"send-agent",
@@ -114,15 +114,15 @@ func (dr *DirectoryResolver) isProjectRoot(dir string) bool {
 	return false
 }
 
-// isRunningFromSubdirectory サブディレクトリから実行されているかを判定
+// isRunningFromSubdirectory checks if running from subdirectory
 func (dr *DirectoryResolver) isRunningFromSubdirectory() bool {
-	// 現在のディレクトリがプロジェクトルートではない場合
+	// If current directory is not project root
 	return dr.originalWorkingDir != dr.projectRoot
 }
 
-// GetOptimalWorkingDirectory 最適な作業ディレクトリを取得
+// GetOptimalWorkingDirectory gets the optimal working directory
 func (dr *DirectoryResolver) GetOptimalWorkingDirectory() string {
-	// start-agentsディレクトリから実行されている場合は、プロジェクトルートを返す
+	// Return project root if running from start-agents directory
 	if dr.isInSubdirectory {
 		log.Info().
 			Str("original", dr.originalWorkingDir).
@@ -131,46 +131,46 @@ func (dr *DirectoryResolver) GetOptimalWorkingDirectory() string {
 		return dr.projectRoot
 	}
 
-	// それ以外は元の作業ディレクトリを返す
+	// Otherwise return original working directory
 	return dr.originalWorkingDir
 }
 
-// GetProjectRoot プロジェクトルートを取得
+// GetProjectRoot gets the project root
 func (dr *DirectoryResolver) GetProjectRoot() string {
 	return dr.projectRoot
 }
 
-// GetOriginalWorkingDirectory 元の作業ディレクトリを取得
+// GetOriginalWorkingDirectory gets the original working directory
 func (dr *DirectoryResolver) GetOriginalWorkingDirectory() string {
 	return dr.originalWorkingDir
 }
 
-// IsInSubdirectory サブディレクトリから実行されているかを確認
+// IsInSubdirectory checks if running from subdirectory
 func (dr *DirectoryResolver) IsInSubdirectory() bool {
 	return dr.isInSubdirectory
 }
 
-// ResolveRelativePath 相対パスを適切に解決
+// ResolveRelativePath resolves relative paths appropriately
 func (dr *DirectoryResolver) ResolveRelativePath(relativePath string) string {
-	// チルダ展開を先に実行
+	// Perform tilde expansion first
 	expandedPath := ExpandPathSafe(relativePath)
 
-	// 絶対パスの場合はセキュリティ検証を行う
+	// Perform security validation for absolute paths
 	if filepath.IsAbs(expandedPath) {
-		// 危険なシステムパスへのアクセスを防止
+		// Prevent access to dangerous system paths
 		if dr.isDangerousPath(expandedPath) {
 			log.Warn().Str("path", expandedPath).Msg("Dangerous path access blocked")
-			// 安全なプロジェクトルート内のパスに変更
+			// Change to safe path within project root
 			safePath := filepath.Join(dr.projectRoot, filepath.Base(expandedPath))
 			return safePath
 		}
 		return expandedPath
 	}
 
-	// 相対パスの場合、プロジェクトルートを基準に解決
+	// For relative paths, resolve based on project root
 	resolved := filepath.Join(dr.projectRoot, expandedPath)
 
-	// パストラバーサル攻撃の検証
+	// Validate for path traversal attacks
 	cleanResolved := filepath.Clean(resolved)
 	if dr.isPathTraversal(cleanResolved) {
 		log.Warn().
@@ -192,7 +192,7 @@ func (dr *DirectoryResolver) ResolveRelativePath(relativePath string) string {
 	return cleanResolved
 }
 
-// isDangerousPath 危険なシステムパスかどうかを判定
+// isDangerousPath determines if path is dangerous system path
 func (dr *DirectoryResolver) isDangerousPath(path string) bool {
 	dangerousPaths := []string{
 		"/etc", "/root", "/home", "/usr/bin", "/usr/sbin",
@@ -208,28 +208,28 @@ func (dr *DirectoryResolver) isDangerousPath(path string) bool {
 	return false
 }
 
-// isPathTraversal パストラバーサル攻撃かどうかを判定
+// isPathTraversal determines if path is path traversal attack
 func (dr *DirectoryResolver) isPathTraversal(resolvedPath string) bool {
-	// プロジェクトルートの外に出ようとしているかチェック
+	// Check if trying to go outside project root
 	relPath, err := filepath.Rel(dr.projectRoot, resolvedPath)
 	if err != nil {
-		return true // エラーが発生した場合は危険とみなす
+		return true // Consider dangerous if error occurs
 	}
 
-	// "../"で始まる場合はパストラバーサル
+	// Path traversal if starts with "../"
 	return strings.HasPrefix(relPath, "..")
 }
 
-// EnsureDirectoryExists ディレクトリの存在を確認し、必要に応じて作成
+// EnsureDirectoryExists checks directory existence and creates if needed
 func (dr *DirectoryResolver) EnsureDirectoryExists(path string) error {
-	// パスを解決（チルダ展開含む）
+	// Resolve path (including tilde expansion)
 	resolvedPath := dr.ResolveRelativePath(path)
 
 	// ディレクトリが存在するかチェック
 	_, err := os.Stat(resolvedPath)
 	switch {
 	case os.IsNotExist(err):
-		// ディレクトリを作成
+		// Create directory
 		if err := os.MkdirAll(resolvedPath, 0750); err != nil {
 			return fmt.Errorf("failed to create directory %s: %w", resolvedPath, err)
 		}
@@ -241,7 +241,7 @@ func (dr *DirectoryResolver) EnsureDirectoryExists(path string) error {
 	return nil
 }
 
-// GetRelativePathFromRoot プロジェクトルートからの相対パスを取得
+// GetRelativePathFromRoot gets relative path from project root
 func (dr *DirectoryResolver) GetRelativePathFromRoot(absolutePath string) string {
 	if relPath, err := filepath.Rel(dr.projectRoot, absolutePath); err == nil {
 		return relPath
@@ -249,19 +249,19 @@ func (dr *DirectoryResolver) GetRelativePathFromRoot(absolutePath string) string
 	return absolutePath
 }
 
-// ValidateWorkingDirectory 作業ディレクトリの有効性を検証
+// ValidateWorkingDirectory validates working directory
 func (dr *DirectoryResolver) ValidateWorkingDirectory(workingDir string) error {
 	// ディレクトリが存在するかチェック
 	if _, err := os.Stat(workingDir); os.IsNotExist(err) {
 		return fmt.Errorf("working directory does not exist: %s", workingDir)
 	}
 
-	// ディレクトリにアクセス可能かチェック
+	// Check if directory is accessible
 	if err := os.Chdir(workingDir); err != nil {
 		return fmt.Errorf("cannot access working directory: %s", workingDir)
 	}
 
-	// 元のディレクトリに戻る
+	// Return to original directory
 	if err := os.Chdir(dr.originalWorkingDir); err != nil {
 		log.Warn().Err(err).Msg("Failed to return to original working directory")
 	}
@@ -269,7 +269,7 @@ func (dr *DirectoryResolver) ValidateWorkingDirectory(workingDir string) error {
 	return nil
 }
 
-// GetDirectoryInfo ディレクトリ情報を取得
+// GetDirectoryInfo gets directory information
 func (dr *DirectoryResolver) GetDirectoryInfo() map[string]string {
 	return map[string]string{
 		"original_working_dir": dr.originalWorkingDir,
@@ -280,7 +280,7 @@ func (dr *DirectoryResolver) GetDirectoryInfo() map[string]string {
 	}
 }
 
-// ConfigInterface インターフェイス定義
+// ConfigInterface defines configuration interface
 type ConfigInterface interface {
 	GetWorkingDir() string
 	SetWorkingDir(string)
@@ -296,12 +296,12 @@ type ConfigInterface interface {
 	SetAuthBackupDir(string)
 }
 
-// FixDirectoryDependentPaths ディレクトリ依存パスの修正
+// FixDirectoryDependentPaths fixes directory dependent paths
 func (dr *DirectoryResolver) FixDirectoryDependentPaths(config ConfigInterface) error {
-	// 作業ディレクトリを最適化
+	// Optimize working directory
 	config.SetWorkingDir(dr.GetOptimalWorkingDirectory())
 
-	// 相対パスを絶対パスに変換
+	// Convert relative paths to absolute paths
 	if !filepath.IsAbs(config.GetClaudeCLIPath()) {
 		config.SetClaudeCLIPath(dr.ResolveRelativePath(config.GetClaudeCLIPath()))
 	}
@@ -325,7 +325,7 @@ func (dr *DirectoryResolver) FixDirectoryDependentPaths(config ConfigInterface) 
 	return nil
 }
 
-// DisplayDirectoryInfo ディレクトリ情報を表示
+// DisplayDirectoryInfo displays directory information
 func (dr *DirectoryResolver) DisplayDirectoryInfo() {
 	fmt.Println("\n📁 Directory Resolution Information")
 	fmt.Println("==================================")
@@ -346,10 +346,10 @@ func (dr *DirectoryResolver) DisplayDirectoryInfo() {
 	fmt.Println()
 }
 
-// グローバルディレクトリ解決器
+// Global directory resolver
 var globalDirectoryResolver *DirectoryResolver
 
-// GetGlobalDirectoryResolver グローバルディレクトリ解決器を取得
+// GetGlobalDirectoryResolver gets global directory resolver
 func GetGlobalDirectoryResolver() *DirectoryResolver {
 	if globalDirectoryResolver == nil {
 		globalDirectoryResolver = NewDirectoryResolver()
@@ -357,7 +357,7 @@ func GetGlobalDirectoryResolver() *DirectoryResolver {
 	return globalDirectoryResolver
 }
 
-// InitializeDirectoryResolver ディレクトリ解決器の初期化
+// InitializeDirectoryResolver initializes directory resolver
 func InitializeDirectoryResolver() error {
 	resolver := GetGlobalDirectoryResolver()
 	return resolver.Initialize()

@@ -5,9 +5,9 @@ import (
 	"testing"
 )
 
-// TestReloadRoleRegexMatching /reload-roleコマンドの正規表現マッチングテスト
+// TestReloadRoleRegexMatching Tests regular expression matching for /reload-role command
 func TestReloadRoleRegexMatching(t *testing.T) {
-	// 正規表現パターン（main.goから抽出）
+	// Regular expression pattern (extracted from main.go)
 	reloadRoleRegex := regexp.MustCompile(`^/reload-role\s+([a-zA-Z]+)`)
 
 	testCases := []struct {
@@ -17,178 +17,178 @@ func TestReloadRoleRegexMatching(t *testing.T) {
 		expectedRole  string
 		description   string
 	}{
-		// 正常ケース
+		// Normal cases
 		{
 			name:          "ValidRole_PO",
 			input:         "/reload-role po",
 			expectedMatch: true,
 			expectedRole:  "po",
-			description:   "POの役割を正常に認識",
+			description:   "Correctly recognizes PO role",
 		},
 		{
 			name:          "ValidRole_Manager",
 			input:         "/reload-role manager",
 			expectedMatch: true,
 			expectedRole:  "manager",
-			description:   "マネージャーの役割を正常に認識",
+			description:   "Correctly recognizes manager role",
 		},
 		{
 			name:          "ValidRole_Developer",
 			input:         "/reload-role developer",
 			expectedMatch: true,
 			expectedRole:  "developer",
-			description:   "開発者の役割を正常に認識",
+			description:   "Correctly recognizes developer role",
 		},
 		{
 			name:          "ValidRole_Uppercase",
 			input:         "/reload-role PO",
 			expectedMatch: true,
 			expectedRole:  "PO",
-			description:   "大文字の役割名を正常に認識",
+			description:   "Correctly recognizes uppercase role name",
 		},
 		{
 			name:          "ValidRole_MixedCase",
 			input:         "/reload-role DevOps",
 			expectedMatch: true,
 			expectedRole:  "DevOps",
-			description:   "混合大小文字の役割名を正常に認識",
+			description:   "Correctly recognizes mixed case role name",
 		},
 		{
 			name:          "ValidRole_SingleSpace",
 			input:         "/reload-role admin",
 			expectedMatch: true,
 			expectedRole:  "admin",
-			description:   "単一スペースでの役割名を正常に認識",
+			description:   "Correctly recognizes role name with single space",
 		},
 		{
 			name:          "ValidRole_MultipleSpaces",
 			input:         "/reload-role   tester",
 			expectedMatch: true,
 			expectedRole:  "tester",
-			description:   "複数スペースでも正常に認識",
+			description:   "Correctly recognizes role name with multiple spaces",
 		},
 
-		// エラーケース
+		// Error cases
 		{
 			name:          "InvalidCommand_NoRole",
 			input:         "/reload-role",
 			expectedMatch: false,
 			expectedRole:  "",
-			description:   "役割名なしのコマンドは無効",
+			description:   "Command without role name is invalid",
 		},
 		{
 			name:          "InvalidCommand_NoSlash",
 			input:         "reload-role po",
 			expectedMatch: false,
 			expectedRole:  "",
-			description:   "スラッシュなしのコマンドは無効",
+			description:   "Command without slash is invalid",
 		},
 		{
 			name:          "InvalidCommand_WrongCommand",
 			input:         "/restart-role po",
 			expectedMatch: false,
 			expectedRole:  "",
-			description:   "間違ったコマンド名は無効",
+			description:   "Wrong command name is invalid",
 		},
 		{
 			name:          "InvalidRole_WithNumbers",
 			input:         "/reload-role dev123",
 			expectedMatch: true,
 			expectedRole:  "dev",
-			description:   "数字を含む役割名は正規表現でマッチするが、最初の英字部分のみ抽出",
+			description:   "Role name with numbers matches regex but only extracts initial alphabetic part",
 		},
 		{
 			name:          "InvalidRole_WithSymbols",
 			input:         "/reload-role dev-ops",
 			expectedMatch: true,
 			expectedRole:  "dev",
-			description:   "ハイフンを含む役割名は正規表現でマッチするが、最初の英字部分のみ抽出",
+			description:   "Role name with hyphen matches regex but only extracts initial alphabetic part",
 		},
 		{
 			name:          "InvalidRole_WithUnderscore",
 			input:         "/reload-role dev_ops",
 			expectedMatch: true,
 			expectedRole:  "dev",
-			description:   "アンダースコアを含む役割名は正規表現でマッチするが、最初の英字部分のみ抽出",
+			description:   "Role name with underscore matches regex but only extracts initial alphabetic part",
 		},
 		{
 			name:          "InvalidRole_WithSpecialChars",
 			input:         "/reload-role dev@ops",
 			expectedMatch: true,
 			expectedRole:  "dev",
-			description:   "特殊文字を含む役割名は正規表現でマッチするが、最初の英字部分のみ抽出",
+			description:   "Role name with special characters matches regex but only extracts initial alphabetic part",
 		},
 		{
 			name:          "InvalidRole_EmptyString",
 			input:         "/reload-role ",
 			expectedMatch: false,
 			expectedRole:  "",
-			description:   "空の役割名は無効",
+			description:   "Empty role name is invalid",
 		},
 		{
 			name:          "InvalidRole_OnlySpaces",
 			input:         "/reload-role    ",
 			expectedMatch: false,
 			expectedRole:  "",
-			description:   "スペースのみの役割名は無効",
+			description:   "Role name with only spaces is invalid",
 		},
 
-		// エッジケース
+		// Edge cases
 		{
 			name:          "EdgeCase_ExtraText",
 			input:         "/reload-role po extra text",
 			expectedMatch: true,
 			expectedRole:  "po",
-			description:   "追加テキストがあっても最初の役割名を認識",
+			description:   "Recognizes first role name even with extra text",
 		},
 		{
 			name:          "EdgeCase_TabCharacter",
 			input:         "/reload-role\tpo",
 			expectedMatch: true,
 			expectedRole:  "po",
-			description:   "タブ文字も\\s+でマッチする（\\s+は空白文字全般）",
+			description:   "Tab character matches with \\s+ (\\s+ matches all whitespace characters)",
 		},
 		{
 			name:          "EdgeCase_NewLine",
 			input:         "/reload-role\npo",
 			expectedMatch: true,
 			expectedRole:  "po",
-			description:   "改行文字も\\s+でマッチする（\\s+は空白文字全般）",
+			description:   "Newline character matches with \\s+ (\\s+ matches all whitespace characters)",
 		},
 		{
 			name:          "EdgeCase_LeadingSpaces",
 			input:         "   /reload-role po",
 			expectedMatch: false,
 			expectedRole:  "",
-			description:   "行頭スペースがあるコマンドは無効",
+			description:   "Command with leading spaces is invalid",
 		},
 		{
 			name:          "EdgeCase_TrailingSpaces",
 			input:         "/reload-role po   ",
 			expectedMatch: true,
 			expectedRole:  "po",
-			description:   "行末スペースがあっても有効",
+			description:   "Command with trailing spaces is still valid",
 		},
 		{
 			name:          "EdgeCase_VeryLongRole",
 			input:         "/reload-role " + generateLongString(100),
 			expectedMatch: true,
 			expectedRole:  generateLongString(100),
-			description:   "非常に長い役割名も正規表現は通る",
+			description:   "Very long role name still passes regex",
 		},
 		{
 			name:          "EdgeCase_SingleChar",
 			input:         "/reload-role a",
 			expectedMatch: true,
 			expectedRole:  "a",
-			description:   "単一文字の役割名は有効",
+			description:   "Single character role name is valid",
 		},
 		{
 			name:          "EdgeCase_JapaneseChars",
 			input:         "/reload-role 管理者",
 			expectedMatch: false,
 			expectedRole:  "",
-			description:   "日本語文字は無効（英字のみ許可）",
+			description:   "Japanese characters are invalid (only alphabetic characters allowed)",
 		},
 	}
 
@@ -215,7 +215,7 @@ func TestReloadRoleRegexMatching(t *testing.T) {
 	}
 }
 
-// TestReloadRoleRegexPattern 正規表現パターン自体のテスト
+// TestReloadRoleRegexPattern Tests the regular expression pattern itself
 func TestReloadRoleRegexPattern(t *testing.T) {
 	testCases := []struct {
 		name        string
@@ -229,28 +229,28 @@ func TestReloadRoleRegexPattern(t *testing.T) {
 			pattern:     `^/reload-role\s+([a-zA-Z]+)`,
 			input:       "/reload-role po",
 			shouldMatch: true,
-			description: "オリジナルパターンで正常入力をテスト",
+			description: "Test valid input with original pattern",
 		},
 		{
 			name:        "OriginalPattern_InvalidInput",
 			pattern:     `^/reload-role\s+([a-zA-Z]+)`,
 			input:       "/reload-role 123",
 			shouldMatch: false,
-			description: "オリジナルパターンで無効入力をテスト",
+			description: "Test invalid input with original pattern",
 		},
 		{
 			name:        "CaseInsensitivePattern_UpperCase",
 			pattern:     `^/reload-role\s+([a-zA-Z]+)`,
 			input:       "/reload-role ADMIN",
 			shouldMatch: true,
-			description: "大文字の役割名をテスト",
+			description: "Test uppercase role name",
 		},
 		{
 			name:        "CaseInsensitivePattern_LowerCase",
 			pattern:     `^/reload-role\s+([a-zA-Z]+)`,
 			input:       "/reload-role admin",
 			shouldMatch: true,
-			description: "小文字の役割名をテスト",
+			description: "Test lowercase role name",
 		},
 	}
 

@@ -9,20 +9,20 @@ import (
 	"github.com/shivase/cloud-code-agents/send-agent/internal"
 )
 
-// tmux関数の基本的な機能テスト
-// 注意: これらのテストは実際のtmuxが動作していることを前提とする
+// Basic functional tests for tmux functions
+// Note: These tests assume that tmux is actually running
 
 func TestGetTmuxSessions_Structure(t *testing.T) {
 	t.Run("戻り値の構造確認", func(t *testing.T) {
 		sessions, err := internal.GetTmuxSessions()
 
-		// tmuxが存在しない場合はエラーが返されることを確認
+		// Verify that an error is returned if tmux doesn't exist
 		if err != nil {
-			assert.Contains(t, err.Error(), "tmuxセッション一覧の取得に失敗しました")
+			assert.Contains(t, err.Error(), "failed to get tmux session list")
 			return
 		}
 
-		// 正常に取得できる場合は各セッションにNameが設定されていることを確認
+		// Verify that each session has a Name set when successfully retrieved
 		for _, session := range sessions {
 			assert.NotEmpty(t, session.Name, "セッション名が空でない")
 		}
@@ -30,43 +30,43 @@ func TestGetTmuxSessions_Structure(t *testing.T) {
 }
 
 func TestHasSession_Behavior(t *testing.T) {
-	t.Run("存在しないセッションの場合", func(t *testing.T) {
-		// 存在しないセッション名での動作確認
+	t.Run("Non-existing session", func(t *testing.T) {
+		// Test behavior with non-existing session name
 		result := internal.HasSession("non-existing-session-12345")
-		assert.False(t, result, "存在しないセッションはfalseを返す")
+		assert.False(t, result, "Non-existing session should return false")
 	})
 }
 
 func TestGetPaneCount_Structure(t *testing.T) {
-	t.Run("存在しないセッションの場合", func(t *testing.T) {
+	t.Run("Non-existing session", func(t *testing.T) {
 		count, err := internal.GetPaneCount("non-existing-session-12345")
 		assert.Error(t, err)
 		assert.Equal(t, 0, count)
-		assert.Contains(t, err.Error(), "ペイン数の取得に失敗しました")
+		assert.Contains(t, err.Error(), "failed to get pane count")
 	})
 }
 
 func TestGetPanes_Structure(t *testing.T) {
-	t.Run("存在しないセッションの場合", func(t *testing.T) {
+	t.Run("Non-existing session", func(t *testing.T) {
 		panes, err := internal.GetPanes("non-existing-session-12345")
 		assert.Error(t, err)
 		assert.Nil(t, panes)
-		assert.Contains(t, err.Error(), "ペイン一覧の取得に失敗しました")
+		assert.Contains(t, err.Error(), "failed to get pane list")
 	})
 }
 
 func TestShowPanes_Structure(t *testing.T) {
-	t.Run("存在しないセッションの場合", func(t *testing.T) {
+	t.Run("Non-existing session", func(t *testing.T) {
 		err := internal.ShowPanes("non-existing-session-12345")
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "ペイン状態の表示に失敗しました")
+		assert.Contains(t, err.Error(), "failed to display pane status")
 	})
 }
 
 func TestTmuxSendKeys_Structure(t *testing.T) {
-	t.Run("存在しないセッションの場合", func(t *testing.T) {
+	t.Run("Non-existing session", func(t *testing.T) {
 		err := internal.TmuxSendKeys("non-existing-session-12345:0", "echo hello")
-		// send-keysは存在しないセッションでもエラーを返すことを確認
+		// Verify that send-keys returns an error even for non-existing sessions
 		assert.Error(t, err)
 	})
 }
@@ -75,20 +75,20 @@ func TestDetectDefaultSession_Structure(t *testing.T) {
 	t.Run("戻り値の構造確認", func(t *testing.T) {
 		session, err := internal.DetectDefaultSession()
 
-		// tmuxが存在しない場合はエラーが返されることを確認
+		// Verify that an error is returned if tmux doesn't exist
 		if err != nil {
-			assert.Contains(t, err.Error(), "tmuxセッションが見つかりません")
+			assert.Contains(t, err.Error(), "no tmux sessions found")
 			return
 		}
 
-		// 正常に取得できる場合はセッション名が空でないことを確認
+		// Verify that session name is not empty when successfully retrieved
 		assert.NotEmpty(t, session, "セッション名が空でない")
 	})
 }
 
-// 統合テスト用のヘルパー関数
+// Helper functions for integration tests
 func TestIntegratedSessionDetection(t *testing.T) {
-	// 正規表現パターンのテスト
+	// Test regular expression patterns
 	tests := []struct {
 		name     string
 		session  string
@@ -109,7 +109,7 @@ func TestIntegratedSessionDetection(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// 正規表現のテスト
+			// Test regular expression
 			re := regexp.MustCompile(`-(po|manager|dev[1-4])$`)
 			result := re.MatchString(tt.session)
 			assert.Equal(t, tt.expected, result)

@@ -9,13 +9,13 @@ import (
 	"strings"
 )
 
-// Tmux関連のユーティリティ関数
+// Tmux related utility functions
 
 func GetTmuxSessions() ([]Session, error) {
 	cmd := exec.Command("tmux", "list-sessions", "-F", "#{session_name}")
 	output, err := cmd.Output()
 	if err != nil {
-		return nil, fmt.Errorf("tmuxセッション一覧の取得に失敗しました: %v", err)
+		return nil, fmt.Errorf("failed to get tmux session list: %v", err)
 	}
 
 	var sessions []Session
@@ -39,7 +39,7 @@ func GetPaneCount(sessionName string) (int, error) {
 	cmd := exec.Command("tmux", "list-panes", "-t", sessionName)
 	output, err := cmd.Output()
 	if err != nil {
-		return 0, fmt.Errorf("ペイン数の取得に失敗しました: %v", err)
+		return 0, fmt.Errorf("failed to get pane count: %v", err)
 	}
 	return len(strings.Split(strings.TrimSpace(string(output)), "\n")), nil
 }
@@ -48,7 +48,7 @@ func GetPanes(sessionName string) ([]string, error) {
 	cmd := exec.Command("tmux", "list-panes", "-t", sessionName, "-F", "#{pane_index}")
 	output, err := cmd.Output()
 	if err != nil {
-		return nil, fmt.Errorf("ペイン一覧の取得に失敗しました: %v", err)
+		return nil, fmt.Errorf("failed to get pane list: %v", err)
 	}
 
 	var panes []string
@@ -63,10 +63,10 @@ func GetPanes(sessionName string) ([]string, error) {
 }
 
 func ShowPanes(sessionName string) error {
-	cmd := exec.Command("tmux", "list-panes", "-t", sessionName, "-F", "  ペイン#{pane_index}: #{pane_title}")
+	cmd := exec.Command("tmux", "list-panes", "-t", sessionName, "-F", "  Pane #{pane_index}: #{pane_title}")
 	output, err := cmd.Output()
 	if err != nil {
-		return fmt.Errorf("ペイン状態の表示に失敗しました: %v", err)
+		return fmt.Errorf("failed to display pane status: %v", err)
 	}
 	fmt.Print(string(output))
 	return nil
@@ -80,10 +80,10 @@ func TmuxSendKeys(target, keys string) error {
 func DetectDefaultSession() (string, error) {
 	sessions, err := GetTmuxSessions()
 	if err != nil || len(sessions) == 0 {
-		return "", fmt.Errorf("tmuxセッションが見つかりません")
+		return "", fmt.Errorf("no tmux sessions found")
 	}
 
-	// 統合監視画面セッション（6ペイン）を優先
+	// Prioritize integrated monitoring screen sessions (6 panes)
 	for _, session := range sessions {
 		paneCount, err := GetPaneCount(session.Name)
 		if err != nil {
@@ -94,13 +94,13 @@ func DetectDefaultSession() (string, error) {
 		}
 	}
 
-	// 潜在的なAIセッションを検出（数字だけのセッション名や短い名前）
+	// Detect potential AI sessions (numeric session names or short names)
 	for _, session := range sessions {
 		paneCount, err := GetPaneCount(session.Name)
 		if err != nil {
 			continue
 		}
-		// 数字だけのセッション名や短い名前、AI関連キーワードのセッションをチェック
+		// Check sessions with numeric names, short names, or AI-related keywords
 		if paneCount >= 1 && (len(session.Name) <= 3 ||
 			strings.Contains(session.Name, "ai") ||
 			strings.Contains(session.Name, "claude") ||
@@ -109,7 +109,7 @@ func DetectDefaultSession() (string, error) {
 		}
 	}
 
-	// 個別セッション方式のベース名を探す
+	// Find base names for individual session mode
 	individualSessions := map[string]bool{}
 	re := regexp.MustCompile(`-(po|manager|dev[1-4])$`)
 	for _, session := range sessions {
@@ -128,5 +128,5 @@ func DetectDefaultSession() (string, error) {
 		return baseNames[0], nil
 	}
 
-	return "", fmt.Errorf("AIエージェント関連のセッションが見つかりません")
+	return "", fmt.Errorf("no AI agent related sessions found")
 }

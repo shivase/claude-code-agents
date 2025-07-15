@@ -15,46 +15,46 @@ import (
 	"github.com/shivase/claude-code-agents/internal/utils"
 )
 
-// ValidateEnvironment システム環境の検証
+// ValidateEnvironment validates system environment
 func ValidateEnvironment() error {
 	log.Info().Msg("Validating environment...")
 
-	// Claude CLIパスの設定（デフォルト）
+	// Set Claude CLI path (default)
 	claudePath := findClaudeExecutableHelper()
 	if claudePath == "" {
-		log.Error().Msg("❌ Claude CLI検証失敗 Claude CLIが見つかりません")
+		log.Error().Msg("❌ Claude CLI verification failed Claude CLI not found")
 		return fmt.Errorf("claude CLI not found")
 	}
 
-	// Claude認証状態の確認（設定ファイル確認のみ）
+	// Check Claude authentication status (configuration file check only)
 	claudeAuth := auth.NewClaudeAuthManager()
 	if authStatus, err := claudeAuth.CheckAuthenticationStatus(); err != nil {
 		return fmt.Errorf("claude authentication check failed: %w", err)
 	} else if !authStatus.IsAuthenticated {
-		log.Warn().Msg("Claude認証が完了していません")
+		log.Warn().Msg("Claude authentication not completed")
 	}
-	log.Info().Msg("✅ Claude設定ファイル確認完了")
+	log.Info().Msg("✅ Claude configuration file check completed")
 
-	// Claude CLIパス情報を表示
-	log.Info().Str("claude_path", claudePath).Msg("✅ Claude CLI検証完了")
+	// Display Claude CLI path information
+	log.Info().Str("claude_path", claudePath).Msg("✅ Claude CLI verification completed")
 
-	// 必要なディレクトリの確認
+	// Check required directories
 	if utils.IsVerboseLogging() {
-		utils.DisplayProgress("必要ディレクトリ確認", "必要なディレクトリの存在を確認中...")
+		utils.DisplayProgress("Required directory check", "Checking existence of required directories...")
 	}
 	if !checkRequiredDirectories() {
-		utils.DisplayError("必要ディレクトリ確認失敗", fmt.Errorf("required directories not found"))
+		utils.DisplayError("Required directory check failed", fmt.Errorf("required directories not found"))
 		return fmt.Errorf("required directories not found")
 	}
 	if utils.IsVerboseLogging() {
-		utils.DisplaySuccess("必要ディレクトリ確認完了", "必要なディレクトリが全て確認されました")
+		utils.DisplaySuccess("Required directory check completed", "All required directories have been verified")
 	}
 
 	log.Info().Msg("Environment validation completed")
 	return nil
 }
 
-// checkClaudeConfig Claude設定ファイルの確認
+// checkClaudeConfig checks Claude configuration file
 func checkClaudeConfig() bool {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -66,7 +66,7 @@ func checkClaudeConfig() bool {
 		return false
 	}
 
-	// ファイルが空でないかチェック
+	// Check if file is not empty
 	info, err := os.Stat(configPath)
 	if err != nil || info.Size() == 0 {
 		return false
@@ -75,7 +75,7 @@ func checkClaudeConfig() bool {
 	return true
 }
 
-// checkRequiredDirectories 必要なディレクトリの確認
+// checkRequiredDirectories checks required directories
 func checkRequiredDirectories() bool {
 	homeDir, _ := os.UserHomeDir()
 
@@ -94,7 +94,7 @@ func checkRequiredDirectories() bool {
 	return true
 }
 
-// LauncherConfig システム起動設定
+// LauncherConfig system launch configuration
 type LauncherConfig struct {
 	SessionName     string
 	Layout          string
@@ -104,19 +104,19 @@ type LauncherConfig struct {
 	ClaudePath      string
 }
 
-// SystemLauncher システムランチャー
+// SystemLauncher system launcher
 type SystemLauncher struct {
 	config      *LauncherConfig
 	tmuxManager *tmux.TmuxManagerImpl
 }
 
-// NewSystemLauncher 新しいシステムランチャーを作成
+// NewSystemLauncher creates a new system launcher
 func NewSystemLauncher(config *LauncherConfig) (*SystemLauncher, error) {
 	if config == nil {
 		return nil, fmt.Errorf("launcher config is required")
 	}
 
-	// Claude CLIパスが指定されていない場合は自動検出
+	// Auto-detect Claude CLI path if not specified
 	if config.ClaudePath == "" {
 		config.ClaudePath = findClaudeExecutableHelper()
 		if config.ClaudePath == "" {
@@ -124,7 +124,7 @@ func NewSystemLauncher(config *LauncherConfig) (*SystemLauncher, error) {
 		}
 	}
 
-	// tmuxManagerを初期化
+	// Initialize tmuxManager
 	tmuxManager := tmux.NewTmuxManager(config.SessionName)
 
 	return &SystemLauncher{
@@ -133,26 +133,26 @@ func NewSystemLauncher(config *LauncherConfig) (*SystemLauncher, error) {
 	}, nil
 }
 
-// Launch システムを起動
+// Launch launches the system
 func (sl *SystemLauncher) Launch() error {
 	log.Info().Str("session", sl.config.SessionName).Msg("Starting system launcher")
 
-	// 統一フォーマットで起動情報を表示
-	log.Info().Msg("📌 システムランチャー起動")
+	// Display launch information in unified format
+	log.Info().Msg("📌 System launcher starting")
 	log.Info().Msg("-------------------------------------")
-	log.Info().Str("layout", sl.config.Layout).Msg("ℹ️ 起動モード選択")
+	log.Info().Str("layout", sl.config.Layout).Msg("ℹ️ Launch mode selected")
 
-	// 既存のClaude CLIプロセスをクリーンアップ
+	// Clean up existing Claude CLI processes
 	if utils.IsVerboseLogging() {
-		log.Info().Msg("🔄 プロセスクリーンアップ 既存のClaude CLIプロセスをクリーンアップ中")
-		log.Info().Msg("✅ プロセスクリーンアップ完了 既存のClaude CLIプロセスをクリーンアップしました")
+		log.Info().Msg("🔄 Process cleanup Cleaning up existing Claude CLI processes")
+		log.Info().Msg("✅ Process cleanup completed Cleaned up existing Claude CLI processes")
 	}
 
-	// レイアウトに応じて起動方法を選択
+	// Select launch method based on layout
 	switch sl.config.Layout {
 	case "individual":
-		log.Info().Msg("ℹ️ 個別セッション起動 個別セッション方式でシステムを起動します")
-		log.Info().Msg("🔄 個別セッション起動 個別セッション方式でシステムを起動中")
+		log.Info().Msg("ℹ️ Individual session launch Launching system with individual session layout")
+		log.Info().Msg("🔄 Individual session launch Launching system with individual session layout")
 		return sl.startIndividualSessions()
 	case "integrated":
 		fallthrough
@@ -161,135 +161,135 @@ func (sl *SystemLauncher) Launch() error {
 	}
 }
 
-// startIndividualSessions 個別セッション方式で起動
+// startIndividualSessions starts with individual session layout
 func (sl *SystemLauncher) startIndividualSessions() error {
 	log.Info().Msg("Starting individual sessions...")
 
 	if utils.IsVerboseLogging() {
-		utils.DisplayProgress("個別セッション起動", "個別セッション方式でシステムを起動中...")
+		utils.DisplayProgress("Individual session launch", "Launching system with individual session layout...")
 	}
 
-	// 既存セッションのクリーンアップ
+	// Clean up existing sessions
 	if sl.config.Reset {
 		if utils.IsVerboseLogging() {
-			utils.DisplayProgress("セッションクリーンアップ", "既存セッションをクリーンアップ中...")
+			utils.DisplayProgress("Session cleanup", "Cleaning up existing sessions...")
 		}
 		sl.cleanupIndividualSessions()
 		if utils.IsVerboseLogging() {
-			utils.DisplaySuccess("セッションクリーンアップ完了", "既存セッションのクリーンアップが完了しました")
+			utils.DisplaySuccess("Session cleanup completed", "Existing sessions have been cleaned up")
 		}
 	}
 
-	// 各エージェントのセッションを作成
+	// Create sessions for each agent
 	agents := []string{"po", "manager", "dev1", "dev2", "dev3", "dev4"}
 	for _, agent := range agents {
 		sessionName := fmt.Sprintf("%s-%s", sl.config.SessionName, agent)
 
 		if sl.tmuxManager.SessionExists(sessionName) {
 			if utils.IsVerboseLogging() {
-				utils.DisplayInfo("セッション存在確認", fmt.Sprintf("セッション %s は既に存在します", sessionName))
+				utils.DisplayInfo("Session existence check", fmt.Sprintf("Session %s already exists", sessionName))
 			}
 			log.Info().Str("session", sessionName).Msg("Session already exists")
 			continue
 		}
 
 		if utils.IsVerboseLogging() {
-			utils.DisplayProgress("エージェントセッション作成", fmt.Sprintf("%s エージェントのセッションを作成中...", agent))
+			utils.DisplayProgress("Agent session creation", fmt.Sprintf("Creating session for %s agent...", agent))
 		}
 		if err := sl.createAgentSession(sessionName, agent); err != nil {
-			utils.DisplayError("エージェントセッション作成失敗", fmt.Errorf("failed to create session %s: %w", sessionName, err))
+			utils.DisplayError("Agent session creation failed", fmt.Errorf("failed to create session %s: %w", sessionName, err))
 			return fmt.Errorf("failed to create session %s: %w", sessionName, err)
 		}
 		if utils.IsVerboseLogging() {
-			utils.DisplaySuccess("エージェントセッション作成完了", fmt.Sprintf("%s エージェントのセッションが作成されました", agent))
+			utils.DisplaySuccess("Agent session creation completed", fmt.Sprintf("Session for %s agent has been created", agent))
 		}
 	}
 
 	log.Info().Msg("Individual sessions started successfully")
 	if utils.IsVerboseLogging() {
-		utils.DisplaySuccess("個別セッション起動完了", "全ての個別セッションが正常に起動しました")
+		utils.DisplaySuccess("Individual session launch completed", "All individual sessions have been launched successfully")
 	}
 	return nil
 }
 
-// startIntegratedMonitor 統合監視画面方式で起動
+// startIntegratedMonitor starts with integrated monitoring screen layout
 func (sl *SystemLauncher) startIntegratedMonitor() error {
 	log.Info().Msg("Starting integrated monitor...")
 
-	log.Info().Msg("ℹ️ 統合監視起動 統合監視画面方式でシステムを起動します")
-	log.Info().Msg("🔄 統合監視起動 統合監視画面方式でシステムを起動中")
+	log.Info().Msg("ℹ️ Integrated monitoring launch Launching system with integrated monitoring screen layout")
+	log.Info().Msg("🔄 Integrated monitoring launch Launching system with integrated monitoring screen layout")
 
 	utils.DisplayLauncherStart()
 	utils.DisplayLauncherProgress()
 
-	// 既存セッションの確認
+	// Check existing sessions
 	if sl.tmuxManager.SessionExists(sl.config.SessionName) {
 		if sl.config.Reset {
 			if utils.IsVerboseLogging() {
-				utils.DisplayProgress("既存セッション削除", "既存セッションを削除中...")
+				utils.DisplayProgress("Existing session deletion", "Deleting existing session...")
 			}
 			if err := sl.tmuxManager.KillSession(sl.config.SessionName); err != nil {
 				log.Warn().Err(err).Str("session", sl.config.SessionName).Msg("Failed to kill existing session")
 			}
 			time.Sleep(2 * time.Second)
 			if utils.IsVerboseLogging() {
-				utils.DisplaySuccess("既存セッション削除完了", "既存セッションが削除されました")
+				utils.DisplaySuccess("Existing session deletion completed", "Existing session has been deleted")
 			}
 		} else {
 			if utils.IsVerboseLogging() {
-				utils.DisplayInfo("既存セッション接続", fmt.Sprintf("既存セッション %s に接続します", sl.config.SessionName))
+				utils.DisplayInfo("Existing session connection", fmt.Sprintf("Connecting to existing session %s", sl.config.SessionName))
 			}
 			log.Info().Str("session", sl.config.SessionName).Msg("Attaching to existing session")
 			return sl.tmuxManager.AttachSession(sl.config.SessionName)
 		}
 	}
 
-	// 新しいセッションを作成
+	// Create new session
 	if utils.IsVerboseLogging() {
-		utils.DisplayProgress("新規セッション作成", "新しいtmuxセッションを作成中...")
+		utils.DisplayProgress("New session creation", "Creating new tmux session...")
 	}
 	if err := sl.tmuxManager.CreateSession(sl.config.SessionName); err != nil {
-		utils.DisplayError("新規セッション作成失敗", err)
+		utils.DisplayError("New session creation failed", err)
 		return fmt.Errorf("failed to create session: %w", err)
 	}
 	if utils.IsVerboseLogging() {
-		utils.DisplaySuccess("新規セッション作成完了", fmt.Sprintf("セッション %s が作成されました", sl.config.SessionName))
+		utils.DisplaySuccess("New session creation completed", fmt.Sprintf("Session %s has been created", sl.config.SessionName))
 	}
 
-	// 統合レイアウトを作成
+	// Create integrated layout
 	if utils.IsVerboseLogging() {
-		utils.DisplayProgress("統合レイアウト作成", "6ペイン統合レイアウトを作成中...")
+		utils.DisplayProgress("Integrated layout creation", "Creating 6-pane integrated layout...")
 	}
 	if err := sl.createIntegratedLayout(); err != nil {
-		utils.DisplayError("統合レイアウト作成失敗", err)
+		utils.DisplayError("Integrated layout creation failed", err)
 		return fmt.Errorf("failed to create integrated layout: %w", err)
 	}
 	if utils.IsVerboseLogging() {
-		utils.DisplaySuccess("統合レイアウト作成完了", "6ペイン統合レイアウトが作成されました")
+		utils.DisplaySuccess("Integrated layout creation completed", "6-pane integrated layout has been created")
 	}
 
-	// 各ペインにエージェントを配置
-	log.Info().Msg("🔄 エージェント配置 6ペインにエージェントを配置中")
+	// Deploy agents to each pane
+	log.Info().Msg("🔄 Agent deployment Deploying agents to 6 panes")
 	sl.setupAgentsInPanes()
-	log.Info().Msg("✅ エージェント配置完了 全てのエージェントが正常に配置されました")
+	log.Info().Msg("✅ Agent deployment completed All agents have been deployed successfully")
 
-	// セッションに接続
+	// Connect to session
 	if utils.IsVerboseLogging() {
-		utils.DisplayProgress("セッション接続", "セッションに接続中...")
+		utils.DisplayProgress("Session connection", "Connecting to session...")
 	}
 	if err := sl.tmuxManager.AttachSession(sl.config.SessionName); err != nil {
-		utils.DisplayError("セッション接続失敗", err)
+		utils.DisplayError("Session connection failed", err)
 		return err
 	}
 
 	return nil
 }
 
-// createIntegratedLayout 統合レイアウトを作成（claude.shと同じ構成）
+// createIntegratedLayout creates integrated layout (same configuration as claude.sh)
 func (sl *SystemLauncher) createIntegratedLayout() error {
 	sessionName := sl.config.SessionName
 
-	// 6ペイン構成を段階的に作成（claude.shと同じ構成）
+	// Create 6-pane configuration step by step (same configuration as claude.sh)
 	log.Info().Msg("Creating 6-pane layout (claude.sh compatible)...")
 	if utils.IsVerboseLogging() {
 		utils.DisplayProgress("6ペインレイアウト作成", "claude.shと同じ6ペイン構成を段階的に作成中...")

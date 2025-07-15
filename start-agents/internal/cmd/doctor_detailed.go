@@ -15,26 +15,26 @@ import (
 	"github.com/shivase/claude-code-agents/internal/utils"
 )
 
-// ValidatePathsDetailed パス検証機能の詳細確認
+// ValidatePathsDetailed validates paths in detail
 func ValidatePathsDetailed() []string {
 	var errors []string
 
-	// Claude CLI実行可能ファイルの検証
+	// Validate Claude CLI executable
 	claudePath := findClaudeExecutableHelper()
 	if claudePath == "" {
-		errors = append(errors, "Claude CLI実行可能ファイルが見つかりません")
+		errors = append(errors, "Claude CLI executable not found")
 	} else {
 		fmt.Printf("   ✅ Claude CLI: %s\n", claudePath)
 	}
 
-	// ディレクトリ解決器を使用したパス検証
+	// Path validation using directory resolver
 	dirResolver := utils.GetGlobalDirectoryResolver()
 	dirInfo := dirResolver.GetDirectoryInfo()
 
-	fmt.Printf("   📂 プロジェクトルート: %s\n", dirInfo["project_root"])
-	fmt.Printf("   📂 作業ディレクトリ: %s\n", dirInfo["original_working_dir"])
+	fmt.Printf("   📂 Project root: %s\n", dirInfo["project_root"])
+	fmt.Printf("   📂 Working directory: %s\n", dirInfo["original_working_dir"])
 
-	// 必要ディレクトリの確認
+	// Check required directories
 	homeDir, _ := os.UserHomeDir()
 	requiredDirs := []string{
 		filepath.Join(homeDir, ".claude"),
@@ -44,47 +44,47 @@ func ValidatePathsDetailed() []string {
 
 	for _, dir := range requiredDirs {
 		if _, err := os.Stat(dir); err != nil {
-			errors = append(errors, fmt.Sprintf("必要ディレクトリが見つかりません: %s", dir))
+			errors = append(errors, fmt.Sprintf("Required directory not found: %s", dir))
 		} else {
-			fmt.Printf("   ✅ ディレクトリ確認: %s\n", dir)
+			fmt.Printf("   ✅ Directory check: %s\n", dir)
 		}
 	}
 
 	return errors
 }
 
-// ValidateConfigurationDetailed 設定ファイル確認機能の詳細確認
+// ValidateConfigurationDetailed validates configuration files in detail
 func ValidateConfigurationDetailed() []string {
 	var errors []string
 
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		errors = append(errors, "ホームディレクトリの取得に失敗")
+		errors = append(errors, "Failed to get home directory")
 		return errors
 	}
 
-	// ~/.claude/settings.json の確認
+	// Check ~/.claude/settings.json
 	settingsPath := filepath.Join(homeDir, ".claude", "settings.json")
 	if _, err := os.Stat(settingsPath); err != nil {
-		errors = append(errors, "Claude設定ファイル(settings.json)が見つかりません")
+		errors = append(errors, "Claude settings file (settings.json) not found")
 	} else {
-		// ファイルサイズと内容の基本チェック
+		// Basic check for file size and content
 		info, err := os.Stat(settingsPath)
 		if err != nil || info.Size() == 0 {
-			errors = append(errors, "Claude設定ファイル(settings.json)が空です")
+			errors = append(errors, "Claude settings file (settings.json) is empty")
 		} else {
 			fmt.Printf("   ✅ settings.json: %s (%d bytes)\n", settingsPath, info.Size())
 		}
 	}
 
-	// ~/.claude/claude.json の確認
+	// Check ~/.claude/claude.json
 	claudeJsonPath := filepath.Join(homeDir, ".claude", "claude.json")
 	if _, err := os.Stat(claudeJsonPath); err != nil {
-		errors = append(errors, "Claude認証ファイル(claude.json)が見つかりません")
+		errors = append(errors, "Claude authentication file (claude.json) not found")
 	} else {
 		info, err := os.Stat(claudeJsonPath)
 		if err != nil || info.Size() == 0 {
-			errors = append(errors, "Claude認証ファイル(claude.json)が空です")
+			errors = append(errors, "Claude authentication file (claude.json) is empty")
 		} else {
 			fmt.Printf("   ✅ claude.json: %s (%d bytes)\n", claudeJsonPath, info.Size())
 		}
@@ -93,77 +93,77 @@ func ValidateConfigurationDetailed() []string {
 	return errors
 }
 
-// ValidateAuthenticationDetailed Claude認証チェック機能の詳細確認
+// ValidateAuthenticationDetailed checks Claude authentication in detail
 func ValidateAuthenticationDetailed() []string {
 	var warnings []string
 
-	// 認証マネージャーを使用した認証確認
+	// Check authentication using authentication manager
 	authManager := auth.NewClaudeAuthManager()
 
-	// 設定ファイル確認
+	// Check settings file
 	if err := authManager.CheckSettingsFile(); err != nil {
-		warnings = append(warnings, fmt.Sprintf("設定ファイル確認失敗: %v", err))
+		warnings = append(warnings, fmt.Sprintf("Settings file check failed: %v", err))
 	} else {
-		fmt.Printf("   ✅ 設定ファイル確認完了\n")
+		fmt.Printf("   ✅ Settings file check completed\n")
 	}
 
-	// 認証状態確認
+	// Check authentication status
 	authStatus, err := authManager.CheckAuthenticationStatus()
 	if err != nil {
-		warnings = append(warnings, fmt.Sprintf("認証状態確認失敗: %v", err))
+		warnings = append(warnings, fmt.Sprintf("Authentication status check failed: %v", err))
 	} else {
 		if authStatus.IsAuthenticated {
 			if authStatus.UserID != "" {
-				fmt.Printf("   ✅ 認証済み (UserID: %s...)\n", authStatus.UserID[:8])
+				fmt.Printf("   ✅ Authenticated (UserID: %s...)\n", authStatus.UserID[:8])
 			}
 			if authStatus.OAuthAccount != nil {
 				if email, exists := authStatus.OAuthAccount["emailAddress"]; exists {
-					fmt.Printf("   ✅ OAuth認証済み: %v\n", email)
+					fmt.Printf("   ✅ OAuth authenticated: %v\n", email)
 				}
 			}
 		} else {
-			warnings = append(warnings, "Claude認証が完了していません")
+			warnings = append(warnings, "Claude authentication not completed")
 		}
 	}
 
 	return warnings
 }
 
-// ValidateEnvironmentDetailed システム環境確認機能の詳細確認
+// ValidateEnvironmentDetailed checks system environment in detail
 func ValidateEnvironmentDetailed() []string {
 	var errors []string
 
-	// OS情報確認
+	// Check OS information
 	fmt.Printf("   🖥️ OS: %s\n", runtime.GOOS)
-	fmt.Printf("   🏗️ アーキテクチャ: %s\n", runtime.GOARCH)
+	fmt.Printf("   🏗️ Architecture: %s\n", runtime.GOARCH)
 
-	// 権限確認
+	// Check permissions
 	homeDir, _ := os.UserHomeDir()
 	claudeDir := filepath.Join(homeDir, ".claude")
 
-	// .claudeディレクトリの書き込み権限確認
+	// Check write permission for .claude directory
 	testFile := filepath.Join(claudeDir, "test_write")
 	if err := os.WriteFile(testFile, []byte("test"), 0600); err != nil {
-		errors = append(errors, fmt.Sprintf(".claudeディレクトリへの書き込み権限がありません: %v", err))
+		errors = append(errors, fmt.Sprintf("No write permission for .claude directory: %v", err))
 	} else {
-		_ = os.Remove(testFile) // テストファイル削除
-		fmt.Printf("   ✅ ディレクトリ書き込み権限: 正常\n")
+		_ = os.Remove(testFile) // Remove test file
+		fmt.Printf("   ✅ Directory write permission: OK\n")
 	}
 
-	// 依存関係確認
+	// Check dependencies
 	dependencies := []string{"tmux"}
 	for _, dep := range dependencies {
 		if path, err := exec.LookPath(dep); err != nil {
-			errors = append(errors, fmt.Sprintf("依存関係 '%s' が見つかりません", dep))
+			errors = append(errors, fmt.Sprintf("Dependency '%s' not found", dep))
 		} else {
-			fmt.Printf("   ✅ 依存関係 %s: %s\n", dep, path)
+			fmt.Printf("   ✅ Dependency %s: %s\n", dep, path)
 		}
 	}
 
-	// 環境変数確認
+	// Check environment variables
 	shell := os.Getenv("SHELL")
 	if shell == "" {
-		errors = append(errors, "SHELL環境変数が設定されていません")
+		errors = append(errors, "SHELL environment variable not set")
 	} else {
 		fmt.Printf("   ✅ SHELL: %s\n", shell)
 	}
@@ -171,54 +171,54 @@ func ValidateEnvironmentDetailed() []string {
 	return errors
 }
 
-// DisplaySolutionsForErrors エラーに対する解決策表示
+// DisplaySolutionsForErrors displays solutions for errors
 func DisplaySolutionsForErrors(errors []string) {
 	for _, err := range errors {
 		switch {
-		case strings.Contains(err, "Claude CLI実行可能ファイル"):
-			fmt.Println("   → Claude CLIをインストールしてください")
+		case strings.Contains(err, "Claude CLI executable"):
+			fmt.Println("   → Please install Claude CLI")
 			fmt.Println("      curl -fsSL https://anthropic.com/claude/install.sh | sh")
-		case strings.Contains(err, "必要ディレクトリ"):
-			fmt.Println("   → 必要なディレクトリを作成してください")
+		case strings.Contains(err, "Required directory"):
+			fmt.Println("   → Please create required directories")
 			fmt.Println("      mkdir -p ~/.claude/claude-code-agents/instructions")
 		case strings.Contains(err, "settings.json"):
-			fmt.Println("   → Claude CLIを起動して初期設定を完了してください")
+			fmt.Println("   → Please start Claude CLI and complete initial setup")
 			fmt.Println("      claude")
 		case strings.Contains(err, "claude.json"):
-			fmt.Println("   → Claude CLIにログインしてください")
+			fmt.Println("   → Please log in to Claude CLI")
 			fmt.Println("      claude")
 		case strings.Contains(err, "tmux"):
-			fmt.Println("   → tmuxをインストールしてください")
+			fmt.Println("   → Please install tmux")
 			fmt.Println("      macOS: brew install tmux")
 			fmt.Println("      Ubuntu: sudo apt install tmux")
-		case strings.Contains(err, "書き込み権限"):
-			fmt.Println("   → ディレクトリの権限を確認してください")
+		case strings.Contains(err, "write permission"):
+			fmt.Println("   → Please check directory permissions")
 			fmt.Println("      chmod 750 ~/.claude")
-		case strings.Contains(err, "SHELL環境変数"):
-			fmt.Println("   → SHELL環境変数を設定してください")
+		case strings.Contains(err, "SHELL environment variable"):
+			fmt.Println("   → Please set SHELL environment variable")
 			fmt.Println("      export SHELL=/bin/bash")
 		}
 	}
 }
 
-// DisplaySolutionsForWarnings 警告に対する推奨事項表示
+// DisplaySolutionsForWarnings displays recommendations for warnings
 func DisplaySolutionsForWarnings(warnings []string) {
 	for _, warning := range warnings {
 		switch {
-		case strings.Contains(warning, "認証が完了していません"):
-			fmt.Println("   → Claude CLIにログインすることを推奨します")
+		case strings.Contains(warning, "authentication not completed"):
+			fmt.Println("   → Recommend logging in to Claude CLI")
 			fmt.Println("      claude")
-		case strings.Contains(warning, "認証状態確認失敗"):
-			fmt.Println("   → Claude CLIの再インストールを検討してください")
-		case strings.Contains(warning, "設定ファイル確認失敗"):
-			fmt.Println("   → Claude CLIの設定を再作成してください")
+		case strings.Contains(warning, "Authentication status check failed"):
+			fmt.Println("   → Consider reinstalling Claude CLI")
+		case strings.Contains(warning, "Settings file check failed"):
+			fmt.Println("   → Please recreate Claude CLI settings")
 		}
 	}
 }
 
-// findClaudeExecutableHelper Claude CLI実行可能ファイルを検索
+// findClaudeExecutableHelper searches for Claude CLI executable
 func findClaudeExecutableHelper() string {
-	// 一般的なパスを順番に確認
+	// Check common paths in order
 	paths := []string{
 		"~/.claude/local/claude",
 		"/usr/local/bin/claude",
@@ -235,7 +235,7 @@ func findClaudeExecutableHelper() string {
 		}
 	}
 
-	// PATHから検索
+	// Search from PATH
 	if path, err := exec.LookPath("claude"); err == nil {
 		return path
 	}

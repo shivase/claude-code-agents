@@ -5,33 +5,33 @@ import (
 	"time"
 )
 
-// ProcessManagerInterface プロセス管理インターフェース
+// ProcessManagerInterface defines the interface for process management
 type ProcessManagerInterface interface {
-	// GetClaudeProcesses クローデプロセスの取得
+	// GetClaudeProcesses retrieves all Claude processes
 	GetClaudeProcesses() ([]*ProcessInfo, error)
-	// CheckClaudeProcesses クローデプロセスの確認
+	// CheckClaudeProcesses checks the status of Claude processes
 	CheckClaudeProcesses() ([]*ProcessInfo, error)
-	// KillClaudeProcesses クローデプロセスの強制終了
+	// KillClaudeProcesses forcefully terminates all Claude processes
 	KillClaudeProcesses() error
-	// WaitForClaudeProcesses クローデプロセスの終了待機
+	// WaitForClaudeProcesses waits for Claude processes to terminate
 	WaitForClaudeProcesses(timeout time.Duration) error
-	// GetProcessInfo プロセス情報の取得
+	// GetProcessInfo retrieves information about a specific process
 	GetProcessInfo(pid int) (*ProcessInfo, error)
-	// IsProcessRunning プロセスの実行確認
+	// IsProcessRunning checks if a process is currently running
 	IsProcessRunning(pid int) bool
-	// KillProcess プロセスの終了
+	// KillProcess terminates a specific process
 	KillProcess(pid int) error
-	// MonitorProcesses プロセスの監視
+	// MonitorProcesses monitors running processes
 	MonitorProcesses() error
-	// GetProcessesByName 名前でプロセスを検索
+	// GetProcessesByName searches for processes by name
 	GetProcessesByName(name string) ([]*ProcessInfo, error)
-	// GetProcessCounts プロセス数の取得
+	// GetProcessCounts retrieves the count of processes by type
 	GetProcessCounts() (map[string]int, error)
-	// CleanupProcesses プロセスのクリーンアップ
+	// CleanupProcesses cleans up terminated processes
 	CleanupProcesses() error
 }
 
-// ProcessInfo プロセス情報
+// ProcessInfo contains information about a process
 type ProcessInfo struct {
 	PID         int       `json:"pid"`
 	Name        string    `json:"name"`
@@ -45,18 +45,18 @@ type ProcessInfo struct {
 	LastCheck   time.Time `json:"last_check"`
 }
 
-// String プロセス情報を文字列で表示
+// String returns a string representation of the process info
 func (p *ProcessInfo) String() string {
 	return fmt.Sprintf("PID: %d, Name: %s, Command: %s, Start: %s, CPU: %s, Memory: %s, Status: %s",
 		p.PID, p.Name, p.Command, p.StartTime.Format("2006-01-02 15:04:05"), p.CPUPercent, p.MemoryUsage, p.Status)
 }
 
-// FileLockInterface ファイルロック管理インターフェース
+// FileLockInterface defines the interface for file lock management
 type FileLockInterface interface {
-	// Lock ファイルをロック
+	// Lock acquires a file lock
 	Lock() error
-	// Unlock ファイルをアンロック
+	// Unlock releases a file lock
 	Unlock() error
-	// IsLocked ロック状態を確認
+	// IsLocked checks if the file is locked
 	IsLocked() bool
 }

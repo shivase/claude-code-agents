@@ -43,7 +43,7 @@ func captureStdout(f func()) (string, error) {
 }
 
 func TestSetVerboseLogging(t *testing.T) {
-	// 初期状態をリセット
+	// Reset initial state
 	utils.SetVerboseLogging(false)
 	utils.SetSilentMode(false)
 
@@ -54,13 +54,13 @@ func TestSetVerboseLogging(t *testing.T) {
 		expectedSilent  bool
 	}{
 		{
-			name:            "詳細ログ有効化",
+			name:            "Enable verbose logging",
 			verbose:         true,
 			expectedVerbose: true,
 			expectedSilent:  false,
 		},
 		{
-			name:            "詳細ログ無効化",
+			name:            "Disable verbose logging",
 			verbose:         false,
 			expectedVerbose: false,
 			expectedSilent:  false,
@@ -75,7 +75,7 @@ func TestSetVerboseLogging(t *testing.T) {
 		})
 	}
 
-	t.Run("詳細ログがサイレントモードを無効化", func(t *testing.T) {
+	t.Run("Verbose logging disables silent mode", func(t *testing.T) {
 		utils.SetSilentMode(true)
 		assert.True(t, utils.IsSilentMode())
 
@@ -86,7 +86,7 @@ func TestSetVerboseLogging(t *testing.T) {
 }
 
 func TestSetSilentMode(t *testing.T) {
-	// 初期状態をリセット
+	// Reset initial state
 	utils.SetVerboseLogging(false)
 	utils.SetSilentMode(false)
 
@@ -97,13 +97,13 @@ func TestSetSilentMode(t *testing.T) {
 		expectedSilent  bool
 	}{
 		{
-			name:            "サイレントモード有効化",
+			name:            "Enable silent mode",
 			silent:          true,
 			expectedVerbose: false,
 			expectedSilent:  true,
 		},
 		{
-			name:            "サイレントモード無効化",
+			name:            "Disable silent mode",
 			silent:          false,
 			expectedVerbose: false,
 			expectedSilent:  false,
@@ -118,7 +118,7 @@ func TestSetSilentMode(t *testing.T) {
 		})
 	}
 
-	t.Run("サイレントモードが詳細ログを無効化", func(t *testing.T) {
+	t.Run("Silent mode disables verbose logging", func(t *testing.T) {
 		utils.SetVerboseLogging(true)
 		assert.True(t, utils.IsVerboseLogging())
 
@@ -129,10 +129,10 @@ func TestSetSilentMode(t *testing.T) {
 }
 
 func TestDisplayProgress(t *testing.T) {
-	// 初期状態をリセット
+	// Reset initial state
 	utils.SetSilentMode(false)
 
-	t.Run("通常モードでの表示", func(t *testing.T) {
+	t.Run("Display in normal mode", func(t *testing.T) {
 		output, err := captureStdout(func() {
 			utils.DisplayProgress("テスト操作", "進行中です")
 		})
@@ -143,7 +143,7 @@ func TestDisplayProgress(t *testing.T) {
 		assert.Contains(t, output, "進行中です")
 	})
 
-	t.Run("サイレントモードでの非表示", func(t *testing.T) {
+	t.Run("No display in silent mode", func(t *testing.T) {
 		utils.SetSilentMode(true)
 
 		output, err := captureStdout(func() {
@@ -161,7 +161,7 @@ func TestDisplayProgress(t *testing.T) {
 func TestDisplaySuccess(t *testing.T) {
 	utils.SetSilentMode(false)
 
-	t.Run("通常モードでの表示", func(t *testing.T) {
+	t.Run("Display in normal mode", func(t *testing.T) {
 		output, err := captureStdout(func() {
 			utils.DisplaySuccess("テスト操作", "完了しました")
 		})
@@ -172,7 +172,7 @@ func TestDisplaySuccess(t *testing.T) {
 		assert.Contains(t, output, "完了しました")
 	})
 
-	t.Run("サイレントモードでの非表示", func(t *testing.T) {
+	t.Run("No display in silent mode", func(t *testing.T) {
 		utils.SetSilentMode(true)
 
 		output, err := captureStdout(func() {
@@ -187,7 +187,7 @@ func TestDisplaySuccess(t *testing.T) {
 }
 
 func TestDisplayError(t *testing.T) {
-	t.Run("エラーメッセージ表示", func(t *testing.T) {
+	t.Run("Display error message", func(t *testing.T) {
 		testErr := fmt.Errorf("テストエラー")
 
 		output, err := captureStdout(func() {
@@ -200,7 +200,7 @@ func TestDisplayError(t *testing.T) {
 		assert.Contains(t, output, "テストエラー")
 	})
 
-	t.Run("サイレントモードでも表示される", func(t *testing.T) {
+	t.Run("Displayed even in silent mode", func(t *testing.T) {
 		utils.SetSilentMode(true)
 		testErr := fmt.Errorf("テストエラー")
 
@@ -220,7 +220,7 @@ func TestDisplayError(t *testing.T) {
 func TestDisplayInfo(t *testing.T) {
 	utils.SetSilentMode(false)
 
-	t.Run("通常モードでの表示", func(t *testing.T) {
+	t.Run("Display in normal mode", func(t *testing.T) {
 		output, err := captureStdout(func() {
 			utils.DisplayInfo("テスト操作", "情報メッセージ")
 		})
@@ -231,7 +231,7 @@ func TestDisplayInfo(t *testing.T) {
 		assert.Contains(t, output, "情報メッセージ")
 	})
 
-	t.Run("サイレントモードでの非表示", func(t *testing.T) {
+	t.Run("No display in silent mode", func(t *testing.T) {
 		utils.SetSilentMode(true)
 
 		output, err := captureStdout(func() {
@@ -248,7 +248,7 @@ func TestDisplayInfo(t *testing.T) {
 func TestDisplayWarning(t *testing.T) {
 	utils.SetSilentMode(false)
 
-	t.Run("通常モードでの表示", func(t *testing.T) {
+	t.Run("Display in normal mode", func(t *testing.T) {
 		output, err := captureStdout(func() {
 			utils.DisplayWarning("テスト操作", "警告メッセージ")
 		})
@@ -259,7 +259,7 @@ func TestDisplayWarning(t *testing.T) {
 		assert.Contains(t, output, "警告メッセージ")
 	})
 
-	t.Run("サイレントモードでの非表示", func(t *testing.T) {
+	t.Run("No display in silent mode", func(t *testing.T) {
 		utils.SetSilentMode(true)
 
 		output, err := captureStdout(func() {
@@ -276,7 +276,7 @@ func TestDisplayWarning(t *testing.T) {
 func TestDisplayStartupBanner(t *testing.T) {
 	utils.SetSilentMode(false)
 
-	t.Run("通常モードでの表示", func(t *testing.T) {
+	t.Run("Display in normal mode", func(t *testing.T) {
 		output, err := captureStdout(func() {
 			utils.DisplayStartupBanner()
 		})
@@ -292,7 +292,7 @@ func TestDisplayStartupBanner(t *testing.T) {
 		assert.Contains(t, output, "=====================================")
 	})
 
-	t.Run("サイレントモードでの非表示", func(t *testing.T) {
+	t.Run("No display in silent mode", func(t *testing.T) {
 		utils.SetSilentMode(true)
 
 		output, err := captureStdout(func() {
@@ -309,20 +309,20 @@ func TestDisplayStartupBanner(t *testing.T) {
 func TestDisplayLauncherStart(t *testing.T) {
 	utils.SetSilentMode(false)
 
-	t.Run("通常モードでの表示", func(t *testing.T) {
+	t.Run("Display in normal mode", func(t *testing.T) {
 		output, err := captureStdout(func() {
 			utils.DisplayLauncherStart()
 		})
 
 		require.NoError(t, err)
-		assert.Contains(t, output, "🚀 システムランチャー開始")
+		assert.Contains(t, output, "🚀 System launcher started")
 		assert.Contains(t, output, "=====================================")
 		// タイムスタンプフォーマットの確認
 		timePattern := time.Now().Format("15:04")[:4] // HH:MM部分だけチェック
 		assert.Contains(t, output, timePattern)
 	})
 
-	t.Run("サイレントモードでの非表示", func(t *testing.T) {
+	t.Run("No display in silent mode", func(t *testing.T) {
 		utils.SetSilentMode(true)
 
 		output, err := captureStdout(func() {
@@ -339,19 +339,19 @@ func TestDisplayLauncherStart(t *testing.T) {
 func TestDisplayLauncherProgress(t *testing.T) {
 	utils.SetSilentMode(false)
 
-	t.Run("通常モードでの表示", func(t *testing.T) {
+	t.Run("Display in normal mode", func(t *testing.T) {
 		output, err := captureStdout(func() {
 			utils.DisplayLauncherProgress()
 		})
 
 		require.NoError(t, err)
-		assert.Contains(t, output, "🔄 システム初期化中...")
+		assert.Contains(t, output, "🔄 System initializing...")
 		// タイムスタンプフォーマットの確認
 		timePattern := time.Now().Format("15:04")[:4] // HH:MM部分だけチェック
 		assert.Contains(t, output, timePattern)
 	})
 
-	t.Run("サイレントモードでの非表示", func(t *testing.T) {
+	t.Run("No display in silent mode", func(t *testing.T) {
 		utils.SetSilentMode(true)
 
 		output, err := captureStdout(func() {
@@ -368,7 +368,7 @@ func TestDisplayLauncherProgress(t *testing.T) {
 func TestDisplayConfig(t *testing.T) {
 	utils.SetSilentMode(false)
 
-	t.Run("map形式の設定表示", func(t *testing.T) {
+	t.Run("Display map format configuration", func(t *testing.T) {
 		config := map[string]interface{}{
 			"dev_count":  4,
 			"log_level":  "info",
@@ -380,14 +380,14 @@ func TestDisplayConfig(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		assert.Contains(t, output, "📋 設定情報")
-		assert.Contains(t, output, "セッション名: test-session")
+		assert.Contains(t, output, "📋 Configuration Information")
+		assert.Contains(t, output, "Session Name: test-session")
 		assert.Contains(t, output, "dev_count")
 		assert.Contains(t, output, "log_level")
 		assert.Contains(t, output, "debug_mode")
 	})
 
-	t.Run("非map形式の設定", func(t *testing.T) {
+	t.Run("Non-map format configuration", func(t *testing.T) {
 		config := "非マップ設定"
 
 		output, err := captureStdout(func() {
@@ -395,13 +395,13 @@ func TestDisplayConfig(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		assert.Contains(t, output, "📋 設定情報")
-		assert.Contains(t, output, "セッション名: test-session")
+		assert.Contains(t, output, "📋 Configuration Information")
+		assert.Contains(t, output, "Session Name: test-session")
 		// 設定詳細は表示されない
 		assert.NotContains(t, output, "非マップ設定")
 	})
 
-	t.Run("サイレントモードでの非表示", func(t *testing.T) {
+	t.Run("No display in silent mode", func(t *testing.T) {
 		utils.SetSilentMode(true)
 		config := map[string]interface{}{"test": "value"}
 
@@ -419,7 +419,7 @@ func TestDisplayConfig(t *testing.T) {
 func TestDisplayValidationResults(t *testing.T) {
 	utils.SetSilentMode(false)
 
-	t.Run("通常モードでの表示", func(t *testing.T) {
+	t.Run("Display in normal mode", func(t *testing.T) {
 		config := map[string]interface{}{"test": "value"}
 
 		output, err := captureStdout(func() {
@@ -427,13 +427,13 @@ func TestDisplayValidationResults(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		assert.Contains(t, output, "🔍 検証結果")
-		assert.Contains(t, output, "✅ Claude CLI: 利用可能")
-		assert.Contains(t, output, "✅ インストラクション: 準備完了")
-		assert.Contains(t, output, "✅ 作業ディレクトリ: アクセス可能")
+		assert.Contains(t, output, "🔍 Validation Results")
+		assert.Contains(t, output, "✅ Claude CLI: Available")
+		assert.Contains(t, output, "✅ Instructions: Ready")
+		assert.Contains(t, output, "✅ Working Directory: Accessible")
 	})
 
-	t.Run("サイレントモードでの非表示", func(t *testing.T) {
+	t.Run("No display in silent mode", func(t *testing.T) {
 		utils.SetSilentMode(true)
 		config := map[string]interface{}{"test": "value"}
 
@@ -458,27 +458,27 @@ func TestFormatPath(t *testing.T) {
 		expected string
 	}{
 		{
-			name:     "空のパス",
+			name:     "Empty path",
 			path:     "",
 			expected: "<empty>",
 		},
 		{
-			name:     "ホームディレクトリ",
+			name:     "Home directory",
 			path:     homeDir,
 			expected: "~",
 		},
 		{
-			name:     "ホームディレクトリ内のパス",
+			name:     "Path within home directory",
 			path:     filepath.Join(homeDir, "documents", "test.txt"),
 			expected: "~/documents/test.txt",
 		},
 		{
-			name:     "絶対パス",
+			name:     "Absolute path",
 			path:     "/usr/local/bin",
 			expected: "/usr/local/bin",
 		},
 		{
-			name:     "相対パス",
+			name:     "Relative path",
 			path:     "relative/path",
 			expected: "relative/path",
 		},
@@ -504,27 +504,27 @@ func TestValidatePath(t *testing.T) {
 		expected bool
 	}{
 		{
-			name:     "空のパス",
+			name:     "Empty path",
 			path:     "",
 			expected: false,
 		},
 		{
-			name:     "存在するファイル",
+			name:     "Existing file",
 			path:     existingFile,
 			expected: true,
 		},
 		{
-			name:     "存在するディレクトリ",
+			name:     "Existing directory",
 			path:     tmpDir,
 			expected: true,
 		},
 		{
-			name:     "存在しないパス",
+			name:     "Non-existing path",
 			path:     filepath.Join(tmpDir, "nonexistent.txt"),
 			expected: false,
 		},
 		{
-			name:     "チルダパス（ホームディレクトリ）",
+			name:     "Tilde path (home directory)",
 			path:     "~",
 			expected: true,
 		},
@@ -548,17 +548,17 @@ func TestExpandPathOld(t *testing.T) {
 		expected string
 	}{
 		{
-			name:     "チルダパス",
+			name:     "Tilde path",
 			path:     "~/test",
 			expected: filepath.Join(homeDir, "test"),
 		},
 		{
-			name:     "通常のパス",
+			name:     "Normal path",
 			path:     "/tmp/test",
 			expected: "/tmp/test",
 		},
 		{
-			name:     "空のパス",
+			name:     "Empty path",
 			path:     "",
 			expected: "",
 		},
@@ -591,22 +591,22 @@ func TestIsExecutable(t *testing.T) {
 		expected bool
 	}{
 		{
-			name:     "実行可能ファイル",
+			name:     "Executable file",
 			path:     executableFile,
 			expected: true,
 		},
 		{
-			name:     "非実行可能ファイル",
+			name:     "Non-executable file",
 			path:     nonExecutableFile,
 			expected: false,
 		},
 		{
-			name:     "存在しないファイル",
+			name:     "Non-existing file",
 			path:     filepath.Join(tmpDir, "nonexistent"),
 			expected: false,
 		},
 		{
-			name:     "ディレクトリ（実行可能）",
+			name:     "Directory (executable)",
 			path:     tmpDir,
 			expected: true,
 		},
@@ -621,11 +621,11 @@ func TestIsExecutable(t *testing.T) {
 }
 
 func TestDisplayFunctionsIntegration(t *testing.T) {
-	// 初期状態をリセット
+	// Reset initial state
 	utils.SetVerboseLogging(false)
 	utils.SetSilentMode(false)
 
-	t.Run("表示モードの切り替えテスト", func(t *testing.T) {
+	t.Run("Display mode switching test", func(t *testing.T) {
 		// 通常モード
 		output1, err := captureStdout(func() {
 			utils.DisplayProgress("テスト", "通常モード")

@@ -20,43 +20,43 @@ func TestExpandPath(t *testing.T) {
 		wantErr  bool
 	}{
 		{
-			name:     "空文字列",
+			name:     "Empty string",
 			path:     "",
 			expected: "",
 			wantErr:  false,
 		},
 		{
-			name:     "チルダのみ",
+			name:     "Tilde only",
 			path:     "~",
 			expected: homeDir,
 			wantErr:  false,
 		},
 		{
-			name:     "チルダと相対パス",
+			name:     "Tilde and relative path",
 			path:     "~/documents",
 			expected: filepath.Join(homeDir, "documents"),
 			wantErr:  false,
 		},
 		{
-			name:     "チルダとスラッシュ",
+			name:     "Tilde and slash",
 			path:     "~/",
 			expected: homeDir,
 			wantErr:  false,
 		},
 		{
-			name:     "ユーザー指定パス（展開されない）",
+			name:     "User-specified path (not expanded)",
 			path:     "~otheruser/documents",
 			expected: "~otheruser/documents",
 			wantErr:  false,
 		},
 		{
-			name:     "通常の絶対パス",
+			name:     "Normal absolute path",
 			path:     "/usr/local/bin",
 			expected: "/usr/local/bin",
 			wantErr:  false,
 		},
 		{
-			name:     "通常の相対パス",
+			name:     "Normal relative path",
 			path:     "relative/path",
 			expected: "relative/path",
 			wantErr:  false,
@@ -85,17 +85,17 @@ func TestExpandPathSafe(t *testing.T) {
 		expected string
 	}{
 		{
-			name:     "正常なチルダパス",
+			name:     "Normal tilde path",
 			path:     "~/test",
 			expected: filepath.Join(homeDir, "test"),
 		},
 		{
-			name:     "通常のパス",
+			name:     "Normal path",
 			path:     "/tmp/test",
 			expected: "/tmp/test",
 		},
 		{
-			name:     "空文字列",
+			name:     "Empty string",
 			path:     "",
 			expected: "",
 		},
@@ -123,7 +123,7 @@ func TestNormalizePath(t *testing.T) {
 		check   func(t *testing.T, result string)
 	}{
 		{
-			name:    "空文字列",
+			name:    "Empty string",
 			path:    "",
 			wantErr: false,
 			check: func(t *testing.T, result string) {
@@ -131,7 +131,7 @@ func TestNormalizePath(t *testing.T) {
 			},
 		},
 		{
-			name:    "チルダパス",
+			name:    "Tilde path",
 			path:    "~/test",
 			wantErr: false,
 			check: func(t *testing.T, result string) {
@@ -140,7 +140,7 @@ func TestNormalizePath(t *testing.T) {
 			},
 		},
 		{
-			name:    "相対パス",
+			name:    "Relative path",
 			path:    "relative/path",
 			wantErr: false,
 			check: func(t *testing.T, result string) {
@@ -149,7 +149,7 @@ func TestNormalizePath(t *testing.T) {
 			},
 		},
 		{
-			name:    "絶対パス",
+			name:    "Absolute path",
 			path:    "/tmp/test",
 			wantErr: false,
 			check: func(t *testing.T, result string) {
@@ -157,7 +157,7 @@ func TestNormalizePath(t *testing.T) {
 			},
 		},
 		{
-			name:    "カレントディレクトリ",
+			name:    "Current directory",
 			path:    ".",
 			wantErr: false,
 			check: func(t *testing.T, result string) {
@@ -188,22 +188,22 @@ func TestEnsureDirectory(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "新規ディレクトリ作成",
+			name:    "Create new directory",
 			path:    filepath.Join(tmpDir, "newdir"),
 			wantErr: false,
 		},
 		{
-			name:    "既存ディレクトリ",
+			name:    "Existing directory",
 			path:    tmpDir,
 			wantErr: false,
 		},
 		{
-			name:    "ネストディレクトリ作成",
+			name:    "Create nested directory",
 			path:    filepath.Join(tmpDir, "nested/deep/dir"),
 			wantErr: false,
 		},
 		{
-			name:    "チルダパス",
+			name:    "Tilde path",
 			path:    "~/test_ensure_dir",
 			wantErr: false,
 		},
@@ -216,7 +216,7 @@ func TestEnsureDirectory(t *testing.T) {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
-				// ディレクトリが実際に作成されたことを確認
+				// Confirm directory was actually created
 				normalizedPath, _ := utils.NormalizePath(tt.path)
 				info, err := os.Stat(normalizedPath)
 				assert.NoError(t, err)
@@ -225,7 +225,7 @@ func TestEnsureDirectory(t *testing.T) {
 		})
 	}
 
-	// チルダパスのクリーンアップ
+	// Cleanup tilde path
 	t.Cleanup(func() {
 		homeDir, _ := os.UserHomeDir()
 		testDir := filepath.Join(homeDir, "test_ensure_dir")
@@ -245,27 +245,27 @@ func TestPathExists(t *testing.T) {
 		expected bool
 	}{
 		{
-			name:     "存在するファイル",
+			name:     "Existing file",
 			path:     existingFile,
 			expected: true,
 		},
 		{
-			name:     "存在するディレクトリ",
+			name:     "Existing directory",
 			path:     tmpDir,
 			expected: true,
 		},
 		{
-			name:     "存在しないファイル",
+			name:     "Non-existing file",
 			path:     filepath.Join(tmpDir, "nonexistent.txt"),
 			expected: false,
 		},
 		{
-			name:     "存在しないディレクトリ",
+			name:     "Non-existing directory",
 			path:     filepath.Join(tmpDir, "nonexistent"),
 			expected: false,
 		},
 		{
-			name:     "空文字列",
+			name:     "Empty string",
 			path:     "",
 			expected: false,
 		},
@@ -291,22 +291,22 @@ func TestIsDirectory(t *testing.T) {
 		expected bool
 	}{
 		{
-			name:     "ディレクトリ",
+			name:     "Directory",
 			path:     tmpDir,
 			expected: true,
 		},
 		{
-			name:     "ファイル",
+			name:     "File",
 			path:     testFile,
 			expected: false,
 		},
 		{
-			name:     "存在しないパス",
+			name:     "Non-existing path",
 			path:     filepath.Join(tmpDir, "nonexistent"),
 			expected: false,
 		},
 		{
-			name:     "空文字列",
+			name:     "Empty string",
 			path:     "",
 			expected: false,
 		},
@@ -332,7 +332,7 @@ func TestJoinPath(t *testing.T) {
 		check    func(t *testing.T, result string)
 	}{
 		{
-			name:     "通常のパス結合",
+			name:     "Normal path join",
 			base:     "/usr/local",
 			elements: []string{"bin", "claude"},
 			wantErr:  false,
@@ -341,7 +341,7 @@ func TestJoinPath(t *testing.T) {
 			},
 		},
 		{
-			name:     "チルダベースパス",
+			name:     "Tilde base path",
 			base:     "~",
 			elements: []string{"documents", "test.txt"},
 			wantErr:  false,
@@ -351,7 +351,7 @@ func TestJoinPath(t *testing.T) {
 			},
 		},
 		{
-			name:     "相対パス結合",
+			name:     "Relative path join",
 			base:     "relative",
 			elements: []string{"sub", "file.txt"},
 			wantErr:  false,
@@ -362,7 +362,7 @@ func TestJoinPath(t *testing.T) {
 			},
 		},
 		{
-			name:     "空要素",
+			name:     "Empty elements",
 			base:     "/tmp",
 			elements: []string{},
 			wantErr:  false,
@@ -393,7 +393,7 @@ func TestJoinPathSafe(t *testing.T) {
 		check    func(t *testing.T, result string)
 	}{
 		{
-			name:     "正常なパス結合",
+			name:     "Normal path join",
 			base:     "/usr/local",
 			elements: []string{"bin", "claude"},
 			check: func(t *testing.T, result string) {
@@ -401,7 +401,7 @@ func TestJoinPathSafe(t *testing.T) {
 			},
 		},
 		{
-			name:     "チルダパス",
+			name:     "Tilde path",
 			base:     "~/test",
 			elements: []string{"sub"},
 			check: func(t *testing.T, result string) {
@@ -420,7 +420,7 @@ func TestJoinPathSafe(t *testing.T) {
 	}
 }
 
-// ベンチマークテスト
+// Benchmark tests
 func BenchmarkExpandPath(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, _ = utils.ExpandPath("~/test/path")

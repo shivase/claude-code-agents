@@ -14,7 +14,7 @@ import (
 	"github.com/shivase/claude-code-agents/internal/config"
 )
 
-// SystemLoadInfo システム負荷情報
+// SystemLoadInfo represents system load information
 type SystemLoadInfo struct {
 	LoadAvg1Min  float64 `json:"load_avg_1min"`
 	LoadAvg5Min  float64 `json:"load_avg_5min"`
@@ -25,22 +25,22 @@ type SystemLoadInfo struct {
 	Threads      int     `json:"threads"`
 }
 
-// SystemOptimizer システム最適化機能
+// SystemOptimizer provides system optimization functionality
 type SystemOptimizer struct {
 	config   *config.TeamConfig
 	loadInfo *SystemLoadInfo
 }
 
-// NewSystemOptimizer 新しいシステム最適化インスタンスを作成
+// NewSystemOptimizer creates a new system optimizer instance
 func NewSystemOptimizer(config *config.TeamConfig) *SystemOptimizer {
 	return &SystemOptimizer{
 		config: config,
 	}
 }
 
-// GetSystemLoadInfo システム負荷情報の取得
+// GetSystemLoadInfo retrieves system load information
 func (so *SystemOptimizer) GetSystemLoadInfo() (*SystemLoadInfo, error) {
-	// uptime コマンドで負荷平均を取得
+	// Get load average using uptime command
 	cmd := exec.Command("uptime")
 	output, err := cmd.Output()
 	if err != nil {
@@ -51,12 +51,12 @@ func (so *SystemOptimizer) GetSystemLoadInfo() (*SystemLoadInfo, error) {
 		CPUCores: runtime.NumCPU(),
 	}
 
-	// メモリ情報を取得
+	// Get memory information
 	if memSize, err := getMemorySize(); err == nil {
 		loadInfo.MemoryGB = float64(memSize) / (1024 * 1024 * 1024)
 	}
 
-	// uptime 出力から負荷平均を解析
+	// Parse load average from uptime output
 	outputStr := strings.TrimSpace(string(output))
 	if strings.Contains(outputStr, "load average:") {
 		parts := strings.Split(outputStr, "load average:")
@@ -76,7 +76,7 @@ func (so *SystemOptimizer) GetSystemLoadInfo() (*SystemLoadInfo, error) {
 		}
 	}
 
-	// プロセス情報を取得
+	// Get process information
 	if processes, err := getProcessCount(); err == nil {
 		loadInfo.Processes = processes
 	}
@@ -85,18 +85,18 @@ func (so *SystemOptimizer) GetSystemLoadInfo() (*SystemLoadInfo, error) {
 	return loadInfo, nil
 }
 
-// IsHighLoadCondition 高負荷状態かどうかを判定
+// IsHighLoadCondition determines if the system is under high load
 func (so *SystemOptimizer) IsHighLoadCondition() bool {
 	if so.loadInfo == nil {
 		return false
 	}
 
-	// 負荷平均がCPUコア数の80%を超える場合は高負荷とみなす
+	// Consider high load when load average exceeds 80% of CPU cores
 	threshold := float64(so.loadInfo.CPUCores) * 0.8
 	return so.loadInfo.LoadAvg1Min > threshold
 }
 
-// OptimizeSystemLoad システム負荷を最適化
+// OptimizeSystemLoad optimizes system load
 func (so *SystemOptimizer) OptimizeSystemLoad() error {
 	if !so.IsHighLoadCondition() {
 		log.Info().Msg("System load is within normal range")
@@ -105,26 +105,26 @@ func (so *SystemOptimizer) OptimizeSystemLoad() error {
 
 	log.Warn().Float64("load_avg", so.loadInfo.LoadAvg1Min).Int("cpu_cores", so.loadInfo.CPUCores).Msg("High system load detected")
 
-	// 高負荷時の最適化処理
+	// Optimization process for high load conditions
 	so.optimizeClaudeProcesses()
 
 	return nil
 }
 
-// optimizeClaudeProcesses claudeプロセスの最適化
+// optimizeClaudeProcesses optimizes claude processes
 func (so *SystemOptimizer) optimizeClaudeProcesses() {
 	log.Info().Msg("Claude process optimization - feature disabled")
 }
 
-// LimitProcessResources プロセスのリソース制限を設定
+// LimitProcessResources sets resource limits for a process
 func (so *SystemOptimizer) LimitProcessResources(pid int) error {
-	// プロセスのリソース制限を設定
+	// Set process resource limits
 	process, err := os.FindProcess(pid)
 	if err != nil {
 		return fmt.Errorf("failed to find process %d: %w", pid, err)
 	}
 
-	// CPU時間制限を設定（例: 300秒）
+	// Set CPU time limit (e.g., 300 seconds)
 	if err := syscall.Setrlimit(syscall.RLIMIT_CPU, &syscall.Rlimit{
 		Cur: 300,
 		Max: 300,
@@ -132,7 +132,7 @@ func (so *SystemOptimizer) LimitProcessResources(pid int) error {
 		log.Warn().Err(err).Int("pid", pid).Msg("Failed to set CPU time limit")
 	}
 
-	// メモリ制限を設定（例: 1GB）
+	// Set memory limit (e.g., 1GB)
 	if err := syscall.Setrlimit(syscall.RLIMIT_AS, &syscall.Rlimit{
 		Cur: 1024 * 1024 * 1024,
 		Max: 1024 * 1024 * 1024,
@@ -140,11 +140,11 @@ func (so *SystemOptimizer) LimitProcessResources(pid int) error {
 		log.Warn().Err(err).Int("pid", pid).Msg("Failed to set memory limit")
 	}
 
-	_ = process // プロセスハンドルを使用
+	_ = process // Use process handle
 	return nil
 }
 
-// MonitorSystemLoad システム負荷の監視
+// MonitorSystemLoad monitors system load
 func (so *SystemOptimizer) MonitorSystemLoad(interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -159,7 +159,7 @@ func (so *SystemOptimizer) MonitorSystemLoad(interval time.Duration) {
 					Int("cpu_cores", loadInfo.CPUCores).
 					Msg("High system load detected")
 
-				// 自動最適化を実行
+				// Execute automatic optimization
 				if err := so.OptimizeSystemLoad(); err != nil {
 					log.Error().Err(err).Msg("Failed to optimize system load")
 				}
@@ -172,7 +172,7 @@ func (so *SystemOptimizer) MonitorSystemLoad(interval time.Duration) {
 	}
 }
 
-// GenerateSystemReport システム負荷レポートの生成
+// GenerateSystemReport generates a system load report
 func (so *SystemOptimizer) GenerateSystemReport() string {
 	var report strings.Builder
 	report.WriteString("📊 System Load Analysis Report\n")
@@ -187,7 +187,7 @@ func (so *SystemOptimizer) GenerateSystemReport() string {
 		report.WriteString(fmt.Sprintf("   Load Average (15min): %.2f\n", so.loadInfo.LoadAvg15Min))
 		report.WriteString(fmt.Sprintf("   Total Processes: %d\n\n", so.loadInfo.Processes))
 
-		// 負荷状態の評価
+		// Evaluate load status
 		threshold := float64(so.loadInfo.CPUCores) * 0.8
 		if so.loadInfo.LoadAvg1Min > threshold {
 			report.WriteString("⚠️ Status: HIGH LOAD DETECTED\n")
@@ -217,9 +217,9 @@ func (so *SystemOptimizer) GenerateSystemReport() string {
 	return report.String()
 }
 
-// ヘルパー関数
+// Helper functions
 
-// getMemorySize システムメモリサイズを取得
+// getMemorySize retrieves system memory size
 func getMemorySize() (int64, error) {
 	cmd := exec.Command("sysctl", "-n", "hw.memsize")
 	output, err := cmd.Output()
@@ -235,7 +235,7 @@ func getMemorySize() (int64, error) {
 	return size, nil
 }
 
-// getProcessCount プロセス数を取得
+// getProcessCount retrieves process count
 func getProcessCount() (int, error) {
 	cmd := exec.Command("ps", "ax")
 	output, err := cmd.Output()
@@ -244,5 +244,5 @@ func getProcessCount() (int, error) {
 	}
 
 	lines := strings.Split(string(output), "\n")
-	return len(lines) - 1, nil // ヘッダー行を除く
+	return len(lines) - 1, nil // Exclude header line
 }

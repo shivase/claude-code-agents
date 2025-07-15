@@ -1,21 +1,21 @@
 package auth
 
-// AuthProviderInterface Claude認証プロバイダーのインターフェース
+// AuthProviderInterface defines Claude authentication provider interface
 type AuthProviderInterface interface {
-	// CheckAuth 認証状態を確認
+	// CheckAuth checks authentication status
 	CheckAuth() error
-	// CheckSettingsFile 設定ファイルを確認
+	// CheckSettingsFile checks settings file
 	CheckSettingsFile() error
-	// IsReady Claude CLIが使用準備完了かチェック
+	// IsReady checks if Claude CLI is ready for use
 	IsReady() bool
-	// GetPath Claude CLIのパスを取得
+	// GetPath gets Claude CLI path
 	GetPath() string
-	// ValidateSetup セットアップの包括的な検証
+	// ValidateSetup performs comprehensive setup validation
 	ValidateSetup() error
 }
 
-// PreAuthCheckerInterface 事前認証チェッカーのインターフェース
+// PreAuthCheckerInterface defines pre-authentication checker interface
 type PreAuthCheckerInterface interface {
-	// CheckAuthenticationBeforeStart 開始前の認証確認
+	// CheckAuthenticationBeforeStart checks authentication before start
 	CheckAuthenticationBeforeStart() error
 }

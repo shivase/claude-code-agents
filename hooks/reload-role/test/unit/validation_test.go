@@ -47,31 +47,31 @@ func TestIsValidRole_ExistingFile(t *testing.T) {
 			name:        "ValidRole_PO",
 			role:        "po",
 			expected:    true,
-			description: "POの役割ファイルが存在する場合",
+			description: "When PO role file exists",
 		},
 		{
 			name:        "ValidRole_Manager",
 			role:        "manager",
 			expected:    true,
-			description: "マネージャーの役割ファイルが存在する場合",
+			description: "When manager role file exists",
 		},
 		{
 			name:        "ValidRole_Developer",
 			role:        "developer",
 			expected:    true,
-			description: "開発者の役割ファイルが存在する場合",
+			description: "When developer role file exists",
 		},
 		{
 			name:        "ValidRole_Admin",
 			role:        "admin",
 			expected:    true,
-			description: "管理者の役割ファイルが存在する場合",
+			description: "When admin role file exists",
 		},
 		{
 			name:        "ValidRole_Tester",
 			role:        "tester",
 			expected:    true,
-			description: "テスターの役割ファイルが存在する場合",
+			description: "When tester role file exists",
 		},
 	}
 
@@ -104,25 +104,25 @@ func TestIsValidRole_NonExistingFile(t *testing.T) {
 			name:        "NonExistingRole_analyst",
 			role:        "analyst",
 			expected:    false,
-			description: "存在しないanalyst役割ファイル",
+			description: "Non-existent analyst role file",
 		},
 		{
 			name:        "NonExistingRole_architect",
 			role:        "architect",
 			expected:    false,
-			description: "存在しないarchitect役割ファイル",
+			description: "Non-existent architect role file",
 		},
 		{
 			name:        "NonExistingRole_designer",
 			role:        "designer",
 			expected:    false,
-			description: "存在しないdesigner役割ファイル",
+			description: "Non-existent designer role file",
 		},
 		{
 			name:        "NonExistingRole_random",
 			role:        "randomrole",
 			expected:    false,
-			description: "存在しないランダム役割ファイル",
+			description: "Non-existent random role file",
 		},
 	}
 
@@ -157,61 +157,61 @@ func TestIsValidRole_EdgeCases(t *testing.T) {
 			name:        "EdgeCase_EmptyString",
 			role:        "",
 			expected:    false,
-			description: "空文字列の役割名",
+			description: "Empty string role name",
 		},
 		{
 			name:        "EdgeCase_SpaceOnly",
 			role:        " ",
 			expected:    false,
-			description: "スペースのみの役割名",
+			description: "Role name with only spaces",
 		},
 		{
 			name:        "EdgeCase_TabCharacter",
 			role:        "\t",
 			expected:    false,
-			description: "タブ文字の役割名",
+			description: "Tab character role name",
 		},
 		{
 			name:        "EdgeCase_NewlineCharacter",
 			role:        "\n",
 			expected:    false,
-			description: "改行文字の役割名",
+			description: "Newline character role name",
 		},
 		{
 			name:        "EdgeCase_VeryLongRole",
 			role:        "verylongrolename",
 			expected:    false, // 長い文字列のファイルは作成していないのでfalse
-			description: "非常に長い役割名（ファイル名が長すぎて作成できない）",
+			description: "Very long role name (filename too long to create)",
 		},
 		{
 			name:        "EdgeCase_SingleCharacter",
 			role:        "a",
 			expected:    false,
-			description: "単一文字の役割名",
+			description: "Single character role name",
 		},
 		{
 			name:        "EdgeCase_NumbersOnly",
 			role:        "123",
 			expected:    false,
-			description: "数字のみの役割名",
+			description: "Numeric-only role name",
 		},
 		{
 			name:        "EdgeCase_SpecialCharacters",
 			role:        "!@#$%",
 			expected:    false,
-			description: "特殊文字の役割名",
+			description: "Special character role name",
 		},
 		{
 			name:        "EdgeCase_PathTraversal",
 			role:        "../etc/passwd",
 			expected:    false,
-			description: "パストラバーサル攻撃を模擬した役割名",
+			description: "Path traversal attack simulated role name",
 		},
 		{
 			name:        "EdgeCase_JapaneseCharacters",
 			role:        "管理者",
 			expected:    false,
-			description: "日本語文字の役割名",
+			description: "Japanese character role name",
 		},
 	}
 
@@ -260,13 +260,13 @@ func TestIsValidRole_FilePermissions(t *testing.T) {
 			name:        "ReadOnlyFile_Exists",
 			role:        "readonly",
 			expected:    true,
-			description: "読み取り専用ファイルでも存在確認は可能",
+			description: "Existence check is possible even for read-only file",
 		},
 		{
 			name:        "NoPermissionsFile_Exists",
 			role:        "noperms",
 			expected:    true,
-			description: "権限なしファイルでも存在確認は可能（OS依存）",
+			description: "Existence check is possible even for no-permission file (OS dependent)",
 		},
 	}
 
@@ -293,7 +293,7 @@ func TestIsValidRole_HomeDirectoryError(t *testing.T) {
 	os.Unsetenv("HOME")
 	os.Unsetenv("USERPROFILE")
 
-	// テスト終了時に復元
+	// Restore after test
 	t.Cleanup(func() {
 		os.Setenv("HOME", originalHome)
 		os.Setenv("USERPROFILE", originalUserProfile)
@@ -309,13 +309,13 @@ func TestIsValidRole_HomeDirectoryError(t *testing.T) {
 			name:        "HomeDirectoryError_ValidRole",
 			role:        "po",
 			expected:    false,
-			description: "ホームディレクトリが取得できない場合は常にfalse",
+			description: "Always false when home directory cannot be obtained",
 		},
 		{
 			name:        "HomeDirectoryError_InvalidRole",
 			role:        "invalid",
 			expected:    false,
-			description: "無効な役割名でホームディレクトリエラーでも常にfalse",
+			description: "Always false for invalid role name even with home directory error",
 		},
 	}
 
@@ -371,37 +371,37 @@ func TestIsValidRole_RealWorldScenarios(t *testing.T) {
 			name:        "RealWorld_PO",
 			role:        "po",
 			expected:    true,
-			description: "実際のPO役割ファイル",
+			description: "Actual PO role file",
 		},
 		{
 			name:        "RealWorld_Manager",
 			role:        "manager",
 			expected:    true,
-			description: "実際のマネージャー役割ファイル",
+			description: "Actual manager role file",
 		},
 		{
 			name:        "RealWorld_Developer",
 			role:        "developer",
 			expected:    true,
-			description: "実際の開発者役割ファイル",
+			description: "Actual developer role file",
 		},
 		{
 			name:        "RealWorld_Designer",
 			role:        "designer",
 			expected:    true,
-			description: "実際のデザイナー役割ファイル",
+			description: "Actual designer role file",
 		},
 		{
 			name:        "RealWorld_NonExistentRole",
 			role:        "consultant",
 			expected:    false,
-			description: "存在しないコンサルタント役割",
+			description: "Non-existent consultant role",
 		},
 		{
 			name:        "RealWorld_CaseSensitive",
 			role:        "PO",
 			expected:    true,
-			description: "大文字のPO（ファイルは小文字で作成。実際のテスト環境では大文字の.mdファイルが存在するため）",
+			description: "Uppercase PO (file created in lowercase. In actual test environment, uppercase .md file exists)",
 		},
 	}
 
@@ -466,7 +466,7 @@ func setupTestEnvironment(t *testing.T, tempDir string) {
 		t.Fatalf("Failed to create instructions directory: %v", err)
 	}
 
-	// テスト終了時に復元
+	// Restore after test
 	t.Cleanup(func() {
 		os.Setenv("HOME", originalHome)
 	})

@@ -8,83 +8,83 @@ import (
 	"time"
 )
 
-// 表示制御フラグ
+// Display control flags
 var (
 	verboseLogging = false
 	silentMode     = false
 )
 
-// SetVerboseLogging 詳細ログ出力を設定
+// SetVerboseLogging sets verbose log output
 func SetVerboseLogging(verbose bool) {
 	verboseLogging = verbose
 	if verbose {
-		silentMode = false // verbose時はsilentを無効化
-		// 詳細ログ有効化のメッセージは不要（fmt出力で十分）
+		silentMode = false // Disable silent mode when verbose is enabled
+		// No need for verbose enable message (fmt output is sufficient)
 	}
 }
 
-// SetSilentMode サイレントモードを設定
+// SetSilentMode sets silent mode
 func SetSilentMode(silent bool) {
 	silentMode = silent
 	if silent {
-		verboseLogging = false // silent時はverboseを無効化
-		// サイレントモード有効化のメッセージは不要（fmt出力で十分）
+		verboseLogging = false // Disable verbose when silent is enabled
+		// No need for silent mode enable message (fmt output is sufficient)
 	}
 }
 
-// IsVerboseLogging 詳細ログ出力が有効かチェック
+// IsVerboseLogging checks if verbose logging is enabled
 func IsVerboseLogging() bool {
 	return verboseLogging
 }
 
-// IsSilentMode サイレントモードが有効かチェック
+// IsSilentMode checks if silent mode is enabled
 func IsSilentMode() bool {
 	return silentMode
 }
 
-// DisplayProgress 進行状況の表示
+// DisplayProgress displays progress status
 func DisplayProgress(operation, message string) {
 	if silentMode {
 		return
 	}
 	fmt.Printf("🔄 %s: %s\n", operation, message)
-	// 構造化ログは不要（fmt出力で十分）
+	// No need for structured logging (fmt output is sufficient)
 }
 
-// DisplaySuccess 成功メッセージの表示
+// DisplaySuccess displays success message
 func DisplaySuccess(operation, message string) {
 	if silentMode {
 		return
 	}
 	fmt.Printf("✅ %s: %s\n", operation, message)
-	// 構造化ログは不要（fmt出力で十分）
+	// No need for structured logging (fmt output is sufficient)
 }
 
-// DisplayError エラーメッセージの表示
+// DisplayError displays error message
 func DisplayError(operation string, err error) {
 	fmt.Printf("❌ %s: %v\n", operation, err)
-	// 構造化ログは不要（fmt出力で十分）
+	// No need for structured logging (fmt output is sufficient)
 }
 
-// DisplayInfo 情報メッセージの表示
+// DisplayInfo displays info message
 func DisplayInfo(operation, message string) {
 	if silentMode {
 		return
 	}
 	fmt.Printf("ℹ️ %s: %s\n", operation, message)
-	// 構造化ログは不要（fmt出力で十分）
+	// No need for structured logging (fmt output is sufficient)
 }
 
-// DisplayWarning 警告メッセージの表示
+// DisplayWarning displays warning message
 func DisplayWarning(operation, message string) {
 	if silentMode {
 		return
 	}
 	fmt.Printf("⚠️ %s: %s\n", operation, message)
-	// 構造化ログは不要（fmt出力で十分）
+	// No need for structured logging (fmt output is sufficient)
 }
 
-// DisplayStartupBanner スタートアップバナーを表示（詳細モード時のみ）
+// DisplayStartupBanner displays startup banner (only in verbose mode)
 func DisplayStartupBanner() {
 	if silentMode {
 		return
@@ -99,38 +99,38 @@ func DisplayStartupBanner() {
 	fmt.Println("=====================================")
 	fmt.Println()
 
-	// 構造化ログは不要（fmt出力で十分）
+	// No need for structured logging (fmt output is sufficient)
 }
 
-// DisplayLauncherStart ランチャー開始メッセージを表示
+// DisplayLauncherStart displays launcher start message
 func DisplayLauncherStart() {
 	if silentMode {
 		return
 	}
-	fmt.Printf("[%s] 🚀 システムランチャー開始\n", time.Now().Format("15:04:05"))
+	fmt.Printf("[%s] 🚀 System launcher started\n", time.Now().Format("15:04:05"))
 	fmt.Println("=====================================")
 }
 
-// DisplayLauncherProgress ランチャー進行状況を表示
+// DisplayLauncherProgress displays launcher progress
 func DisplayLauncherProgress() {
 	if silentMode {
 		return
 	}
-	fmt.Printf("[%s] 🔄 システム初期化中...\n", time.Now().Format("15:04:05"))
+	fmt.Printf("[%s] 🔄 System initializing...\n", time.Now().Format("15:04:05"))
 }
 
-// DisplayConfig 設定情報を表示
+// DisplayConfig displays configuration information
 func DisplayConfig(teamConfig interface{}, sessionName string) {
 	if silentMode {
 		return
 	}
 
-	fmt.Println("📋 設定情報")
+	fmt.Println("📋 Configuration Information")
 	fmt.Println("===========")
-	fmt.Printf("セッション名: %s\n", sessionName)
+	fmt.Printf("Session Name: %s\n", sessionName)
 	fmt.Println()
 
-	// teamConfigの型によって処理を分ける（interface{}として受け取るため）
+	// Process by teamConfig type (received as interface{})
 	if config, ok := teamConfig.(map[string]interface{}); ok {
 		for key, value := range config {
 			fmt.Printf("  %s: %v\n", key, value)
@@ -139,29 +139,29 @@ func DisplayConfig(teamConfig interface{}, sessionName string) {
 	fmt.Println()
 }
 
-// DisplayValidationResults 検証結果を表示
+// DisplayValidationResults displays validation results
 func DisplayValidationResults(teamConfig interface{}) {
 	if silentMode {
 		return
 	}
 
-	fmt.Println("🔍 検証結果")
+	fmt.Println("🔍 Validation Results")
 	fmt.Println("===========")
 
-	// 簡易的な検証結果表示
-	fmt.Println("✅ Claude CLI: 利用可能")
-	fmt.Println("✅ インストラクション: 準備完了")
-	fmt.Println("✅ 作業ディレクトリ: アクセス可能")
+	// Simple validation result display
+	fmt.Println("✅ Claude CLI: Available")
+	fmt.Println("✅ Instructions: Ready")
+	fmt.Println("✅ Working Directory: Accessible")
 	fmt.Println()
 }
 
-// FormatPath パスを表示用にフォーマット
+// FormatPath formats path for display
 func FormatPath(path string) string {
 	if path == "" {
 		return "<empty>"
 	}
 
-	// ホームディレクトリを ~ に置換
+	// Replace home directory with ~
 	homeDir, err := os.UserHomeDir()
 	if err == nil && strings.HasPrefix(path, homeDir) {
 		return "~" + path[len(homeDir):]
@@ -170,7 +170,7 @@ func FormatPath(path string) string {
 	return path
 }
 
-// ValidatePath パスの存在確認
+// ValidatePath checks path existence
 func ValidatePath(path string) bool {
 	if path == "" {
 		return false
@@ -181,12 +181,12 @@ func ValidatePath(path string) bool {
 	return err == nil
 }
 
-// ExpandPathOld チルダ展開（非推奨: path_utils.goのExpandPathSafeを使用してください）
+// ExpandPathOld tilde expansion (deprecated: use ExpandPathSafe from path_utils.go)
 func ExpandPathOld(path string) string {
 	return ExpandPathSafe(path)
 }
 
-// IsExecutable ファイルが実行可能かチェック
+// IsExecutable checks if file is executable
 func IsExecutable(path string) bool {
 	fileInfo, err := os.Stat(path)
 	if err != nil {

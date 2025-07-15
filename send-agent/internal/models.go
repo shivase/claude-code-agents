@@ -1,6 +1,6 @@
 package internal
 
-// 定数定義
+// Constant definitions
 const (
 	IntegratedSessionPaneCount = 6
 
@@ -40,12 +40,12 @@ type MessageSender struct {
 }
 
 var AvailableAgents = []Agent{
-	{AgentPO, "プロダクトオーナー（製品責任者）"},
-	{AgentManager, "プロジェクトマネージャー（柔軟なチーム管理）"},
-	{AgentDev1, "実行エージェント1（柔軟な役割対応）"},
-	{AgentDev2, "実行エージェント2（柔軟な役割対応）"},
-	{AgentDev3, "実行エージェント3（柔軟な役割対応）"},
-	{AgentDev4, "実行エージェント4（柔軟な役割対応）"},
+	{AgentPO, "Product Owner (Product Manager)"},
+	{AgentManager, "Project Manager (Flexible team management)"},
+	{AgentDev1, "Execution Agent 1 (Flexible role assignment)"},
+	{AgentDev2, "Execution Agent 2 (Flexible role assignment)"},
+	{AgentDev3, "Execution Agent 3 (Flexible role assignment)"},
+	{AgentDev4, "Execution Agent 4 (Flexible role assignment)"},
 }
 
 var ValidAgentNames = map[string]bool{

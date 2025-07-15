@@ -14,7 +14,7 @@ import (
 )
 
 func TestNewStartupLogger(t *testing.T) {
-	t.Run("起動ログインスタンス作成", func(t *testing.T) {
+	t.Run("Create startup log instance", func(t *testing.T) {
 		startupLogger := logger.NewStartupLogger()
 		assert.NotNil(t, startupLogger)
 		assert.Implements(t, (*logger.StartupLogger)(nil), startupLogger)
@@ -35,7 +35,7 @@ func TestDefaultStartupLogger_LogSystemInit(t *testing.T) {
 	sl.LogSystemInit("application_startup", details)
 
 	output := buf.String()
-	assert.Contains(t, output, "🚀 システム初期化")
+	assert.Contains(t, output, "🚀 System initialization")
 	assert.Contains(t, output, "startup")
 	assert.Contains(t, output, "application_startup")
 	assert.Contains(t, output, "1.0.0")
@@ -49,7 +49,7 @@ func TestDefaultStartupLogger_LogConfigLoad(t *testing.T) {
 
 	sl := logger.NewStartupLogger()
 
-	t.Run("詳細情報ありの設定読み込み", func(t *testing.T) {
+	t.Run("Configuration loading with detailed information", func(t *testing.T) {
 		buf.Reset()
 		details := map[string]interface{}{
 			"file_size": 1024,
@@ -59,19 +59,19 @@ func TestDefaultStartupLogger_LogConfigLoad(t *testing.T) {
 		sl.LogConfigLoad("/path/to/config.yaml", details)
 
 		output := buf.String()
-		assert.Contains(t, output, "📋 設定ファイル読み込み")
+		assert.Contains(t, output, "📋 Configuration file loading")
 		assert.Contains(t, output, "config_load")
 		assert.Contains(t, output, "/path/to/config.yaml")
 		assert.Contains(t, output, "1024")
 		assert.Contains(t, output, "utf-8")
 	})
 
-	t.Run("詳細情報なしの設定読み込み", func(t *testing.T) {
+	t.Run("Configuration loading without detailed information", func(t *testing.T) {
 		buf.Reset()
 		sl.LogConfigLoad("/path/to/config.yaml", nil)
 
 		output := buf.String()
-		assert.Contains(t, output, "📋 設定ファイル読み込み")
+		assert.Contains(t, output, "📋 Configuration file loading")
 		assert.Contains(t, output, "/path/to/config.yaml")
 	})
 }
@@ -97,7 +97,7 @@ func TestDefaultStartupLogger_LogInstructionConfig(t *testing.T) {
 	sl.LogInstructionConfig(instructionInfo, details)
 
 	output := buf.String()
-	assert.Contains(t, output, "📝 instruction設定確認")
+	assert.Contains(t, output, "📝 Instruction configuration verification")
 	assert.Contains(t, output, "instruction_config")
 	assert.Contains(t, output, "po.md")
 	assert.Contains(t, output, "manager.md")
@@ -117,12 +117,12 @@ func TestDefaultStartupLogger_LogEnvironmentInfo(t *testing.T) {
 		"arch":       "amd64",
 	}
 
-	t.Run("通常モードでの環境情報ログ", func(t *testing.T) {
+	t.Run("Environment information log in normal mode", func(t *testing.T) {
 		buf.Reset()
 		sl.LogEnvironmentInfo(envInfo, false)
 
 		output := buf.String()
-		assert.Contains(t, output, "🔍 環境情報確認")
+		assert.Contains(t, output, "🔍 Environment information verification")
 		assert.Contains(t, output, "environment_check")
 		assert.Contains(t, output, "1.21")
 		assert.Contains(t, output, "darwin")
@@ -130,12 +130,12 @@ func TestDefaultStartupLogger_LogEnvironmentInfo(t *testing.T) {
 		assert.Contains(t, output, "\"debug_mode\":false")
 	})
 
-	t.Run("デバッグモードでの環境情報ログ", func(t *testing.T) {
+	t.Run("Environment information log in debug mode", func(t *testing.T) {
 		buf.Reset()
 		sl.LogEnvironmentInfo(envInfo, true)
 
 		output := buf.String()
-		assert.Contains(t, output, "🔍 環境情報確認")
+		assert.Contains(t, output, "🔍 Environment information verification")
 		assert.Contains(t, output, "\"debug_mode\":true")
 	})
 }
@@ -147,7 +147,7 @@ func TestDefaultStartupLogger_LogTmuxSetup(t *testing.T) {
 
 	sl := logger.NewStartupLogger()
 
-	t.Run("詳細情報ありのtmuxセットアップ", func(t *testing.T) {
+	t.Run("tmux setup with detailed information", func(t *testing.T) {
 		buf.Reset()
 		details := map[string]interface{}{
 			"layout":      "tiled",
@@ -157,7 +157,7 @@ func TestDefaultStartupLogger_LogTmuxSetup(t *testing.T) {
 		sl.LogTmuxSetup("test-session", 6, details)
 
 		output := buf.String()
-		assert.Contains(t, output, "🖥️  tmuxセッション設定")
+		assert.Contains(t, output, "🖥️  tmux session setup")
 		assert.Contains(t, output, "tmux_setup")
 		assert.Contains(t, output, "test-session")
 		assert.Contains(t, output, "6")
@@ -165,12 +165,12 @@ func TestDefaultStartupLogger_LogTmuxSetup(t *testing.T) {
 		assert.Contains(t, output, "ai-teams")
 	})
 
-	t.Run("詳細情報なしのtmuxセットアップ", func(t *testing.T) {
+	t.Run("tmux setup without detailed information", func(t *testing.T) {
 		buf.Reset()
 		sl.LogTmuxSetup("simple-session", 4, nil)
 
 		output := buf.String()
-		assert.Contains(t, output, "🖥️  tmuxセッション設定")
+		assert.Contains(t, output, "🖥️  tmux session setup")
 		assert.Contains(t, output, "simple-session")
 		assert.Contains(t, output, "4")
 	})
@@ -183,7 +183,7 @@ func TestDefaultStartupLogger_LogClaudeStart(t *testing.T) {
 
 	sl := logger.NewStartupLogger()
 
-	t.Run("詳細情報ありのClaude CLI起動", func(t *testing.T) {
+	t.Run("Claude CLI startup with detailed information", func(t *testing.T) {
 		buf.Reset()
 		details := map[string]interface{}{
 			"cli_path":    "/usr/local/bin/claude",
@@ -193,7 +193,7 @@ func TestDefaultStartupLogger_LogClaudeStart(t *testing.T) {
 		sl.LogClaudeStart("dev1", "0", details)
 
 		output := buf.String()
-		assert.Contains(t, output, "🤖 Claude CLI起動")
+		assert.Contains(t, output, "🤖 Claude CLI startup")
 		assert.Contains(t, output, "claude_start")
 		assert.Contains(t, output, "dev1")
 		assert.Contains(t, output, "\"pane_id\":\"0\"")
@@ -201,12 +201,12 @@ func TestDefaultStartupLogger_LogClaudeStart(t *testing.T) {
 		assert.Contains(t, output, "~/.claude/config.json")
 	})
 
-	t.Run("詳細情報なしのClaude CLI起動", func(t *testing.T) {
+	t.Run("Claude CLI startup without detailed information", func(t *testing.T) {
 		buf.Reset()
 		sl.LogClaudeStart("manager", "1", nil)
 
 		output := buf.String()
-		assert.Contains(t, output, "🤖 Claude CLI起動")
+		assert.Contains(t, output, "🤖 Claude CLI startup")
 		assert.Contains(t, output, "manager")
 		assert.Contains(t, output, "\"pane_id\":\"1\"")
 	})
@@ -220,7 +220,7 @@ func TestDefaultStartupLogger_LogStartupComplete(t *testing.T) {
 	sl := logger.NewStartupLogger()
 	totalTime := 5 * time.Second
 
-	t.Run("詳細情報ありの起動完了", func(t *testing.T) {
+	t.Run("Startup completion with detailed information", func(t *testing.T) {
 		buf.Reset()
 		details := map[string]interface{}{
 			"agents_started": 6,
@@ -230,7 +230,7 @@ func TestDefaultStartupLogger_LogStartupComplete(t *testing.T) {
 		sl.LogStartupComplete(totalTime, details)
 
 		output := buf.String()
-		assert.Contains(t, output, "✅ 起動完了")
+		assert.Contains(t, output, "✅ Startup completed")
 		assert.Contains(t, output, "complete")
 		assert.Contains(t, output, "5s")
 		assert.Contains(t, output, "5000")
@@ -238,12 +238,12 @@ func TestDefaultStartupLogger_LogStartupComplete(t *testing.T) {
 		assert.Contains(t, output, "ai-teams")
 	})
 
-	t.Run("詳細情報なしの起動完了", func(t *testing.T) {
+	t.Run("Startup completion without detailed information", func(t *testing.T) {
 		buf.Reset()
 		sl.LogStartupComplete(totalTime, nil)
 
 		output := buf.String()
-		assert.Contains(t, output, "✅ 起動完了")
+		assert.Contains(t, output, "✅ Startup completed")
 		assert.Contains(t, output, "5s")
 		assert.Contains(t, output, "5000")
 	})
@@ -257,7 +257,7 @@ func TestDefaultStartupLogger_LogStartupError(t *testing.T) {
 	sl := logger.NewStartupLogger()
 	testErr := fmt.Errorf("テストエラー")
 
-	t.Run("復旧情報ありのエラーログ", func(t *testing.T) {
+	t.Run("Error log with recovery information", func(t *testing.T) {
 		buf.Reset()
 		recovery := map[string]interface{}{
 			"action":   "retry",
@@ -267,19 +267,19 @@ func TestDefaultStartupLogger_LogStartupError(t *testing.T) {
 		sl.LogStartupError("claude_start", testErr, recovery)
 
 		output := buf.String()
-		assert.Contains(t, output, "❌ 起動エラー")
+		assert.Contains(t, output, "❌ Startup error")
 		assert.Contains(t, output, "claude_start")
 		assert.Contains(t, output, "テストエラー")
 		assert.Contains(t, output, "retry")
 		assert.Contains(t, output, "3")
 	})
 
-	t.Run("復旧情報なしのエラーログ", func(t *testing.T) {
+	t.Run("Error log without recovery information", func(t *testing.T) {
 		buf.Reset()
 		sl.LogStartupError("config_load", testErr, nil)
 
 		output := buf.String()
-		assert.Contains(t, output, "❌ 起動エラー")
+		assert.Contains(t, output, "❌ Startup error")
 		assert.Contains(t, output, "config_load")
 		assert.Contains(t, output, "テストエラー")
 	})
@@ -304,7 +304,7 @@ func TestDefaultStartupLogger_BeginPhase(t *testing.T) {
 	assert.WithinDuration(t, time.Now(), phase.StartTime, time.Second)
 
 	output := buf.String()
-	assert.Contains(t, output, "🔄 起動フェーズ開始")
+	assert.Contains(t, output, "🔄 Startup phase began")
 	assert.Contains(t, output, "initialization")
 	assert.Contains(t, output, "started")
 	assert.Contains(t, output, "system_init")
@@ -328,7 +328,7 @@ func TestStartupPhase_Complete(t *testing.T) {
 	phase.Complete()
 
 	output := buf.String()
-	assert.Contains(t, output, "✅ 起動フェーズ完了")
+	assert.Contains(t, output, "✅ Startup phase completed")
 	assert.Contains(t, output, "test_phase")
 	assert.Contains(t, output, "completed")
 	assert.Contains(t, output, "duration")
@@ -354,7 +354,7 @@ func TestStartupPhase_CompleteWithError(t *testing.T) {
 	phase.CompleteWithError(testErr)
 
 	output := buf.String()
-	assert.Contains(t, output, "❌ 起動フェーズ失敗")
+	assert.Contains(t, output, "❌ Startup phase failed")
 	assert.Contains(t, output, "failed_phase")
 	assert.Contains(t, output, "failed")
 	assert.Contains(t, output, "duration")
@@ -369,7 +369,7 @@ func TestLogStartupProgress(t *testing.T) {
 	logger.LogStartupProgress("agent_initialization", 3, 6)
 
 	output := buf.String()
-	assert.Contains(t, output, "📊 起動プログレス")
+	assert.Contains(t, output, "📊 Startup progress")
 	assert.Contains(t, output, "agent_initialization")
 	assert.Contains(t, output, "3")
 	assert.Contains(t, output, "6")
@@ -415,68 +415,68 @@ func TestPackageLevelFunctions(t *testing.T) {
 	log.Logger = zerolog.New(&buf).With().Timestamp().Logger()
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
-	t.Run("パッケージレベル関数のテスト", func(t *testing.T) {
+	t.Run("Package level function test", func(t *testing.T) {
 		// LogSystemInit
 		buf.Reset()
 		logger.LogSystemInit("app_start", map[string]interface{}{"test": "value"})
 		output := buf.String()
-		assert.Contains(t, output, "🚀 システム初期化")
+		assert.Contains(t, output, "🚀 System initialization")
 
 		// LogConfigLoad
 		buf.Reset()
 		logger.LogConfigLoad("/config/test.yaml", nil)
 		output = buf.String()
-		assert.Contains(t, output, "📋 設定ファイル読み込み")
+		assert.Contains(t, output, "📋 Configuration file loading")
 
 		// LogInstructionConfig
 		buf.Reset()
 		instructionInfo := map[string]interface{}{"test_instruction": "test.md"}
 		logger.LogInstructionConfig(instructionInfo, nil)
 		output = buf.String()
-		assert.Contains(t, output, "📝 instruction設定確認")
+		assert.Contains(t, output, "📝 Instruction configuration verification")
 
 		// LogEnvironmentInfo
 		buf.Reset()
 		envInfo := map[string]interface{}{"test_env": "test_value"}
 		logger.LogEnvironmentInfo(envInfo, false)
 		output = buf.String()
-		assert.Contains(t, output, "🔍 環境情報確認")
+		assert.Contains(t, output, "🔍 Environment information verification")
 
 		// LogTmuxSetup
 		buf.Reset()
 		logger.LogTmuxSetup("test-session", 4, nil)
 		output = buf.String()
-		assert.Contains(t, output, "🖥️  tmuxセッション設定")
+		assert.Contains(t, output, "🖥️  tmux session setup")
 
 		// LogClaudeStart
 		buf.Reset()
 		logger.LogClaudeStart("test-agent", "0", nil)
 		output = buf.String()
-		assert.Contains(t, output, "🤖 Claude CLI起動")
+		assert.Contains(t, output, "🤖 Claude CLI startup")
 
 		// LogStartupComplete
 		buf.Reset()
 		logger.LogStartupComplete(1*time.Second, nil)
 		output = buf.String()
-		assert.Contains(t, output, "✅ 起動完了")
+		assert.Contains(t, output, "✅ Startup completed")
 
 		// LogStartupError
 		buf.Reset()
 		logger.LogStartupError("test_phase", fmt.Errorf("test error"), nil)
 		output = buf.String()
-		assert.Contains(t, output, "❌ 起動エラー")
+		assert.Contains(t, output, "❌ Startup error")
 
 		// BeginPhase
 		buf.Reset()
 		phase := logger.BeginPhase("test_phase", map[string]interface{}{"test": "value"})
 		assert.NotNil(t, phase)
 		output = buf.String()
-		assert.Contains(t, output, "🔄 起動フェーズ開始")
+		assert.Contains(t, output, "🔄 Startup phase began")
 	})
 }
 
 func TestStartupLoggerInterface(t *testing.T) {
-	t.Run("インターフェース実装確認", func(t *testing.T) {
+	t.Run("Interface implementation verification", func(t *testing.T) {
 		sl := logger.NewStartupLogger()
 		assert.Implements(t, (*logger.StartupLogger)(nil), sl)
 

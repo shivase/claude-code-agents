@@ -6,19 +6,19 @@ import (
 	"sort"
 )
 
-// セッション管理メソッド
+// Session management methods
 
 func (sm *SessionManager) ListAllSessions() error {
-	fmt.Println("📋 利用可能なAIエージェントセッション一覧:")
+	fmt.Println("📋 Available AI Agent Sessions:")
 	fmt.Println("==================================")
 
 	sessions, err := GetTmuxSessions()
 	if err != nil {
-		return fmt.Errorf("tmuxセッションの取得に失敗しました: %v", err)
+		return fmt.Errorf("failed to get tmux sessions: %v", err)
 	}
 
 	if len(sessions) == 0 {
-		fmt.Println("❌ 起動中のtmuxセッションがありません")
+		fmt.Println("❌ No running tmux sessions")
 		return nil
 	}
 
@@ -29,8 +29,8 @@ func (sm *SessionManager) ListAllSessions() error {
 
 	if len(integratedSessions) == 0 && len(individualSessions) == 0 {
 		fmt.Println()
-		fmt.Println("ℹ️ AIエージェント関連のセッションが見つかりませんでした")
-		fmt.Println("💡 新しいセッションを作成: start-ai-agent [セッション名]")
+		fmt.Println("ℹ️ No AI agent related sessions found")
+		fmt.Println("💡 Create new session: start-ai-agent [session-name]")
 	}
 
 	return nil
@@ -74,10 +74,10 @@ func (sm *SessionManager) extractBaseName(sessionName string) string {
 func (sm *SessionManager) displayIntegratedSessions(sessions []Session) {
 	if len(sessions) > 0 {
 		fmt.Println()
-		fmt.Println("📺 統合監視画面セッション:")
+		fmt.Println("📺 Integrated monitoring screen sessions:")
 		for _, session := range sessions {
-			fmt.Printf("  🎯 %s (6ペイン統合画面)\n", session.Name)
-			fmt.Printf("    使用例: send-agent --session %s po \"メッセージ\"\n", session.Name)
+			fmt.Printf("  🎯 %s (6-pane integrated screen)\n", session.Name)
+			fmt.Printf("    Usage: send-agent --session %s po \"message\"\n", session.Name)
 		}
 	}
 }
@@ -85,21 +85,21 @@ func (sm *SessionManager) displayIntegratedSessions(sessions []Session) {
 func (sm *SessionManager) displayIndividualSessions(sessions map[string]bool) {
 	if len(sessions) > 0 {
 		fmt.Println()
-		fmt.Println("🔄 個別セッション方式:")
+		fmt.Println("🔄 Individual session mode:")
 		var baseNames []string
 		for baseName := range sessions {
 			baseNames = append(baseNames, baseName)
 		}
 		sort.Strings(baseNames)
 		for _, baseName := range baseNames {
-			fmt.Printf("  📋 %s グループ\n", baseName)
-			fmt.Printf("    使用例: send-agent --session %s manager \"メッセージ\"\n", baseName)
+			fmt.Printf("  📋 %s group\n", baseName)
+			fmt.Printf("    Usage: send-agent --session %s manager \"message\"\n", baseName)
 		}
 	}
 }
 
 func (sm *SessionManager) ShowAgentsForSession(sessionName string) error {
-	fmt.Printf("📋 AIエージェントメンバー一覧 (セッション: %s):\n", sessionName)
+	fmt.Printf("📋 AI Agent Member List (Session: %s):\n", sessionName)
 	fmt.Println("==================================================")
 
 	if HasSession(sessionName) {
@@ -112,18 +112,18 @@ func (sm *SessionManager) ShowAgentsForSession(sessionName string) error {
 func (sm *SessionManager) showIntegratedSessionAgents(sessionName string) error {
 	paneCount, err := GetPaneCount(sessionName)
 	if err != nil {
-		return fmt.Errorf("セッション '%s' の情報取得に失敗しました: %v", sessionName, err)
+		return fmt.Errorf("failed to get information for session '%s': %v", sessionName, err)
 	}
 
 	if paneCount == IntegratedSessionPaneCount {
-		fmt.Printf("🎯 統合監視画面（%s）使用中:\n", sessionName)
+		fmt.Printf("🎯 Using integrated monitoring screen (%s):\n", sessionName)
 		sm.displayAgentPaneMapping()
 		fmt.Println()
-		fmt.Println("現在のペイン状態:")
+		fmt.Println("Current pane status:")
 		return ShowPanes(sessionName)
 	}
 
-	return fmt.Errorf("セッション '%s' は統合監視画面形式ではありません", sessionName)
+	return fmt.Errorf("session '%s' is not in integrated monitoring screen format", sessionName)
 }
 
 func (sm *SessionManager) showIndividualSessionAgents(sessionName string) error {
@@ -136,7 +136,7 @@ func (sm *SessionManager) showIndividualSessionAgents(sessionName string) error 
 	}
 
 	if len(foundSessions) > 0 {
-		fmt.Printf("🔄 個別セッション方式（%s）:\n", sessionName)
+		fmt.Printf("🔄 Individual session mode (%s):\n", sessionName)
 		for _, agentName := range foundSessions {
 			agent := FindAgentByName(agentName)
 			if agent != nil {
@@ -147,7 +147,7 @@ func (sm *SessionManager) showIndividualSessionAgents(sessionName string) error 
 		return nil
 	}
 
-	return fmt.Errorf("セッション '%s' に関連するAIエージェントセッションが見つかりません\n💡 利用可能なセッション一覧: send-agent list-sessions", sessionName)
+	return fmt.Errorf("no AI agent sessions related to session '%s' found\n💡 Available sessions: send-agent list-sessions", sessionName)
 }
 
 func (sm *SessionManager) displayAgentPaneMapping() {
@@ -158,6 +158,6 @@ func (sm *SessionManager) displayAgentPaneMapping() {
 
 	for _, agent := range AvailableAgents {
 		paneIndex := agentPaneMap[agent.Name]
-		fmt.Printf("  %s → ペイン%d (%s)\n", agent.Name, paneIndex, agent.Description)
+		fmt.Printf("  %s → pane %d (%s)\n", agent.Name, paneIndex, agent.Description)
 	}
 }

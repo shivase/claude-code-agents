@@ -7,14 +7,14 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// StartupPhase 起動フェーズの管理構造体
+// StartupPhase manages startup phases
 type StartupPhase struct {
 	Name      string
 	StartTime time.Time
 	Details   map[string]interface{}
 }
 
-// StartupLogger 起動ログの管理インターフェース
+// StartupLogger interface for managing startup logs
 type StartupLogger interface {
 	LogSystemInit(phase string, details map[string]interface{})
 	LogConfigLoad(configPath string, details map[string]interface{})
@@ -27,24 +27,24 @@ type StartupLogger interface {
 	BeginPhase(phase string, details map[string]interface{}) *StartupPhase
 }
 
-// DefaultStartupLogger デフォルトの起動ログ実装
+// DefaultStartupLogger default startup log implementation
 type DefaultStartupLogger struct{}
 
-// NewStartupLogger 新しい起動ログインスタンスを作成
+// NewStartupLogger creates new startup logger instance
 func NewStartupLogger() StartupLogger {
 	return &DefaultStartupLogger{}
 }
 
-// LogSystemInit システム初期化ログ
+// LogSystemInit logs system initialization
 func (sl *DefaultStartupLogger) LogSystemInit(phase string, details map[string]interface{}) {
 	log.Info().
 		Str("category", "startup").
 		Str("phase", phase).
 		Interface("details", details).
-		Msg("🚀 システム初期化")
+		Msg("🚀 System initialization")
 }
 
-// LogConfigLoad 設定ファイル読み込みログ
+// LogConfigLoad logs configuration file loading
 func (sl *DefaultStartupLogger) LogConfigLoad(configPath string, details map[string]interface{}) {
 	if details == nil {
 		details = make(map[string]interface{})
@@ -55,16 +55,16 @@ func (sl *DefaultStartupLogger) LogConfigLoad(configPath string, details map[str
 		Str("category", "startup").
 		Str("phase", "config_load").
 		Interface("details", details).
-		Msg("📋 設定ファイル読み込み")
+		Msg("📋 Configuration file loading")
 }
 
-// LogInstructionConfig instruction設定情報ログ
+// LogInstructionConfig logs instruction configuration information
 func (sl *DefaultStartupLogger) LogInstructionConfig(instructionInfo map[string]interface{}, details map[string]interface{}) {
 	if details == nil {
 		details = make(map[string]interface{})
 	}
 
-	// instruction情報をdetailsに統合
+	// Integrate instruction information into details
 	for key, value := range instructionInfo {
 		details[key] = value
 	}
@@ -73,10 +73,10 @@ func (sl *DefaultStartupLogger) LogInstructionConfig(instructionInfo map[string]
 		Str("category", "startup").
 		Str("phase", "instruction_config").
 		Interface("details", details).
-		Msg("📝 instruction設定確認")
+		Msg("📝 Instruction configuration verification")
 }
 
-// LogEnvironmentInfo 環境情報ログ
+// LogEnvironmentInfo logs environment information
 func (sl *DefaultStartupLogger) LogEnvironmentInfo(envInfo map[string]interface{}, debugMode bool) {
 	logLevel := log.Info()
 	if debugMode {
@@ -88,10 +88,10 @@ func (sl *DefaultStartupLogger) LogEnvironmentInfo(envInfo map[string]interface{
 		Str("phase", "environment_check").
 		Bool("debug_mode", debugMode).
 		Interface("environment", envInfo).
-		Msg("🔍 環境情報確認")
+		Msg("🔍 Environment information verification")
 }
 
-// LogTmuxSetup tmuxセットアップログ
+// LogTmuxSetup logs tmux setup
 func (sl *DefaultStartupLogger) LogTmuxSetup(sessionName string, paneCount int, details map[string]interface{}) {
 	if details == nil {
 		details = make(map[string]interface{})
@@ -103,10 +103,10 @@ func (sl *DefaultStartupLogger) LogTmuxSetup(sessionName string, paneCount int, 
 		Str("category", "startup").
 		Str("phase", "tmux_setup").
 		Interface("details", details).
-		Msg("🖥️  tmuxセッション設定")
+		Msg("🖥️  tmux session setup")
 }
 
-// LogClaudeStart Claude CLI起動ログ
+// LogClaudeStart logs Claude CLI startup
 func (sl *DefaultStartupLogger) LogClaudeStart(agent string, paneID string, details map[string]interface{}) {
 	if details == nil {
 		details = make(map[string]interface{})
@@ -118,10 +118,10 @@ func (sl *DefaultStartupLogger) LogClaudeStart(agent string, paneID string, deta
 		Str("category", "startup").
 		Str("phase", "claude_start").
 		Interface("details", details).
-		Msg("🤖 Claude CLI起動")
+		Msg("🤖 Claude CLI startup")
 }
 
-// LogStartupComplete 起動完了ログ
+// LogStartupComplete logs startup completion
 func (sl *DefaultStartupLogger) LogStartupComplete(totalTime time.Duration, details map[string]interface{}) {
 	if details == nil {
 		details = make(map[string]interface{})
@@ -133,10 +133,10 @@ func (sl *DefaultStartupLogger) LogStartupComplete(totalTime time.Duration, deta
 		Str("category", "startup").
 		Str("phase", "complete").
 		Interface("details", details).
-		Msg("✅ 起動完了")
+		Msg("✅ Startup completed")
 }
 
-// LogStartupError 起動エラーログ
+// LogStartupError logs startup error
 func (sl *DefaultStartupLogger) LogStartupError(phase string, err error, recovery map[string]interface{}) {
 	fields := map[string]interface{}{
 		"category": "startup",
@@ -151,10 +151,10 @@ func (sl *DefaultStartupLogger) LogStartupError(phase string, err error, recover
 	log.Error().
 		Interface("details", fields).
 		Err(err).
-		Msg("❌ 起動エラー")
+		Msg("❌ Startup error")
 }
 
-// BeginPhase 起動フェーズ開始
+// BeginPhase begins startup phase
 func (sl *DefaultStartupLogger) BeginPhase(phase string, details map[string]interface{}) *StartupPhase {
 	sp := &StartupPhase{
 		Name:      phase,
@@ -167,12 +167,12 @@ func (sl *DefaultStartupLogger) BeginPhase(phase string, details map[string]inte
 		Str("phase", phase).
 		Str("status", "started").
 		Interface("details", details).
-		Msg("🔄 起動フェーズ開始")
+		Msg("🔄 Startup phase began")
 
 	return sp
 }
 
-// Complete フェーズ完了
+// Complete completes phase
 func (sp *StartupPhase) Complete() {
 	duration := time.Since(sp.StartTime)
 
@@ -182,10 +182,10 @@ func (sp *StartupPhase) Complete() {
 		Str("status", "completed").
 		Dur("duration", duration).
 		Interface("details", sp.Details).
-		Msg("✅ 起動フェーズ完了")
+		Msg("✅ Startup phase completed")
 }
 
-// CompleteWithError フェーズエラー完了
+// CompleteWithError completes phase with error
 func (sp *StartupPhase) CompleteWithError(err error) {
 	duration := time.Since(sp.StartTime)
 
@@ -196,12 +196,12 @@ func (sp *StartupPhase) CompleteWithError(err error) {
 		Dur("duration", duration).
 		Interface("details", sp.Details).
 		Err(err).
-		Msg("❌ 起動フェーズ失敗")
+		Msg("❌ Startup phase failed")
 }
 
-// ヘルパー関数
+// Helper functions
 
-// LogStartupProgress 起動プログレス表示
+// LogStartupProgress displays startup progress
 func LogStartupProgress(phase string, progress int, total int) {
 	percentage := float64(progress) / float64(total) * 100
 
@@ -215,10 +215,10 @@ func LogStartupProgress(phase string, progress int, total int) {
 		Str("category", "startup").
 		Str("phase", phase).
 		Interface("details", fields).
-		Msg("📊 起動プログレス")
+		Msg("📊 Startup progress")
 }
 
-// LogStartupDebug デバッグ用起動ログ
+// LogStartupDebug debug startup log
 func LogStartupDebug(phase string, message string, details map[string]interface{}) {
 	log.Debug().
 		Str("category", "startup").
@@ -227,7 +227,7 @@ func LogStartupDebug(phase string, message string, details map[string]interface{
 		Msg(fmt.Sprintf("🔍 %s", message))
 }
 
-// LogStartupWarning 起動警告ログ
+// LogStartupWarning startup warning log
 func LogStartupWarning(phase string, message string, details map[string]interface{}) {
 	log.Warn().
 		Str("category", "startup").
@@ -236,10 +236,10 @@ func LogStartupWarning(phase string, message string, details map[string]interfac
 		Msg(fmt.Sprintf("⚠️  %s", message))
 }
 
-// グローバル変数（簡単なアクセス用）
+// Global variable (for easy access)
 var defaultStartupLogger = NewStartupLogger()
 
-// LogSystemInit パッケージレベルの便利関数
+// LogSystemInit package-level convenience function
 func LogSystemInit(phase string, details map[string]interface{}) {
 	defaultStartupLogger.LogSystemInit(phase, details)
 }

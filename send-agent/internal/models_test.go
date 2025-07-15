@@ -131,32 +131,32 @@ func TestFindAgentByNameFunction(t *testing.T) {
 		{
 			"FindPO",
 			AgentPO,
-			&Agent{AgentPO, "プロダクトオーナー（製品責任者）"},
+			&Agent{AgentPO, "Product Owner (Product Manager)"},
 		},
 		{
 			"FindManager",
 			AgentManager,
-			&Agent{AgentManager, "プロジェクトマネージャー（柔軟なチーム管理）"},
+			&Agent{AgentManager, "Project Manager (Flexible team management)"},
 		},
 		{
 			"FindDev1",
 			AgentDev1,
-			&Agent{AgentDev1, "実行エージェント1（柔軟な役割対応）"},
+			&Agent{AgentDev1, "Execution Agent 1 (Flexible role assignment)"},
 		},
 		{
 			"FindDev2",
 			AgentDev2,
-			&Agent{AgentDev2, "実行エージェント2（柔軟な役割対応）"},
+			&Agent{AgentDev2, "Execution Agent 2 (Flexible role assignment)"},
 		},
 		{
 			"FindDev3",
 			AgentDev3,
-			&Agent{AgentDev3, "実行エージェント3（柔軟な役割対応）"},
+			&Agent{AgentDev3, "Execution Agent 3 (Flexible role assignment)"},
 		},
 		{
 			"FindDev4",
 			AgentDev4,
-			&Agent{AgentDev4, "実行エージェント4（柔軟な役割対応）"},
+			&Agent{AgentDev4, "Execution Agent 4 (Flexible role assignment)"},
 		},
 		{
 			"NotFoundInvalid",
@@ -219,12 +219,12 @@ func TestAvailableAgents(t *testing.T) {
 
 	t.Run("AvailableAgentsContent", func(t *testing.T) {
 		expectedAgents := []Agent{
-			{AgentPO, "プロダクトオーナー（製品責任者）"},
-			{AgentManager, "プロジェクトマネージャー（柔軟なチーム管理）"},
-			{AgentDev1, "実行エージェント1（柔軟な役割対応）"},
-			{AgentDev2, "実行エージェント2（柔軟な役割対応）"},
-			{AgentDev3, "実行エージェント3（柔軟な役割対応）"},
-			{AgentDev4, "実行エージェント4（柔軟な役割対応）"},
+			{AgentPO, "Product Owner (Product Manager)"},
+			{AgentManager, "Project Manager (Flexible team management)"},
+			{AgentDev1, "Execution Agent 1 (Flexible role assignment)"},
+			{AgentDev2, "Execution Agent 2 (Flexible role assignment)"},
+			{AgentDev3, "Execution Agent 3 (Flexible role assignment)"},
+			{AgentDev4, "Execution Agent 4 (Flexible role assignment)"},
 		}
 
 		assert.Equal(t, expectedAgents, AvailableAgents)
@@ -240,19 +240,19 @@ func TestAvailableAgents(t *testing.T) {
 		// POのチェック
 		po, exists := agentMap[AgentPO]
 		assert.True(t, exists, "PO agent should exist")
-		assert.Contains(t, po.Description, "プロダクトオーナー")
+		assert.Contains(t, po.Description, "Product Owner")
 
 		// Managerのチェック
 		manager, exists := agentMap[AgentManager]
 		assert.True(t, exists, "Manager agent should exist")
-		assert.Contains(t, manager.Description, "プロジェクトマネージャー")
+		assert.Contains(t, manager.Description, "Project Manager")
 
 		// Dev1-4のチェック
 		for i := 1; i <= 4; i++ {
 			devName := "dev" + string(rune('0'+i))
 			dev, exists := agentMap[devName]
 			assert.True(t, exists, "Dev%d agent should exist", i)
-			assert.Contains(t, dev.Description, "実行エージェント")
+			assert.Contains(t, dev.Description, "Execution Agent")
 		}
 	})
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/shivase/claude-code-agents/internal/utils"
 )
 
-// ParseArguments 引数解析関数（main.goから移動）
+// ParseArguments parses command line arguments (moved from main.go)
 func ParseArguments(args []string) (string, bool, error) {
 	sessionName := ""
 	resetMode := false
@@ -24,7 +24,7 @@ func ParseArguments(args []string) (string, bool, error) {
 		case "--verbose", "-v":
 			utils.SetVerboseLogging(true)
 		case "--debug", "-d":
-			// グローバルデバッグフラグを設定（main側で処理）
+			// Set global debug flag (processed by main)
 			return "", false, fmt.Errorf("debug flag processed by main")
 		case "--silent", "-s":
 			utils.SetSilentMode(true)
@@ -40,9 +40,9 @@ func ParseArguments(args []string) (string, bool, error) {
 				}
 				os.Exit(0)
 			} else {
-				fmt.Println("❌ エラー: --delete には削除するセッション名が必要です")
-				fmt.Println("使用方法: ./claude-code-agents --delete [セッション名]")
-				fmt.Println("セッション一覧: ./claude-code-agents --list")
+				fmt.Println("❌ Error: --delete requires a session name to delete")
+				fmt.Println("Usage: ./claude-code-agents --delete [session-name]")
+				fmt.Println("Session list: ./claude-code-agents --list")
 				os.Exit(1)
 			}
 		case "--delete-all":
@@ -94,14 +94,14 @@ func ParseArguments(args []string) (string, bool, error) {
 			resetMode = true
 		default:
 			if strings.HasPrefix(arg, "--") {
-				fmt.Printf("❌ エラー: 不明なオプション %s\n", arg)
+				fmt.Printf("❌ Error: Unknown option %s\n", arg)
 				ShowUsage()
 				os.Exit(1)
 			} else {
 				if sessionName == "" {
 					sessionName = arg
 				} else {
-					fmt.Println("❌ エラー: セッション名は1つだけ指定してください")
+					fmt.Println("❌ Error: Please specify only one session name")
 					ShowUsage()
 					os.Exit(1)
 				}

@@ -10,43 +10,43 @@ import (
 	"time"
 )
 
-// Config - アプリケーション設定
+// Config represents application settings
 type Config struct {
-	// プロセス制御
+	// Process control
 	MaxProcesses    int           `json:"max_processes"`
 	RestartDelay    time.Duration `json:"restart_delay"`
 	ProcessTimeout  time.Duration `json:"process_timeout"`
 	StartupTimeout  time.Duration `json:"startup_timeout"`
 	ShutdownTimeout time.Duration `json:"shutdown_timeout"`
 
-	// リソース制御
+	// Resource control
 	MaxMemoryMB   int64   `json:"max_memory_mb"`
 	MaxCPUPercent float64 `json:"max_cpu_percent"`
 
-	// 認証設定
+	// Authentication settings
 	AuthCheckInterval time.Duration `json:"auth_check_interval"`
 
-	// ログ設定
+	// Logging settings
 	LogLevel string `json:"log_level"`
 	LogFile  string `json:"log_file"`
 
-	// パス設定
+	// Path settings
 	ClaudePath      string `json:"claude_path"`
 	InstructionsDir string `json:"instructions_dir"`
 
-	// 監視設定
+	// Monitoring settings
 	HealthCheckInterval time.Duration `json:"health_check_interval"`
 	MaxRestartAttempts  int           `json:"max_restart_attempts"`
 
-	// 開発者設定
+	// Developer settings
 	DevCount int `json:"dev_count"`
 }
 
-// DefaultConfig - デフォルト設定
+// DefaultConfig returns default configuration
 func DefaultConfig() *Config {
 	homeDir, _ := os.UserHomeDir()
 
-	// 統一された設定ディレクトリパス
+	// Unified configuration directory path
 	claudeDir := filepath.Join(homeDir, ".claude")
 	claudCodeAgentsDir := filepath.Join(claudeDir, "claude-code-agents")
 
@@ -69,19 +69,19 @@ func DefaultConfig() *Config {
 	}
 }
 
-// LoadConfig - 設定ファイル読み込み
+// LoadConfig loads configuration from file
 func LoadConfig(configPath string) (*Config, error) {
 	config := DefaultConfig()
 
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		// 設定ファイルが存在しない場合はデフォルト設定で作成
+		// Create with default settings if config file doesn't exist
 		if err := SaveConfig(config, configPath); err != nil {
 			return nil, err
 		}
 		return config, nil
 	}
 
-	// パスの正規化とディレクトリトラバーサル防止
+	// Path normalization and directory traversal prevention
 	cleanPath := filepath.Clean(configPath)
 	if strings.Contains(cleanPath, "..") {
 		return nil, fmt.Errorf("config path contains directory traversal")
@@ -99,9 +99,9 @@ func LoadConfig(configPath string) (*Config, error) {
 	return config, nil
 }
 
-// SaveConfig - 設定ファイル保存
+// SaveConfig saves configuration to file
 func SaveConfig(config *Config, configPath string) error {
-	// ディレクトリ作成
+	// Create directory
 	if err := os.MkdirAll(filepath.Dir(configPath), 0750); err != nil {
 		return err
 	}
@@ -114,19 +114,19 @@ func SaveConfig(config *Config, configPath string) error {
 	return os.WriteFile(configPath, data, 0600)
 }
 
-// ResourceMonitor - リソース監視
+// ResourceMonitor monitors system resources
 type ResourceMonitor struct {
 	config *Config
 }
 
-// NewResourceMonitor - リソース監視器作成
+// NewResourceMonitor creates a new resource monitor
 func NewResourceMonitor(config *Config) *ResourceMonitor {
 	return &ResourceMonitor{
 		config: config,
 	}
 }
 
-// CheckMemoryUsage - メモリ使用量チェック
+// CheckMemoryUsage checks memory usage
 func (rm *ResourceMonitor) CheckMemoryUsage() (bool, error) {
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
@@ -134,50 +134,50 @@ func (rm *ResourceMonitor) CheckMemoryUsage() (bool, error) {
 	const mb = uint64(1024 * 1024)
 	usedMB := memStats.Sys / mb
 
-	// 整数オーバーフロー防止
+	// Prevent integer overflow
 	if rm.config.MaxMemoryMB < 0 {
 		return false, fmt.Errorf("invalid max memory configuration: %d", rm.config.MaxMemoryMB)
 	}
 	if rm.config.MaxMemoryMB == 0 {
-		return true, nil // 制限なし
+		return true, nil // No limit
 	}
-	// 安全な変換のためのチェック
+	// Safe conversion check
 	maxMemoryMB := uint64(rm.config.MaxMemoryMB) // #nosec G115
 	return usedMB <= maxMemoryMB, nil
 }
 
-// CheckCPUUsage - CPU使用量チェック（簡易版）
+// CheckCPUUsage checks CPU usage (simplified version)
 func (rm *ResourceMonitor) CheckCPUUsage() (bool, error) {
-	// 実際の実装では、CPUサンプリングを行う
-	// ここでは簡易的にtrueを返す
+	// In actual implementation, perform CPU sampling
+	// Here we simply return true
 	return true, nil
 }
 
-// HealthChecker - ヘルスチェック
+// HealthChecker performs health checks
 type HealthChecker struct {
 	config *Config
 }
 
-// NewHealthChecker - ヘルスチェッカー作成
+// NewHealthChecker creates a new health checker
 func NewHealthChecker(config *Config) *HealthChecker {
 	return &HealthChecker{
 		config: config,
 	}
 }
 
-// CheckClaudeHealth - Claude CLIヘルスチェック
+// CheckClaudeHealth checks Claude CLI health
 func (hc *HealthChecker) CheckClaudeHealth(claudePath string) error {
-	// Claude CLIの基本的なヘルスチェック
+	// Basic health check for Claude CLI
 	if _, err := os.Stat(claudePath); err != nil {
 		return err
 	}
 
-	// 簡易的な実行チェック
-	// 実際の実装では、Claude CLIの応答性をチェックする
+	// Simple execution check
+	// In actual implementation, check Claude CLI responsiveness
 	return nil
 }
 
-// CheckAuthHealth - 認証状態ヘルスチェック
+// CheckAuthHealth checks authentication health
 func (hc *HealthChecker) CheckAuthHealth() error {
 	homeDir, _ := os.UserHomeDir()
 	configFile := filepath.Join(homeDir, ".claude", "settings.json")

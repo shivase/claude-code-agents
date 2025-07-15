@@ -18,12 +18,12 @@ func TestNewConfigGenerator(t *testing.T) {
 
 // TestGenerateConfigBasic - 基本的な設定ファイル生成テスト
 func TestGenerateConfigBasic(t *testing.T) {
-	// 一時ディレクトリを作成
+	// Create temporary directory
 	tempHome, err := os.MkdirTemp("", "config_gen_test_*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tempHome)
 
-	// HOME環境変数を一時的に変更
+	// Temporarily change HOME environment variable
 	oldHome := os.Getenv("HOME")
 	os.Setenv("HOME", tempHome)
 	defer os.Setenv("HOME", oldHome)
@@ -51,12 +51,12 @@ DEV_COUNT=2`
 
 // TestForceGenerateConfig - 強制上書き機能のテスト
 func TestForceGenerateConfig(t *testing.T) {
-	// 一時ディレクトリを作成
+	// Create temporary directory
 	tempHome, err := os.MkdirTemp("", "config_force_test_*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tempHome)
 
-	// HOME環境変数を一時的に変更
+	// Temporarily change HOME environment variable
 	oldHome := os.Getenv("HOME")
 	os.Setenv("HOME", tempHome)
 	defer os.Setenv("HOME", oldHome)
@@ -66,7 +66,7 @@ func TestForceGenerateConfig(t *testing.T) {
 	err = os.MkdirAll(configDir, 0755)
 	require.NoError(t, err)
 
-	// 既存ファイルを作成
+	// Create existing file
 	configPath := filepath.Join(configDir, "agents.conf")
 	err = os.WriteFile(configPath, []byte("# Existing config"), 0644)
 	require.NoError(t, err)
@@ -91,12 +91,12 @@ SESSION_NAME=new-session`
 
 // TestGenerateConfigWithExistingFile - 既存ファイルがある場合のテスト
 func TestGenerateConfigWithExistingFile(t *testing.T) {
-	// 一時ディレクトリを作成
+	// Create temporary directory
 	tempHome, err := os.MkdirTemp("", "config_existing_test_*")
 	require.NoError(t, err)
 	defer os.RemoveAll(tempHome)
 
-	// HOME環境変数を一時的に変更
+	// Temporarily change HOME environment variable
 	oldHome := os.Getenv("HOME")
 	os.Setenv("HOME", tempHome)
 	defer os.Setenv("HOME", oldHome)
@@ -106,7 +106,7 @@ func TestGenerateConfigWithExistingFile(t *testing.T) {
 	err = os.MkdirAll(configDir, 0755)
 	require.NoError(t, err)
 
-	// 既存ファイルを作成
+	// Create existing file
 	configPath := filepath.Join(configDir, "agents.conf")
 	originalContent := "# Original config"
 	err = os.WriteFile(configPath, []byte(originalContent), 0644)

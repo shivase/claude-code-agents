@@ -17,16 +17,16 @@ import (
 	"github.com/shivase/claude-code-agents/internal/auth"
 )
 
-// SecurityEnhancement - セキュリティ強化機能
+// SecurityEnhancement - Security enhancement functionality
 type SecurityEnhancement struct {
 	encryptionKey    []byte
 	auditTrail       *AuditTrail
 	integrityChecker *IntegrityChecker
 }
 
-// NewSecurityEnhancement - セキュリティ強化機能の作成
+// NewSecurityEnhancement - Creates security enhancement functionality
 func NewSecurityEnhancement() (*SecurityEnhancement, error) {
-	// 暗号化キーの生成
+	// Generate encryption key
 	encryptionKey := sha256.Sum256([]byte(fmt.Sprintf("claude-auth-security-%d", time.Now().UnixNano())))
 
 	auditTrail, err := NewAuditTrail()
@@ -46,7 +46,7 @@ func NewSecurityEnhancement() (*SecurityEnhancement, error) {
 	}, nil
 }
 
-// EncryptData - データの暗号化
+// EncryptData - Encrypts data
 func (se *SecurityEnhancement) EncryptData(data []byte) ([]byte, error) {
 	block, err := aes.NewCipher(se.encryptionKey)
 	if err != nil {
@@ -67,7 +67,7 @@ func (se *SecurityEnhancement) EncryptData(data []byte) ([]byte, error) {
 	return ciphertext, nil
 }
 
-// DecryptData - データの復号化
+// DecryptData - Decrypts data
 func (se *SecurityEnhancement) DecryptData(ciphertext []byte) ([]byte, error) {
 	block, err := aes.NewCipher(se.encryptionKey)
 	if err != nil {
@@ -93,9 +93,9 @@ func (se *SecurityEnhancement) DecryptData(ciphertext []byte) ([]byte, error) {
 	return plaintext, nil
 }
 
-// SecureDelete - セキュアファイル削除
+// SecureDelete - Securely deletes a file
 func (se *SecurityEnhancement) SecureDelete(filePath string) error {
-	// パスの正規化とディレクトリトラバーサル防止
+	// Normalize path and prevent directory traversal
 	cleanPath := filepath.Clean(filePath)
 	if strings.Contains(cleanPath, "..") {
 		return fmt.Errorf("file path contains directory traversal")
@@ -119,7 +119,7 @@ func (se *SecurityEnhancement) SecureDelete(filePath string) error {
 		return fmt.Errorf("failed to stat file: %w", err)
 	}
 
-	// ファイルをランダムデータで上書き（3回）
+	// Overwrite file with random data (3 times)
 	for i := 0; i < 3; i++ {
 		if _, err := file.Seek(0, 0); err != nil {
 			return fmt.Errorf("failed to seek to beginning of file: %w", err)
@@ -136,7 +136,7 @@ func (se *SecurityEnhancement) SecureDelete(filePath string) error {
 		}
 	}
 
-	// ファイルを削除
+	// Delete the file
 	if err := os.Remove(filePath); err != nil {
 		return fmt.Errorf("failed to remove file: %w", err)
 	}
@@ -145,12 +145,12 @@ func (se *SecurityEnhancement) SecureDelete(filePath string) error {
 	return nil
 }
 
-// AuditTrail - セキュリティ監査ログ
+// AuditTrail - Security audit log
 type AuditTrail struct {
 	logFile string
 }
 
-// NewAuditTrail - 監査ログの作成
+// NewAuditTrail - Creates audit log
 func NewAuditTrail() (*AuditTrail, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -161,7 +161,7 @@ func NewAuditTrail() (*AuditTrail, error) {
 	return &AuditTrail{logFile: logFile}, nil
 }
 
-// LogSecurityEvent - セキュリティイベントのログ
+// LogSecurityEvent - Logs security event
 func (at *AuditTrail) LogSecurityEvent(event, details string) error {
 	timestamp := time.Now().Format(time.RFC3339)
 	entry := fmt.Sprintf("[%s] %s: %s\n", timestamp, event, details)
@@ -186,12 +186,12 @@ func (at *AuditTrail) LogSecurityEvent(event, details string) error {
 	return nil
 }
 
-// IntegrityChecker - ファイル整合性チェック
+// IntegrityChecker - File integrity checker
 type IntegrityChecker struct {
 	checksumFile string
 }
 
-// NewIntegrityChecker - 整合性チェッカーの作成
+// NewIntegrityChecker - Creates integrity checker
 func NewIntegrityChecker() (*IntegrityChecker, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -202,9 +202,9 @@ func NewIntegrityChecker() (*IntegrityChecker, error) {
 	return &IntegrityChecker{checksumFile: checksumFile}, nil
 }
 
-// CalculateChecksum - ファイルチェックサムの計算
+// CalculateChecksum - Calculates file checksum
 func (ic *IntegrityChecker) CalculateChecksum(filePath string) (string, error) {
-	// パスの正規化とディレクトリトラバーサル防止
+	// Normalize path and prevent directory traversal
 	cleanPath := filepath.Clean(filePath)
 	if strings.Contains(cleanPath, "..") {
 		return "", fmt.Errorf("file path contains directory traversal")
@@ -219,7 +219,7 @@ func (ic *IntegrityChecker) CalculateChecksum(filePath string) (string, error) {
 	return base64.StdEncoding.EncodeToString(hash[:]), nil
 }
 
-// SaveChecksum - チェックサムの保存
+// SaveChecksum - Saves checksum
 func (ic *IntegrityChecker) SaveChecksum(filePath, checksum string) error {
 	entry := fmt.Sprintf("%s:%s\n", filePath, checksum)
 
@@ -243,21 +243,21 @@ func (ic *IntegrityChecker) SaveChecksum(filePath, checksum string) error {
 	return nil
 }
 
-// VerifyIntegrity - ファイル整合性の検証
+// VerifyIntegrity - Verifies file integrity
 func (ic *IntegrityChecker) VerifyIntegrity(filePath string) error {
-	// 現在のチェックサムを計算
+	// Calculate current checksum
 	currentChecksum, err := ic.CalculateChecksum(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to calculate current checksum: %w", err)
 	}
 
-	// 保存されたチェックサムを読み込み
+	// Load saved checksums
 	data, err := os.ReadFile(ic.checksumFile)
 	if err != nil {
 		return fmt.Errorf("failed to read checksum file: %w", err)
 	}
 
-	// チェックサムの比較
+	// Compare checksums
 	lines := strings.Split(string(data), "\n")
 	for _, line := range lines {
 		parts := strings.Split(line, ":")
@@ -276,13 +276,13 @@ func (ic *IntegrityChecker) VerifyIntegrity(filePath string) error {
 	return fmt.Errorf("no checksum found for file: %s", filePath)
 }
 
-// SecurityManager - セキュリティマネージャー
+// SecurityManager - Security manager
 type SecurityManager struct {
 	authManager *auth.AuthManager
 	enhancement *SecurityEnhancement
 }
 
-// NewSecurityManager - セキュリティマネージャーの作成
+// NewSecurityManager - Creates security manager
 func NewSecurityManager() (*SecurityManager, error) {
 	authManager, err := auth.NewAuthManager()
 	if err != nil {
@@ -300,16 +300,16 @@ func NewSecurityManager() (*SecurityManager, error) {
 	}, nil
 }
 
-// ProtectSystem - システムの保護
+// ProtectSystem - Protects the system
 func (sm *SecurityManager) ProtectSystem() error {
 	log.Info().Msg("Starting system protection")
 
-	// 監査ログに記録
+	// Record in audit log
 	if err := sm.enhancement.auditTrail.LogSecurityEvent("SYSTEM_PROTECTION_START", "Starting system protection"); err != nil {
 		log.Error().Err(err).Msg("Failed to log security event")
 	}
 
-	// ファイル整合性チェック
+	// File integrity check
 	homeDir, _ := os.UserHomeDir()
 	settingsFile := filepath.Join(homeDir, ".claude", "settings.json")
 	if _, err := os.Stat(settingsFile); err == nil {
@@ -323,12 +323,12 @@ func (sm *SecurityManager) ProtectSystem() error {
 		}
 	}
 
-	// 基本的な保護とバックアップ
+	// Basic protection and backup
 	if err := sm.authManager.ProtectAndBackup(); err != nil {
 		return fmt.Errorf("failed to protect and backup: %w", err)
 	}
 
-	// 監査ログに記録
+	// Record in audit log
 	if err := sm.enhancement.auditTrail.LogSecurityEvent("SYSTEM_PROTECTION_COMPLETE", "System protection completed"); err != nil {
 		log.Error().Err(err).Msg("Failed to log security event")
 	}
@@ -337,22 +337,22 @@ func (sm *SecurityManager) ProtectSystem() error {
 	return nil
 }
 
-// RestoreSystem - システムの復元
+// RestoreSystem - Restores the system
 func (sm *SecurityManager) RestoreSystem() error {
 	log.Info().Msg("Starting system restore")
 
-	// 監査ログに記録
+	// Record in audit log
 	if err := sm.enhancement.auditTrail.LogSecurityEvent("SYSTEM_RESTORE_START", "Starting system restore"); err != nil {
 		log.Error().Err(err).Msg("Failed to log security event")
 	}
 
-	// ファイル整合性の検証
+	// Verify file integrity
 	homeDir, _ := os.UserHomeDir()
 	settingsFile := filepath.Join(homeDir, ".claude", "settings.json")
 	if _, err := os.Stat(settingsFile); err == nil {
 		if err := sm.enhancement.integrityChecker.VerifyIntegrity(settingsFile); err != nil {
 			log.Warn().Err(err).Msg("Settings file integrity check failed")
-			// 監査ログに記録
+			// Record in audit log
 			if logErr := sm.enhancement.auditTrail.LogSecurityEvent("INTEGRITY_CHECK_FAILED", fmt.Sprintf("Settings file integrity check failed: %v", err)); logErr != nil {
 				log.Error().Err(logErr).Msg("Failed to log security event")
 			}
@@ -361,12 +361,12 @@ func (sm *SecurityManager) RestoreSystem() error {
 		}
 	}
 
-	// 基本的な復元とクリーンアップ
+	// Basic restore and cleanup
 	if err := sm.authManager.RestoreAndCleanup(); err != nil {
 		return fmt.Errorf("failed to restore and cleanup: %w", err)
 	}
 
-	// 監査ログに記録
+	// Record in audit log
 	if err := sm.enhancement.auditTrail.LogSecurityEvent("SYSTEM_RESTORE_COMPLETE", "System restore completed"); err != nil {
 		log.Error().Err(err).Msg("Failed to log security event")
 	}
@@ -375,15 +375,15 @@ func (sm *SecurityManager) RestoreSystem() error {
 	return nil
 }
 
-// ValidateSecurityStatus - セキュリティ状態の検証
+// ValidateSecurityStatus - Validates security status
 func (sm *SecurityManager) ValidateSecurityStatus() error {
 	log.Info().Msg("Validating security status")
 
-	// 認証設定の検証
+	// Validate authentication settings
 	// Configuration validation is available
 	// Validation completed
 
-	// 監査ログに記録
+	// Record in audit log
 	if err := sm.enhancement.auditTrail.LogSecurityEvent("SECURITY_VALIDATION", "Security status validation completed"); err != nil {
 		log.Error().Err(err).Msg("Failed to log security event")
 	}

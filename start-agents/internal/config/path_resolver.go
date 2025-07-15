@@ -7,55 +7,55 @@ import (
 	"strings"
 )
 
-// PathResolverInterface パス解決インターフェース
+// PathResolverInterface defines path resolver interface
 type PathResolverInterface interface {
-	// ResolvePath パスを解決（環境変数展開、相対パス解決）
+	// ResolvePath resolves path (environment variable expansion, relative path resolution)
 	ResolvePath(path string) (string, error)
 
-	// ExpandEnvironmentVariables 環境変数を展開
+	// ExpandEnvironmentVariables expands environment variables
 	ExpandEnvironmentVariables(path string) string
 
-	// ResolveTildePath チルダパス（~）を展開
+	// ResolveTildePath expands tilde path (~)
 	ResolveTildePath(path string) (string, error)
 
-	// MakeAbsolutePath 絶対パスに変換
+	// MakeAbsolutePath converts to absolute path
 	MakeAbsolutePath(path, basePath string) (string, error)
 }
 
-// PathResolver パス解決器
+// PathResolver resolves file paths
 type PathResolver struct {
 	baseDir string
 }
 
-// NewPathResolver 新しいパス解決器を作成
+// NewPathResolver creates a new path resolver
 func NewPathResolver(baseDir string) *PathResolver {
 	return &PathResolver{
 		baseDir: baseDir,
 	}
 }
 
-// ResolvePath パスを解決
+// ResolvePath resolves path
 func (pr *PathResolver) ResolvePath(path string) (string, error) {
 	if path == "" {
 		return "", fmt.Errorf("empty path")
 	}
 
-	// 1. 環境変数の展開
+	// 1. Environment variable expansion
 	expanded := pr.ExpandEnvironmentVariables(path)
 
-	// 2. チルダ展開
+	// 2. Tilde expansion
 	tildeExpanded, err := pr.ResolveTildePath(expanded)
 	if err != nil {
 		return "", fmt.Errorf("tilde expansion failed: %w", err)
 	}
 
-	// 3. 絶対パス変換
+	// 3. Absolute path conversion
 	absolutePath, err := pr.MakeAbsolutePath(tildeExpanded, pr.baseDir)
 	if err != nil {
 		return "", fmt.Errorf("absolute path conversion failed: %w", err)
 	}
 
-	// 4. パスの正規化
+	// 4. Path normalization
 	return filepath.Clean(absolutePath), nil
 }
 
@@ -85,7 +85,7 @@ func (pr *PathResolver) MakeAbsolutePath(path, basePath string) (string, error) 
 	}
 
 	if basePath == "" {
-		// ベースパスが空の場合は現在のディレクトリを使用
+		// Use current directory if base path is empty
 		cwd, err := os.Getwd()
 		if err != nil {
 			return "", fmt.Errorf("failed to get current directory: %w", err)

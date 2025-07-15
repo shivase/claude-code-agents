@@ -11,7 +11,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// AuthBackupManager - 認証バックアップ管理
+// AuthBackupManager manages authentication backup
 type AuthBackupManager struct {
 	homeDir   string
 	claudeDir string
@@ -19,7 +19,7 @@ type AuthBackupManager struct {
 	retention time.Duration
 }
 
-// NewAuthBackupManager - 認証バックアップマネージャーの作成
+// NewAuthBackupManager creates authentication backup manager
 func NewAuthBackupManager() (*AuthBackupManager, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -37,54 +37,54 @@ func NewAuthBackupManager() (*AuthBackupManager, error) {
 	}, nil
 }
 
-// BackupIDEAuth - IDE連携認証情報のバックアップ
+// BackupIDEAuth backs up IDE integration authentication info
 func (abm *AuthBackupManager) BackupIDEAuth() error {
-	log.Info().Str("backup_dir", abm.backupDir).Msg("💾 IDE認証バックアップ開始")
+	log.Info().Str("backup_dir", abm.backupDir).Msg("💾 Starting IDE authentication backup")
 
-	// バックアップディレクトリを作成
+	// Create backup directory
 	if err := os.MkdirAll(abm.backupDir, 0750); err != nil {
 		return fmt.Errorf("failed to create backup directory: %w", err)
 	}
 
-	// IDE連携ディレクトリの存在確認
+	// Check IDE integration directory existence
 	ideDir := filepath.Join(abm.claudeDir, "ide")
 	if _, err := os.Stat(ideDir); os.IsNotExist(err) {
-		log.Info().Msg("ℹ️ IDEディレクトリが見つからないためバックアップをスキップ")
+		log.Info().Msg("ℹ️ IDE directory not found, skipping backup")
 		return nil
 	}
 
-	// IDE連携情報をバックアップ
+	// Backup IDE integration info
 	backupIdeDir := filepath.Join(abm.backupDir, "ide")
 	if err := abm.copyDir(ideDir, backupIdeDir); err != nil {
 		return fmt.Errorf("failed to backup IDE directory: %w", err)
 	}
 
-	log.Info().Msg("✅ IDE認証バックアップ成功")
+	log.Info().Msg("✅ IDE authentication backup successful")
 	return nil
 }
 
-// RestoreIDEAuth - IDE連携認証情報の復元
+// RestoreIDEAuth restores IDE integration authentication info
 func (abm *AuthBackupManager) RestoreIDEAuth() error {
-	log.Info().Str("backup_dir", abm.backupDir).Msg("💾 IDE認証復元開始")
+	log.Info().Str("backup_dir", abm.backupDir).Msg("💾 Starting IDE authentication restore")
 
-	// バックアップディレクトリの存在確認
+	// Check backup directory existence
 	backupIdeDir := filepath.Join(abm.backupDir, "ide")
 	if _, err := os.Stat(backupIdeDir); os.IsNotExist(err) {
-		log.Info().Msg("ℹ️ IDEバックアップが見つからないため復元をスキップ")
+		log.Info().Msg("ℹ️ IDE backup not found, skipping restore")
 		return nil
 	}
 
-	// IDE連携情報を復元
+	// Restore IDE integration info
 	ideDir := filepath.Join(abm.claudeDir, "ide")
 	if err := abm.copyDir(backupIdeDir, ideDir); err != nil {
 		return fmt.Errorf("failed to restore IDE directory: %w", err)
 	}
 
-	log.Info().Msg("✅ IDE認証復元成功")
+	log.Info().Msg("✅ IDE authentication restore successful")
 	return nil
 }
 
-// CleanupBackup - バックアップディレクトリの削除
+// CleanupBackup removes backup directory
 func (abm *AuthBackupManager) CleanupBackup() error {
 	if _, err := os.Stat(abm.backupDir); os.IsNotExist(err) {
 		return nil
@@ -94,41 +94,41 @@ func (abm *AuthBackupManager) CleanupBackup() error {
 		return fmt.Errorf("failed to cleanup backup directory: %w", err)
 	}
 
-	log.Info().Str("backup_dir", abm.backupDir).Msg("✅ バックアップクリーンアップ完了")
+	log.Info().Str("backup_dir", abm.backupDir).Msg("✅ Backup cleanup completed")
 	return nil
 }
 
-// copyDir - ディレクトリの再帰的コピー
+// copyDir recursively copies directory
 func (abm *AuthBackupManager) copyDir(src, dst string) error {
-	// ソースディレクトリの情報を取得
+	// Get source directory info
 	srcInfo, err := os.Stat(src)
 	if err != nil {
 		return fmt.Errorf("failed to stat source directory: %w", err)
 	}
 
-	// 目的ディレクトリを作成
+	// Create destination directory
 	if err := os.MkdirAll(dst, srcInfo.Mode()); err != nil {
 		return fmt.Errorf("failed to create destination directory: %w", err)
 	}
 
-	// ディレクトリ内のファイルを読み取り
+	// Read directory contents
 	entries, err := os.ReadDir(src)
 	if err != nil {
 		return fmt.Errorf("failed to read directory: %w", err)
 	}
 
-	// 各エントリを処理
+	// Process each entry
 	for _, entry := range entries {
 		srcPath := filepath.Join(src, entry.Name())
 		dstPath := filepath.Join(dst, entry.Name())
 
 		if entry.IsDir() {
-			// ディレクトリの場合は再帰的にコピー
+			// Recursively copy directories
 			if err := abm.copyDir(srcPath, dstPath); err != nil {
 				return err
 			}
 		} else {
-			// ファイルの場合はコピー
+			// Copy files
 			if err := abm.copyFile(srcPath, dstPath); err != nil {
 				return err
 			}
@@ -138,7 +138,7 @@ func (abm *AuthBackupManager) copyDir(src, dst string) error {
 	return nil
 }
 
-// copyFile - ファイルコピー
+// copyFile copies a file
 func (abm *AuthBackupManager) copyFile(src, dst string) error {
 	srcFile, err := os.Open(src) // #nosec G304
 	if err != nil {
@@ -146,7 +146,7 @@ func (abm *AuthBackupManager) copyFile(src, dst string) error {
 	}
 	defer func() {
 		if err := srcFile.Close(); err != nil {
-			log.Warn().Err(err).Msg("⚠️ ソースファイルクローズ失敗")
+			log.Warn().Err(err).Msg("⚠️ Failed to close source file")
 		}
 	}()
 
@@ -161,7 +161,7 @@ func (abm *AuthBackupManager) copyFile(src, dst string) error {
 	}
 	defer func() {
 		if err := dstFile.Close(); err != nil {
-			log.Warn().Err(err).Msg("⚠️ 宛先ファイルクローズ失敗")
+			log.Warn().Err(err).Msg("⚠️ Failed to close destination file")
 		}
 	}()
 
@@ -172,13 +172,13 @@ func (abm *AuthBackupManager) copyFile(src, dst string) error {
 	return nil
 }
 
-// ConfigProtector - 設定保護システム
+// ConfigProtector protects configuration
 type ConfigProtector struct {
 	claudeDir string
 	lockFile  string
 }
 
-// NewConfigProtector - 設定保護システムの作成
+// NewConfigProtector creates configuration protection system
 func NewConfigProtector() (*ConfigProtector, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -194,72 +194,72 @@ func NewConfigProtector() (*ConfigProtector, error) {
 	}, nil
 }
 
-// ProtectExistingConfig - 既存設定の保護
+// ProtectExistingConfig protects existing configuration
 func (cp *ConfigProtector) ProtectExistingConfig() error {
 	settingsFile := filepath.Join(cp.claudeDir, "settings.json")
 
-	// 既存設定の存在確認
+	// Check existing configuration
 	if _, err := os.Stat(settingsFile); os.IsNotExist(err) {
-		log.Info().Msg("ℹ️ 既存Claude設定が見つからない")
+		log.Info().Msg("ℹ️ Existing Claude configuration not found")
 		return nil
 	}
 
-	// 設定ファイルの内容確認
+	// Validate configuration file content
 	if err := cp.ValidateConfig(); err != nil {
 		return fmt.Errorf("existing config validation failed: %w", err)
 	}
 
-	// ロックファイルの作成
+	// Create lock file
 	if err := os.WriteFile(cp.lockFile, []byte("protected"), 0600); err != nil {
 		return fmt.Errorf("failed to create lock file: %w", err)
 	}
 
-	log.Info().Msg("✅ 既存Claude設定を保護")
+	log.Info().Msg("✅ Protected existing Claude configuration")
 	return nil
 }
 
-// ValidateConfig - 設定ファイルの検証
+// ValidateConfig validates configuration file
 func (cp *ConfigProtector) ValidateConfig() error {
 	settingsFile := filepath.Join(cp.claudeDir, "settings.json")
 
-	// ファイルの存在確認
+	// Check file existence
 	info, err := os.Stat(settingsFile)
 	if err != nil {
 		return fmt.Errorf("config file not found: %w", err)
 	}
 
-	// ファイルサイズの確認
+	// Check file size
 	if info.Size() == 0 {
 		return fmt.Errorf("config file is empty")
 	}
 
-	// ファイルの読み取り可能性確認 - パスの正規化とディレクトリトラバーサル防止
+	// Check file readability - path normalization and directory traversal prevention
 	cleanPath := filepath.Clean(settingsFile)
 	if strings.Contains(cleanPath, "..") {
 		return fmt.Errorf("config file path contains directory traversal")
 	}
-	// 読み取り可能性のテスト
+	// Test readability
 	testFile, err := os.Open(cleanPath)
 	if err != nil {
 		return fmt.Errorf("config file is not readable: %w", err)
 	}
 	defer func() {
 		if err := testFile.Close(); err != nil {
-			log.Warn().Err(err).Msg("⚠️ テストファイルクローズ失敗")
+			log.Warn().Err(err).Msg("⚠️ Failed to close test file")
 		}
 	}()
 
-	log.Info().Msg("✅ 設定ファイル検証成功")
+	log.Info().Msg("✅ Configuration file validation successful")
 	return nil
 }
 
-// IsConfigProtected - 設定保護状態の確認
+// IsConfigProtected checks if configuration is protected
 func (cp *ConfigProtector) IsConfigProtected() bool {
 	_, err := os.Stat(cp.lockFile)
 	return err == nil
 }
 
-// UnlockConfig - 設定保護の解除
+// UnlockConfig unlocks configuration protection
 func (cp *ConfigProtector) UnlockConfig() error {
 	if !cp.IsConfigProtected() {
 		return nil
@@ -269,17 +269,17 @@ func (cp *ConfigProtector) UnlockConfig() error {
 		return fmt.Errorf("failed to remove lock file: %w", err)
 	}
 
-	log.Info().Msg("✅ 設定保護を解除")
+	log.Info().Msg("✅ Configuration protection unlocked")
 	return nil
 }
 
-// AuthManager - 統合認証マネージャー
+// AuthManager integrates authentication management
 type AuthManager struct {
 	backup    *AuthBackupManager
 	protector *ConfigProtector
 }
 
-// NewAuthManager - 統合認証マネージャーの作成
+// NewAuthManager creates integrated authentication manager
 func NewAuthManager() (*AuthManager, error) {
 	backup, err := NewAuthBackupManager()
 	if err != nil {
@@ -297,46 +297,46 @@ func NewAuthManager() (*AuthManager, error) {
 	}, nil
 }
 
-// ProtectAndBackup - 認証保護とバックアップ
+// ProtectAndBackup protects and backs up authentication
 func (am *AuthManager) ProtectAndBackup() error {
-	log.Info().Msg("🔒 認証保護とバックアップ開始")
+	log.Info().Msg("🔒 Starting authentication protection and backup")
 
-	// 既存設定の保護
+	// Protect existing configuration
 	if err := am.protector.ProtectExistingConfig(); err != nil {
 		return fmt.Errorf("failed to protect existing config: %w", err)
 	}
 
-	// IDE認証情報のバックアップ
+	// Backup IDE authentication info
 	if err := am.backup.BackupIDEAuth(); err != nil {
 		return fmt.Errorf("failed to backup IDE auth: %w", err)
 	}
 
-	log.Info().Msg("✅ 認証保護とバックアップ完了")
+	log.Info().Msg("✅ Authentication protection and backup completed")
 	return nil
 }
 
-// RestoreAndCleanup - 認証復元とクリーンアップ
+// RestoreAndCleanup restores authentication and cleans up
 func (am *AuthManager) RestoreAndCleanup() error {
-	log.Info().Msg("🔄 認証復元とクリーンアップ開始")
+	log.Info().Msg("🔄 Starting authentication restore and cleanup")
 
-	// IDE認証情報の復元
+	// Restore IDE authentication info
 	if err := am.backup.RestoreIDEAuth(); err != nil {
-		log.Error().Err(err).Msg("❌ IDE認証復元失敗")
-		// 復元失敗は警告として扱い、処理を続行
+		log.Error().Err(err).Msg("❌ IDE authentication restore failed")
+		// Treat restore failure as warning and continue
 	}
 
-	// バックアップのクリーンアップ
+	// Cleanup backup
 	if err := am.backup.CleanupBackup(); err != nil {
-		log.Error().Err(err).Msg("❌ バックアップクリーンアップ失敗")
-		// クリーンアップ失敗は警告として扱い、処理を続行
+		log.Error().Err(err).Msg("❌ Backup cleanup failed")
+		// Treat cleanup failure as warning and continue
 	}
 
-	// 設定保護の解除
+	// Unlock configuration protection
 	if err := am.protector.UnlockConfig(); err != nil {
-		log.Error().Err(err).Msg("❌ 設定アンロック失敗")
-		// アンロック失敗は警告として扱い、処理を続行
+		log.Error().Err(err).Msg("❌ Configuration unlock failed")
+		// Treat unlock failure as warning and continue
 	}
 
-	log.Info().Msg("✅ 認証復元とクリーンアップ完了")
+	log.Info().Msg("✅ Authentication restore and cleanup completed")
 	return nil
 }

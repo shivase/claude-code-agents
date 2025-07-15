@@ -9,14 +9,14 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// SendInstructionToPaneWithConfig 設定ファイルを使用してインストラクションファイルを送信
+// SendInstructionToPaneWithConfig sends instruction file using configuration
 func (tm *TmuxManagerImpl) SendInstructionToPaneWithConfig(sessionName, pane, agent, instructionsDir string, config interface{}) error {
-	log.Info().Str("session", sessionName).Str("pane", pane).Str("agent", agent).Msg("📤 設定ベースインストラクション送信開始")
+	log.Info().Str("session", sessionName).Str("pane", pane).Str("agent", agent).Msg("📤 Starting configuration-based instruction sending")
 
-	// インストラクションファイルのパスを決定（設定ファイルから）
+	// Determine instruction file path from configuration
 	var instructionFile string
 
-	// 設定ファイルからrole別ファイル名を取得
+	// Get role-specific file names from configuration
 	type InstructionConfig interface {
 		GetPOInstructionFile() string
 		GetManagerInstructionFile() string
@@ -44,11 +44,11 @@ func (tm *TmuxManagerImpl) SendInstructionToPaneWithConfig(sessionName, pane, ag
 				instructionFile = filepath.Join(instructionsDir, "developer.md")
 			}
 		default:
-			log.Error().Str("agent", agent).Msg("❌ 未知のエージェントタイプ")
+			log.Error().Str("agent", agent).Msg("❌ Unknown agent type")
 			return fmt.Errorf("unknown agent type: %s", agent)
 		}
 	} else {
-		// 設定が提供されていない場合はデフォルトファイル名を使用
+		// Use default file names if configuration is not provided
 		switch agent {
 		case "po":
 			instructionFile = filepath.Join(instructionsDir, "po.md")
@@ -57,43 +57,43 @@ func (tm *TmuxManagerImpl) SendInstructionToPaneWithConfig(sessionName, pane, ag
 		case "dev1", "dev2", "dev3", "dev4":
 			instructionFile = filepath.Join(instructionsDir, "developer.md")
 		default:
-			log.Error().Str("agent", agent).Msg("❌ 未知のエージェントタイプ")
+			log.Error().Str("agent", agent).Msg("❌ Unknown agent type")
 			return fmt.Errorf("unknown agent type: %s", agent)
 		}
 	}
 
-	log.Info().Str("instruction_file", instructionFile).Msg("📁 設定ベースインストラクションファイルパス決定")
+	log.Info().Str("instruction_file", instructionFile).Msg("📁 Configuration-based instruction file path determined")
 
-	// インストラクションファイルの存在確認（強化版）
+	// Verify instruction file exists (enhanced version)
 	fileInfo, err := os.Stat(instructionFile)
 	if os.IsNotExist(err) {
-		log.Warn().Str("instruction_file", instructionFile).Msg("⚠️ インストラクションファイルが存在しません（スキップ）")
-		return nil // ファイルが存在しない場合はスキップ（エラーではない）
+		log.Warn().Str("instruction_file", instructionFile).Msg("⚠️ Instruction file does not exist (skipping)")
+		return nil // Skip if file doesn't exist (not an error)
 	}
 	if err != nil {
-		log.Error().Str("instruction_file", instructionFile).Err(err).Msg("❌ ファイル情報取得エラー")
+		log.Error().Str("instruction_file", instructionFile).Err(err).Msg("❌ Failed to get file information")
 		return fmt.Errorf("failed to stat instruction file: %w", err)
 	}
 	if fileInfo.Size() == 0 {
-		log.Warn().Str("instruction_file", instructionFile).Msg("⚠️ インストラクションファイルが空です（スキップ）")
+		log.Warn().Str("instruction_file", instructionFile).Msg("⚠️ Instruction file is empty (skipping)")
 		return nil
 	}
 
-	log.Info().Str("instruction_file", instructionFile).Int64("file_size", fileInfo.Size()).Msg("✅ 設定ベースファイル存在確認完了")
+	log.Info().Str("instruction_file", instructionFile).Int64("file_size", fileInfo.Size()).Msg("✅ Configuration-based file existence verified")
 
-	// Claude CLI準備完了待機（強化版）
+	// Wait for Claude CLI to be ready (enhanced version)
 	if err := tm.waitForClaudeReady(sessionName, pane, 10*time.Second); err != nil {
-		log.Warn().Str("session", sessionName).Str("pane", pane).Err(err).Msg("⚠️ Claude CLI準備待機タイムアウト（続行）")
+		log.Warn().Str("session", sessionName).Str("pane", pane).Err(err).Msg("⚠️ Claude CLI readiness wait timeout (continuing)")
 	}
 
-	// catコマンドでインストラクションファイルを送信（リトライ機能付き）
+	// Send instruction file using cat command (with retry functionality)
 	catCommand := fmt.Sprintf("cat \"%s\"", instructionFile)
 
 	for attempt := 1; attempt <= 3; attempt++ {
-		log.Info().Str("command", catCommand).Int("attempt", attempt).Msg("📋 設定ベースcatコマンド送信中")
+		log.Info().Str("command", catCommand).Int("attempt", attempt).Msg("📋 Sending configuration-based cat command")
 
 		if err := tm.SendKeysWithEnter(sessionName, pane, catCommand); err != nil {
-			log.Warn().Err(err).Int("attempt", attempt).Msg("⚠️ catコマンド送信失敗")
+			log.Warn().Err(err).Int("attempt", attempt).Msg("⚠️ Failed to send cat command")
 			if attempt == 3 {
 				return fmt.Errorf("failed to send instruction file after 3 attempts: %w", err)
 			}
@@ -101,23 +101,23 @@ func (tm *TmuxManagerImpl) SendInstructionToPaneWithConfig(sessionName, pane, ag
 			continue
 		}
 
-		// catコマンド実行完了を待機
+		// Wait for cat command execution to complete
 		time.Sleep(2 * time.Second)
-		log.Info().Int("attempt", attempt).Msg("✅ 設定ベースcatコマンド送信成功")
+		log.Info().Int("attempt", attempt).Msg("✅ Configuration-based cat command sent successfully")
 		break
 	}
 
-	// Claude CLI実行のためのEnter送信（最適化版）
+	// Send Enter for Claude CLI execution (optimized version)
 	time.Sleep(1 * time.Second)
-	log.Info().Msg("🔄 Claude CLI実行のためのEnter送信")
+	log.Info().Msg("🔄 Sending Enter for Claude CLI execution")
 
 	for i := 0; i < 3; i++ {
 		if err := tm.SendKeysToPane(sessionName, pane, "C-m"); err != nil {
-			log.Warn().Err(err).Int("attempt", i+1).Msg("⚠️ Enter送信エラー")
+			log.Warn().Err(err).Int("attempt", i+1).Msg("⚠️ Error sending Enter")
 		}
 		time.Sleep(500 * time.Millisecond)
 	}
 
-	log.Info().Str("session", sessionName).Str("pane", pane).Str("agent", agent).Msg("✅ 設定ベースインストラクション送信完了")
+	log.Info().Str("session", sessionName).Str("pane", pane).Str("agent", agent).Msg("✅ Configuration-based instruction sending completed")
 	return nil
 }

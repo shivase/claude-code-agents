@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// テスト用のヘルパー関数：標準出力をキャプチャする
+// Test helper function: captures standard output
 func captureStdout(f func()) (string, error) {
 	originalStdout := os.Stdout
 	r, w, err := os.Pipe()
@@ -46,38 +46,38 @@ func TestShowUsage(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, output)
 
-	// 基本的なヘルプ内容の確認
-	t.Run("基本情報の確認", func(t *testing.T) {
-		assert.Contains(t, output, "AI並列開発チーム - 統合起動システム")
-		assert.Contains(t, output, "使用方法:")
+	// Check basic help contents
+	t.Run("Check basic information", func(t *testing.T) {
+		assert.Contains(t, output, "AI Parallel Development Team - Integrated Launch System")
+		assert.Contains(t, output, "Usage:")
 		assert.Contains(t, output, "claude-code-agents")
 	})
 
-	// 引数説明の確認
-	t.Run("引数説明の確認", func(t *testing.T) {
-		assert.Contains(t, output, "引数:")
-		assert.Contains(t, output, "セッション名")
-		assert.Contains(t, output, "tmuxセッション名")
+	// Check argument descriptions
+	t.Run("Check argument descriptions", func(t *testing.T) {
+		assert.Contains(t, output, "Arguments:")
+		assert.Contains(t, output, "session-name")
+		assert.Contains(t, output, "tmux session name")
 	})
 
-	// オプション説明の確認
-	t.Run("オプション説明の確認", func(t *testing.T) {
-		assert.Contains(t, output, "オプション:")
+	// Check option descriptions
+	t.Run("Check option descriptions", func(t *testing.T) {
+		assert.Contains(t, output, "Options:")
 		assert.Contains(t, output, "--reset")
 		assert.Contains(t, output, "--verbose")
 		assert.Contains(t, output, "--debug")
 		assert.Contains(t, output, "--silent")
 		assert.Contains(t, output, "--help")
 
-		// ショートオプションの確認
+		// Check short options
 		assert.Contains(t, output, "-v")
 		assert.Contains(t, output, "-d")
 		assert.Contains(t, output, "-s")
 	})
 
-	// 管理コマンド説明の確認
-	t.Run("管理コマンド説明の確認", func(t *testing.T) {
-		assert.Contains(t, output, "管理コマンド:")
+	// Check management command descriptions
+	t.Run("Check management command descriptions", func(t *testing.T) {
+		assert.Contains(t, output, "Management Commands:")
 		assert.Contains(t, output, "--list")
 		assert.Contains(t, output, "--delete")
 		assert.Contains(t, output, "--delete-all")
@@ -89,9 +89,9 @@ func TestShowUsage(t *testing.T) {
 		assert.Contains(t, output, "--force")
 	})
 
-	// 使用例の確認
-	t.Run("使用例の確認", func(t *testing.T) {
-		assert.Contains(t, output, "例:")
+	// Check usage examples
+	t.Run("Check usage examples", func(t *testing.T) {
+		assert.Contains(t, output, "Examples:")
 		assert.Contains(t, output, "claude-code-agents myproject")
 		assert.Contains(t, output, "claude-code-agents ai-team")
 		assert.Contains(t, output, "claude-code-agents myproject --reset")
@@ -109,9 +109,9 @@ func TestShowUsage(t *testing.T) {
 		assert.Contains(t, output, "claude-code-agents --doctor")
 	})
 
-	// 環境変数説明の確認
-	t.Run("環境変数説明の確認", func(t *testing.T) {
-		assert.Contains(t, output, "環境変数:")
+	// Check environment variable descriptions
+	t.Run("Check environment variable descriptions", func(t *testing.T) {
+		assert.Contains(t, output, "Environment Variables:")
 		assert.Contains(t, output, "VERBOSE=true")
 		assert.Contains(t, output, "SILENT=true")
 	})
@@ -124,15 +124,15 @@ func TestShowUsage_OutputFormat(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	t.Run("出力フォーマットの確認", func(t *testing.T) {
-		// 絵文字の確認
+	t.Run("Check output format", func(t *testing.T) {
+		// Check for emojis
 		assert.Contains(t, output, "🚀")
 
 		// セクションの区切りの確認
 		lines := strings.Split(output, "\n")
-		assert.True(t, len(lines) > 10, "十分な行数があること")
+		assert.True(t, len(lines) > 10, "Should have sufficient lines")
 
-		// 空行による適切な区切りがあることを確認
+		// Check for appropriate section separators with empty lines
 		hasEmptyLines := false
 		for _, line := range lines {
 			if strings.TrimSpace(line) == "" {
@@ -140,11 +140,11 @@ func TestShowUsage_OutputFormat(t *testing.T) {
 				break
 			}
 		}
-		assert.True(t, hasEmptyLines, "セクション間に空行があること")
+		assert.True(t, hasEmptyLines, "Should have empty lines between sections")
 	})
 
-	t.Run("コマンドライン形式の確認", func(t *testing.T) {
-		// 実際のコマンドライン例が正しい形式であることを確認
+	t.Run("Check command line format", func(t *testing.T) {
+		// Check that command line examples are in correct format
 		commandExamples := []string{
 			"claude-code-agents myproject",
 			"claude-code-agents ai-team",
@@ -164,47 +164,47 @@ func TestShowUsage_OutputFormat(t *testing.T) {
 		}
 
 		for _, example := range commandExamples {
-			assert.Contains(t, output, example, "コマンド例 '%s' が含まれていること", example)
+			assert.Contains(t, output, example, "Command example '%s' should be included", example)
 		}
 	})
 }
 
-func TestShowUsage_JapaneseContent(t *testing.T) {
+func TestShowUsage_EnglishContent(t *testing.T) {
 	output, err := captureStdout(func() {
 		cmd.ShowUsage()
 	})
 
 	assert.NoError(t, err)
 
-	t.Run("日本語説明の確認", func(t *testing.T) {
-		// 主要な日本語説明文の確認
-		japaneseTexts := []string{
-			"統合起動システム",
-			"使用方法",
-			"引数",
-			"オプション",
-			"管理コマンド",
-			"例",
-			"環境変数",
-			"セッション名",
-			"詳細ログ出力",
-			"デバッグログ出力",
-			"サイレントモード",
-			"このヘルプを表示",
-			"起動中のAIチームセッション一覧を表示",
-			"指定したセッションを削除",
-			"全てのAIチームセッションを削除",
-			"設定値の簡易表示",
-			"設定値の詳細表示",
-			"設定ファイルのテンプレートを生成",
-			"既存ファイルを上書きして生成",
-			"システム初期化",
-			"既存ファイルを上書きして初期化",
-			"システムの健全性チェックを実行",
+	t.Run("Check English descriptions", func(t *testing.T) {
+		// Check for major English description texts
+		englishTexts := []string{
+			"Integrated Launch System",
+			"Usage",
+			"Arguments",
+			"Options",
+			"Management Commands",
+			"Examples",
+			"Environment Variables",
+			"session-name",
+			"Enable verbose logging",
+			"Enable debug logging",
+			"Silent mode",
+			"Show this help",
+			"Show running AI team sessions",
+			"Delete specified session",
+			"Delete all AI team sessions",
+			"Show configuration summary",
+			"Show detailed configuration",
+			"Generate configuration file template",
+			"Overwrite existing files",
+			"Initialize system",
+			"Overwrite existing files during initialization",
+			"Run system health check",
 		}
 
-		for _, text := range japaneseTexts {
-			assert.Contains(t, output, text, "日本語テキスト '%s' が含まれていること", text)
+		for _, text := range englishTexts {
+			assert.Contains(t, output, text, "English text '%s' should be included", text)
 		}
 	})
 }
@@ -216,8 +216,8 @@ func TestShowUsage_OptionConsistency(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	t.Run("オプションの一貫性確認", func(t *testing.T) {
-		// ロングオプションとショートオプションの対応確認
+	t.Run("Check option consistency", func(t *testing.T) {
+		// Check correspondence between long and short options
 		optionPairs := map[string]string{
 			"--verbose": "-v",
 			"--debug":   "-d",
@@ -225,10 +225,10 @@ func TestShowUsage_OptionConsistency(t *testing.T) {
 		}
 
 		for longOpt, shortOpt := range optionPairs {
-			assert.Contains(t, output, longOpt, "ロングオプション '%s' が含まれていること", longOpt)
-			assert.Contains(t, output, shortOpt, "ショートオプション '%s' が含まれていること", shortOpt)
+			assert.Contains(t, output, longOpt, "Long option '%s' should be included", longOpt)
+			assert.Contains(t, output, shortOpt, "Short option '%s' should be included", shortOpt)
 
-			// 同じ行にロングとショートが含まれていることを確認
+			// Check that long and short options are on the same line
 			lines := strings.Split(output, "\n")
 			found := false
 			for _, line := range lines {
@@ -237,19 +237,19 @@ func TestShowUsage_OptionConsistency(t *testing.T) {
 					break
 				}
 			}
-			assert.True(t, found, "オプション '%s' と '%s' が同じ行に含まれていること", longOpt, shortOpt)
+			assert.True(t, found, "Options '%s' and '%s' should be on the same line", longOpt, shortOpt)
 		}
 	})
 
-	t.Run("必須引数とオプション引数の区別", func(t *testing.T) {
-		// 必須引数の表記
-		assert.Contains(t, output, "<セッション名>")
-		assert.Contains(t, output, "（必須）")
+	t.Run("Check required and optional arguments", func(t *testing.T) {
+		// Check required argument notation
+		assert.Contains(t, output, "<session-name>")
+		assert.Contains(t, output, "(required)")
 
-		// オプション引数の表記
-		assert.Contains(t, output, "[オプション]")
-		assert.Contains(t, output, "[管理コマンド]")
-		assert.Contains(t, output, "[名前]")
+		// Check optional argument notation
+		assert.Contains(t, output, "[options]")
+		assert.Contains(t, output, "[management-commands]")
+		assert.Contains(t, output, "[name]")
 		assert.Contains(t, output, "[session]")
 	})
 }
@@ -261,8 +261,8 @@ func TestShowUsage_CompleteCoverage(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	t.Run("全機能の網羅性確認", func(t *testing.T) {
-		// parser.goで定義されているすべてのオプションが含まれていることを確認
+	t.Run("Check complete coverage", func(t *testing.T) {
+		// Check that all options defined in parser.go are included
 		allOptions := []string{
 			"--help",
 			"--verbose",
@@ -285,18 +285,18 @@ func TestShowUsage_CompleteCoverage(t *testing.T) {
 		}
 
 		for _, option := range allOptions {
-			assert.Contains(t, output, option, "オプション '%s' がヘルプに含まれていること", option)
+			assert.Contains(t, output, option, "Option '%s' should be included in help", option)
 		}
 	})
 
-	t.Run("環境変数の網羅性確認", func(t *testing.T) {
+	t.Run("Check environment variable coverage", func(t *testing.T) {
 		envVars := []string{
 			"VERBOSE=true",
 			"SILENT=true",
 		}
 
 		for _, envVar := range envVars {
-			assert.Contains(t, output, envVar, "環境変数 '%s' がヘルプに含まれていること", envVar)
+			assert.Contains(t, output, envVar, "Environment variable '%s' should be included in help", envVar)
 		}
 	})
 }
@@ -308,18 +308,18 @@ func TestShowUsage_Structure(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	t.Run("ヘルプ構造の確認", func(t *testing.T) {
+	t.Run("Check help structure", func(t *testing.T) {
 		lines := strings.Split(output, "\n")
 
-		// セクションの順序を確認
+		// Check section order
 		sectionOrder := []string{
-			"AI並列開発チーム - 統合起動システム",
-			"使用方法:",
-			"引数:",
-			"オプション:",
-			"管理コマンド:",
-			"例:",
-			"環境変数:",
+			"AI Parallel Development Team - Integrated Launch System",
+			"Usage:",
+			"Arguments:",
+			"Options:",
+			"Management Commands:",
+			"Examples:",
+			"Environment Variables:",
 		}
 
 		lastIndex := -1
@@ -332,16 +332,16 @@ func TestShowUsage_Structure(t *testing.T) {
 				}
 			}
 
-			assert.NotEqual(t, -1, currentIndex, "セクション '%s' が見つかること", section)
-			assert.Greater(t, currentIndex, lastIndex, "セクション '%s' が正しい順序にあること", section)
+			assert.NotEqual(t, -1, currentIndex, "Section '%s' should be found", section)
+			assert.Greater(t, currentIndex, lastIndex, "Section '%s' should be in correct order", section)
 			lastIndex = currentIndex
 		}
 	})
 
-	t.Run("インデントの確認", func(t *testing.T) {
+	t.Run("Check indentation", func(t *testing.T) {
 		lines := strings.Split(output, "\n")
 
-		// オプションの説明行が適切にインデントされていることを確認
+		// Check that option description lines are properly indented
 		optionLines := []string{}
 		for _, line := range lines {
 			if strings.Contains(line, "--") && !strings.HasPrefix(strings.TrimSpace(line), "claude-code-agents") {
@@ -349,18 +349,18 @@ func TestShowUsage_Structure(t *testing.T) {
 			}
 		}
 
-		assert.Greater(t, len(optionLines), 0, "オプション説明行が存在すること")
+		assert.Greater(t, len(optionLines), 0, "Option description lines should exist")
 
 		for _, line := range optionLines {
-			// 少なくとも2つのスペースでインデントされていることを確認
-			assert.True(t, strings.HasPrefix(line, "  "), "オプション行 '%s' が適切にインデントされていること", strings.TrimSpace(line))
+			// Check that indented with at least 2 spaces
+			assert.True(t, strings.HasPrefix(line, "  "), "Option line '%s' should be properly indented", strings.TrimSpace(line))
 		}
 	})
 }
 
-// パフォーマンステスト
+// Performance test
 func BenchmarkShowUsage(b *testing.B) {
-	// 標準出力を無効化してベンチマークを実行
+	// Disable standard output and run benchmark
 	originalStdout := os.Stdout
 	os.Stdout, _ = os.Open(os.DevNull)
 	defer func() {

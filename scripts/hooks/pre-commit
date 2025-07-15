@@ -1,0 +1,71 @@
+#!/bin/bash
+
+# Cloud Code Agents - Pre-commit Hook
+# このフックは、コミット前に自動的にlintとfmtを実行します
+
+set -e
+
+echo "🔍 Running pre-commit hooks..."
+
+# プロジェクトルートディレクトリに移動
+cd "$(git rev-parse --show-toplevel)"
+
+# Makefileの存在確認
+if [ ! -f "Makefile" ]; then
+    echo "❌ Error: Makefile not found in project root"
+    echo "   This pre-commit hook requires a Makefile with 'lint' and 'fmt' targets"
+    exit 1
+fi
+
+# make lintとmake fmtターゲットの存在確認
+if ! make -n lint >/dev/null 2>&1; then
+    echo "❌ Error: 'make lint' target not found in Makefile"
+    echo "   Please ensure your Makefile includes a 'lint' target"
+    exit 1
+fi
+
+if ! make -n fmt >/dev/null 2>&1; then
+    echo "❌ Error: 'make fmt' target not found in Makefile"
+    echo "   Please ensure your Makefile includes a 'fmt' target"
+    exit 1
+fi
+
+echo "🎨 Running code formatter..."
+
+# make fmtを実行
+if ! make fmt; then
+    echo "❌ Error: Code formatting failed"
+    echo "   Please fix formatting issues and try again"
+    exit 1
+fi
+
+# フォーマット後に変更されたファイルがあるかチェック
+if ! git diff --quiet; then
+    echo "📝 Code formatting made changes to the following files:"
+    git diff --name-only
+    echo ""
+    echo "✅ Automatically staging formatted files..."
+    
+    # 変更されたファイルを自動的にstageに追加
+    git add -u
+    
+    echo "✅ Formatted files have been staged"
+fi
+
+echo "🔍 Running linter..."
+
+# make lintを実行
+if ! make lint; then
+    echo ""
+    echo "❌ Commit aborted: Linting failed"
+    echo ""
+    echo "Please fix the linting errors above and try committing again."
+    echo "You can run 'make lint' to see the specific issues."
+    echo ""
+    exit 1
+fi
+
+echo "✅ All pre-commit checks passed!"
+echo "✅ Proceeding with commit..."
+
+exit 0
