@@ -84,7 +84,7 @@ func TestShowUsage(t *testing.T) {
 		assert.Contains(t, output, "--show-config")
 		assert.Contains(t, output, "--config")
 		assert.Contains(t, output, "--generate-config")
-		assert.Contains(t, output, "--init")
+		assert.Contains(t, output, "--init [ja|en]")
 		assert.Contains(t, output, "--doctor")
 		assert.Contains(t, output, "--force")
 	})
@@ -104,8 +104,9 @@ func TestShowUsage(t *testing.T) {
 		assert.Contains(t, output, "claude-code-agents --config ai-team")
 		assert.Contains(t, output, "claude-code-agents --generate-config")
 		assert.Contains(t, output, "claude-code-agents --generate-config --force")
-		assert.Contains(t, output, "claude-code-agents --init")
-		assert.Contains(t, output, "claude-code-agents --init --force")
+		assert.Contains(t, output, "claude-code-agents --init ja")
+		assert.Contains(t, output, "claude-code-agents --init en")
+		assert.Contains(t, output, "claude-code-agents --init ja --force")
 		assert.Contains(t, output, "claude-code-agents --doctor")
 	})
 
@@ -158,8 +159,9 @@ func TestShowUsage_OutputFormat(t *testing.T) {
 			"claude-code-agents --config ai-team",
 			"claude-code-agents --generate-config",
 			"claude-code-agents --generate-config --force",
-			"claude-code-agents --init",
-			"claude-code-agents --init --force",
+			"claude-code-agents --init ja",
+			"claude-code-agents --init en",
+			"claude-code-agents --init ja --force",
 			"claude-code-agents --doctor",
 		}
 
@@ -198,7 +200,7 @@ func TestShowUsage_EnglishContent(t *testing.T) {
 			"Show detailed configuration",
 			"Generate configuration file template",
 			"Overwrite existing files",
-			"Initialize system",
+			"Initialize system (create directories and config files)",
 			"Overwrite existing files during initialization",
 			"Run system health check",
 		}

@@ -18,10 +18,17 @@ This project is a toolset for running multiple AI agents in parallel to streamli
 
 ## 🚀 Usage
 
+### Prerequisites
+
+* tmux
+* Claude Code CLI (please complete authentication first)
+
 ### Preparation
 
 Create the necessary environment information for startup using the `--init` command.
 Files are saved to `~/.claude/claude-code-agents/agents.json` by default.
+
+The `--init` command requires a language parameter (`ja` or `en`), and instruction files for the specified language will be copied.
 
 ```bash
 git clone https://github.com/shivase/claude-code-agents.git
@@ -29,8 +36,11 @@ cd claude-code-agents
 # install start-agents and send-agent to /usr/local/bin
 make install
 
-# Initialize configuration
-claude-code-agents --init
+# Initialize configuration (using English instruction files)
+claude-code-agents --init en
+
+# Initialize configuration (using Japanese instruction files)
+# claude-code-agents --init ja
 
 # Run system diagnostics
 claude-code-agents --doctor
@@ -67,7 +77,7 @@ claude-code-agents [session_name]
 The operational definitions for each agent are stored in `~/.claude/claude-code-agents/instructions`.
 They are saved in the format `<role>.md`, so please modify them according to your environment and restart the application.
 
-Now I put role.md in Japanese, so please translate it to English if you want to use it in English.
+When you run `claude-code-agents --init en`, English instruction files will be automatically copied. If you run `claude-code-agents --init ja`, Japanese instruction files will be copied instead.
 
 ## FAQ
 

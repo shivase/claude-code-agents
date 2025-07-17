@@ -77,11 +77,34 @@ func ParseArguments(args []string) (string, bool, error) {
 			os.Exit(0)
 		case "--init":
 			forceOverwrite := false
+			language := ""
+
+			// 次の引数を確認
+			if i+1 < len(args) && !strings.HasPrefix(args[i+1], "--") {
+				if args[i+1] == "ja" || args[i+1] == "en" {
+					language = args[i+1]
+					i++
+				} else {
+					fmt.Printf("❌ Error: Invalid language '%s'. Use 'ja' or 'en'\n", args[i+1])
+					fmt.Println("Usage: ./claude-code-agents --init [ja|en] [--force]")
+					os.Exit(1)
+				}
+			}
+
+			// --forceフラグのチェック
 			if i+1 < len(args) && args[i+1] == "--force" {
 				forceOverwrite = true
 				i++
 			}
-			if err := InitializeSystemCommand(forceOverwrite); err != nil {
+
+			// 言語が指定されていない場合はエラー
+			if language == "" {
+				fmt.Println("❌ Error: Language parameter required")
+				fmt.Println("Usage: ./claude-code-agents --init [ja|en] [--force]")
+				os.Exit(1)
+			}
+
+			if err := InitializeSystemCommand(forceOverwrite, language); err != nil {
 				return "", false, err
 			}
 			os.Exit(0)

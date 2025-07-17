@@ -1,7 +1,7 @@
 # Cloud Code Agents - 統合Makefile
 # 各サブプロジェクトのMakefileを統合実行
 
-.PHONY: install help clean build test fmt lint install-instructions
+.PHONY: install help clean build test fmt lint
 .PHONY: hooks-install send-agent-install start-agents-install
 .PHONY: hooks-help send-agent-help start-agents-help hooks-setup
 
@@ -9,7 +9,7 @@
 all: install
 
 # 全プロジェクトのインストール
-install: hooks-install send-agent-install start-agents-install install-instructions hooks-setup
+install: hooks-install send-agent-install start-agents-install hooks-setup
 	@echo "✅ 全てのコンポーネントのインストールが完了しました"
 
 # 各プロジェクトのインストール
@@ -24,21 +24,6 @@ send-agent-install:
 start-agents-install:
 	@echo "🚀 Installing start-agents..."
 	@$(MAKE) -C start-agents install
-
-install-instructions:
-	@echo "📚 Installing instructions to ~/.claude/claude-code-agents/instructions..."
-	@mkdir -p ~/.claude/claude-code-agents/instructions
-	@for file in instructions/*; do \
-		basename_file=$$(basename "$$file"); \
-		target_file="$$HOME/.claude/claude-code-agents/instructions/$$basename_file"; \
-		if [ -f "$$target_file" ]; then \
-			echo "⚠️  $$basename_file already exists, skipping..."; \
-		else \
-			cp "$$file" "$$target_file"; \
-			echo "✅ Installed $$basename_file"; \
-		fi; \
-	done
-	@echo "✅ Instructions installation completed"
 
 # Git Hooks セットアップ
 hooks-setup:
@@ -81,7 +66,6 @@ help:
 	@echo ""
 	@echo "利用可能なターゲット:"
 	@echo "  install           - 全コンポーネントをビルド・インストール"
-	@echo "  install-instructions - instructionsフォルダを~/.claude/claude-code-agents/instructionsにコピー"
 	@echo "  hooks-setup       - Git Hooksの自動セットアップ"
 	@echo "  help              - このヘルプメッセージを表示"
 	@echo "  clean             - 全プロジェクトのビルド成果物をクリーンアップ"

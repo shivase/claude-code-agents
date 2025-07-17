@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"embed"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,6 +13,9 @@ import (
 	"github.com/shivase/claude-code-agents/internal/logger"
 	"github.com/shivase/claude-code-agents/internal/tmux"
 )
+
+//go:embed instructions
+var InstructionsFS embed.FS
 
 var (
 	// GlobalLogLevel global configuration flag
@@ -258,7 +262,7 @@ func LaunchSystem(sessionName string) error {
 }
 
 // InitializeSystemCommand system initialization command
-func InitializeSystemCommand(forceOverwrite bool) error {
+func InitializeSystemCommand(forceOverwrite bool, language string) error {
 	fmt.Println("🚀 Claude Code Agents System Initialization")
 	fmt.Println("=====================================")
 
@@ -274,6 +278,11 @@ func InitializeSystemCommand(forceOverwrite bool) error {
 	// Configuration file generation process
 	if err := generateInitialConfig(forceOverwrite); err != nil {
 		return fmt.Errorf("configuration file generation failed: %w", err)
+	}
+
+	// Copy instruction files based on language
+	if err := CopyInstructionFiles(language, forceOverwrite); err != nil {
+		return fmt.Errorf("instruction files copy failed: %w", err)
 	}
 
 	// Display success message
@@ -320,6 +329,57 @@ func createSystemDirectories(forceOverwrite bool) error {
 			return fmt.Errorf("directory creation failed %s: %w", dir.path, err)
 		}
 		fmt.Printf("     ✅ Creation completed\n")
+	}
+
+	return nil
+}
+
+// CopyInstructionFiles copy instruction files based on language
+func CopyInstructionFiles(language string, forceOverwrite bool) error {
+	fmt.Printf("📋 Copying instruction files for language: %s\n", language)
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("failed to get home directory: %w", err)
+	}
+
+	targetDir := filepath.Join(homeDir, ".claude", "claude-code-agents", "instructions")
+
+	// Create target directory if it doesn't exist
+	if err := os.MkdirAll(targetDir, 0750); err != nil {
+		return fmt.Errorf("failed to create target directory: %w", err)
+	}
+
+	// List of instruction files to copy
+	instructionFiles := []string{"po.md", "manager.md", "developer.md"}
+
+	for _, filename := range instructionFiles {
+		sourcePath := filepath.Join("instructions", language, filename)
+		targetFile := filepath.Join(targetDir, filename)
+
+		fmt.Printf("  📄 %s: embedded %s -> %s\n", filename, sourcePath, targetFile)
+
+		// Read embedded file
+		data, err := InstructionsFS.ReadFile(sourcePath)
+		if err != nil {
+			fmt.Printf("     ⚠️ Embedded file not found (skipped)\n")
+			continue
+		}
+
+		// Check if target file already exists
+		if _, err := os.Stat(targetFile); err == nil {
+			if !forceOverwrite {
+				fmt.Printf("     ✅ Already exists (skipped)\n")
+				continue
+			}
+			fmt.Printf("     ⚠️ Already exists but overwriting (force mode)\n")
+		}
+
+		// Write file
+		if err := os.WriteFile(targetFile, data, 0600); err != nil {
+			return fmt.Errorf("failed to write %s: %w", filename, err)
+		}
+		fmt.Printf("     ✅ Copy completed\n")
 	}
 
 	return nil
